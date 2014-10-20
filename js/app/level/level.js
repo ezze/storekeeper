@@ -19,13 +19,12 @@ define([
 
     var Level = Ring.create({
         constructor: function(storekeeper, data) {
-            // TODO: create a separate stage for level rendering right here
             this._storekeeper = storekeeper;
-
+            this._stage = new Easel.Stage(jqCanvas.get(0));
             this._name = '';
             this._description = '';
             this._items = [];
-
+            this._isValidated = false;
             this._rows = 0;
             this._columns = 0;
 
@@ -54,8 +53,17 @@ define([
                     this.addObjectFromCharacter(this._items[row][column], row, column);
                 }
             }
+            if (this._boxes.length !== this._goals.length || !this._worker) {
+                throw new Exception('Incorrect ' + this._name + ' level');
+            }
+            this._isValidated = true;
+        },
+        
+        render: function() {
+            if (this._isValidated) {
+                this.addObjectsToStage();
+            }
 
-            // TODO: validate level
         },
 
         clone: function() {
@@ -89,6 +97,10 @@ define([
 
         getColumnsCount: function() {
             return this._columns;
+        },
+
+        getStage: function() {
+            return this._stage;
         },
 
         getSize: function() {
@@ -151,6 +163,11 @@ define([
             this.removeObjectsFromStage();
         },
 
+        update: function() {
+            if (!this._stage) return;
+            this._stage.update();
+        }
+
         addObjectsToStage: function() {
             var i;
             for (i = 0; i < this._walls.length; i++) {
@@ -166,16 +183,18 @@ define([
         },
 
         addObjectToStage: function(object) {
-            var stage = this._storekeeper.getStage();
             var sprite = object.getSprite();
-            if (stage.contains(sprite))
+            if (this._stage.contains(sprite))
                 return;
-            stage.addChild(sprite);
+            this._stage.addChild(sprite);
         },
 
         removeObjectsFromStage: function() {
-            var stage = this._storekeeper.getStage();
-            stage.removeAllChildren();
+            this._stage.removeAllChildren();
+        },
+        
+        getWorker: function() {
+            return this._worker;
         }
     });
     return Level;

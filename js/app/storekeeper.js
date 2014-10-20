@@ -28,9 +28,6 @@ define([
 
             var that = this;
 
-            // Creating stage
-            this._stage = new Easel.Stage(jqCanvas.get(0));
-
             this._levelSet = new LevelSet(this, levelSetSource, function() {
                 that._levelSet.selectLevelByIndex(0);
 
@@ -42,13 +39,25 @@ define([
             });
         },
 
-        getStage: function() {
-            return this._stage;
-        },
-
         onAnimationFrame: function(event) {
-            var level = this._levelSet.getActiveLevel();
-            this._stage.update();
+            // TODO: 
+            //var action = event.keyPress
+            var level = this._levelSet.getActiveLevel(); 
+            switch(action) {
+                case 'left': 
+                    level.getWorker().moveLeft();
+                    break;
+                case 'right':
+                    level.getWorker().moveRight();
+                    break;
+                case 'up':
+                    level.getWorker().moveUp();
+                    break;
+                case 'down':
+                    level.getWorker().moveDown();
+                    break;
+            }
+            level.update();
         }
     });
 
