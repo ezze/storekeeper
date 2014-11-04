@@ -1,6 +1,7 @@
 define([
     'jquery',
-    'ring',
+    'easel',
+    'underscore',
     '../exception',
     './object/worker',
     './object/wall',
@@ -8,7 +9,8 @@ define([
     './object/goal'
 ], function(
     $,
-    Ring,
+    Easel,
+    _,
     Exception,
     Worker,
     Wall,
@@ -17,16 +19,16 @@ define([
 ) {
     "use strict";
 
-    var Level = Ring.create({
-        constructor: function(storekeeper, data) {
+    var Level = function(storekeeper, data) {
             this._storekeeper = storekeeper;
-            this._stage = new Easel.Stage(jqCanvas.get(0));
+            this._stage = new Easel.Stage($('canvas').get(0));
             this._name = '';
             this._description = '';
             this._items = [];
             this._isValidated = false;
             this._rows = 0;
             this._columns = 0;
+            this._hasCollision = false;
 
             this._worker = undefined;
             this._walls = [];
@@ -41,9 +43,11 @@ define([
                 this._items = data.items;
                 this.reset();
             }
-        },
+        };
 
-        reset: function() {
+    Level.prototype = {
+
+        reset: function () {
             this._worker = undefined;
             this._walls = [];
             this._goals = [];
@@ -57,60 +61,70 @@ define([
                 throw new Exception('Incorrect ' + this._name + ' level');
             }
             this._isValidated = true;
-        },
-        
-        render: function() {
-            if (this._isValidated) {
-                this.addObjectsToStage();
-            }
-
+            this.start();
         },
 
-        clone: function() {
+        clone: function () {
             var data = {
                 name: this._name,
                 description: this._description,
                 items: this._items
-            }
+            };
             return new Level(this._storekeeper, data);
         },
 
-        getName: function() {
+        getName: function () {
             return this._name;
         },
 
-        setName: function(name) {
+        setName: function (name) {
             this._name = name;
         },
 
-        getDescription: function() {
+        getDescription: function () {
             return this._description;
         },
 
-        setDescription: function(description) {
+        setDescription: function (description) {
             this._description = description;
         },
 
-        getRowsCount: function() {
+        getRowsCount: function () {
             return this._rows;
         },
 
-        getColumnsCount: function() {
+        getColumnsCount: function () {
             return this._columns;
         },
 
-        getStage: function() {
+        getStage: function () {
             return this._stage;
         },
 
-        getSize: function() {
+        getWorker: function () {
+            return this._worker;
+        },
+
+        getBoxes: function() {
+            return this._boxes;
+        },
+
+        getWalls: function() {
+            return this._walls;
+        },
+
+        getGoals: function() {
+            return this._goals;
+        },
+
+        getSize: function () {
             return {
                 rows: this.getRowsCount(),
                 columns: this.getColumnsCount()
             }
         },
 
-        addObjectFromCharacter: function(character, row, column) {
+        addObjectFromCharacter: function (character, row, column) {
             switch (character) {
                 case '@':
                     this.addObject(new Worker(this, row, column));
@@ -135,7 +149,7 @@ define([
             }
         },
 
-        addObject: function(object) {
+        addObject: function (object) {
             var row = object.getRow();
             if (row + 1 > this._rows)
                 this._rows = row + 1;
@@ -145,30 +159,32 @@ define([
 
             // TODO: check whether we can insert object on this position
 
-            if (Ring.instance(object, Worker))
+            if (object instanceof Worker)
                 this._worker = object;
-            else if (Ring.instance(object, Wall))
+            else if (object instanceof Wall)
                 this._walls.push(object);
-            else if (Ring.instance(object, Goal))
+            else if (object instanceof Goal)
                 this._goals.push(object);
-            else if (Ring.instance(object, Box))
+            else if (object instanceof Box)
                 this._boxes.push(object);
         },
 
-        start: function() {
-            this.addObjectsToStage();
+        start: function () {
+            if (this._isValidated) {
+                this.addObjectsToStage();
+            }
         },
 
-        stop: function() {
+        stop: function () {
             this.removeObjectsFromStage();
         },
 
-        update: function() {
+        update: function () {
             if (!this._stage) return;
             this._stage.update();
-        }
+        },
 
-        addObjectsToStage: function() {
+        addObjectsToStage: function () {
             var i;
             for (i = 0; i < this._walls.length; i++) {
                 this.addObjectToStage(this._walls[i]);
@@ -182,20 +198,68 @@ define([
             this.addObjectToStage(this._worker);
         },
 
-        addObjectToStage: function(object) {
+        addObjectToStage: function (object) {
             var sprite = object.getSprite();
             if (this._stage.contains(sprite))
                 return;
             this._stage.addChild(sprite);
         },
 
-        removeObjectsFromStage: function() {
+        removeObjectsFromStage: function () {
             this._stage.removeAllChildren();
         },
-        
-        getWorker: function() {
-            return this._worker;
+
+        _detectWorkerCollisionWithWalls: function(worker, direction) {
+            var col = worker.getColumn();
+            var row = worker.getRow();
+            var isCollisionExists;
+            switch(direction) {
+                case 'left':
+                    isCollisionExists = !!(
+                        _.find(this._walls, function(wall) {
+                            return ((wall._row === row) && (wall._column + 1 === col));
+                        }) || false);
+                    break;
+                case 'right':
+                    isCollisionExists = !!(
+                        _.find(this._walls, function(wall) {
+                            return ((wall._row === row) && (wall._column - 1 === col));
+                        }) || false);
+                    break;
+                case 'up':
+                    isCollisionExists = !!(
+                        _.find(this._walls, function(wall) {
+                            return ((wall._row + 1 === row) && (wall._column === col));
+                        }) || false);
+                    break;
+                case 'down':
+                    isCollisionExists = !!(
+                        _.find(this._walls, function(wall) {
+                            return ((wall._row - 1 === row) && (wall._column === col));
+                        }) || false);
+                    break;
+            }
+            return isCollisionExists;
+        },
+        // TODO: simplify!!!
+        checkWorkerCollision: function(direction) {
+            var equalToRow = (this._worker._sprite.y % this._worker._height === 0);
+            var equalToColumn = (this._worker._sprite.x % this._worker._width === 0);
+            if (equalToRow && equalToColumn) {
+                this._worker.transformToLocal();
+                this._hasCollision = this._detectWorkerCollisionWithWalls(this._worker, direction);
+                if (this._worker.getPreviousState() !== 'stand' && !this._hasCollision && !this._storekeeper._userAction.isKeyDown) {
+                    this._worker.stopAnimation();
+                    this._hasCollision = true;
+                    this._storekeeper._userAction.keepMoving = false;
+                } else if (this._worker.getPreviousState() !== 'stand' && !this._hasCollision && this._storekeeper._userAction.isKeyDown) {
+                    this._hasCollision = false;
+                } else if (this._hasCollision) {
+                    this._worker.stopAnimation();
+                }
+                return this._hasCollision;
+            }
         }
-    });
+    };
     return Level;
-});
+    });

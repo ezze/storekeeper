@@ -1,12 +1,10 @@
-define([
-    'ring'
-], function(
-    Ring
-) {
+define(function() {
     "use strict";
 
-    var Exception = Ring.create([Ring.Error], {
-        name: 'StorekeeperException'
-    });
+    var Exception = function() {
+        Error.apply(this);
+        this.name = 'StorekeeperException';
+    };
+    Exception.prototype = Object.create(Error.prototype);
     return Exception;
 });

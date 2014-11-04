@@ -1,18 +1,15 @@
 define([
     'jquery',
-    'ring',
     'parallel',
     './level'
 ], function(
     $,
-    Ring,
     Parallel,
     Level
 ) {
     "use strict";
 
-    var LevelSet = Ring.create({
-        constructor: function(storekeeper, source, loadCallback) {
+    var LevelSet = function(storekeeper, source, loadCallback) {
             this._storekeeper = storekeeper;
             this._source = source;
             this._loadCallback = loadCallback;
@@ -25,7 +22,9 @@ define([
             this._levels = [];
 
             this.load();
-        },
+        };
+
+    LevelSet.prototype = {
 
         load: function() {
             var that = this;
@@ -71,7 +70,7 @@ define([
         },
 
         addLevel: function(level) {
-            if (!(Ring.instance(level, Level)))
+            if (!(level instanceof Level))
                 return;
             this._levels.push(level);
         },
@@ -83,9 +82,12 @@ define([
         },
 
         removeLevel: function(level) {
-            // TODO:
-            if (!(Ring.instance(level, Level)))
+            if (!(level instanceof Level))
                 return;
+            var index = $.inArray(level, this._levels);
+            if (index === -1)
+                return;
+            this._level.splice(index, 1);
         },
 
         selectLevelByIndex: function(index) {
@@ -93,19 +95,19 @@ define([
             if (!level)
                 return;
 
-            // Stop rendering previous level
+            // TODO: rewrite
             if (this._level != null) {
                 this._level.stop();
             }
-
             this._levelIndex = index;
             this._level = level.clone();
             this._level.start();
+            return level;
         },
 
         getActiveLevel: function() {
             return this._level;
         }
-    });
+    };
     return LevelSet;
 });

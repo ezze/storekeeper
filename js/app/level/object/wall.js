@@ -1,17 +1,14 @@
 define([
-    'ring',
      './object'
 ], function(
-    Ring,
-    Object
+    object
 ) {
     "use strict";
 
-    var Wall = Ring.create([Object], {
-        constructor: function(level, row, column) {
-            this.$super(level, row, column);
-            this._sprite.gotoAndStop('wall');
-        }
-    });
+    var Wall = function(level, row, column) {
+        object.apply(this, arguments);
+        this._sprite.gotoAndStop('wall');
+        };
+    Wall.prototype = Object.create(object.prototype);
     return Wall;
-});
+    });
