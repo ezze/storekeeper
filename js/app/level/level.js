@@ -28,7 +28,6 @@ define([
             this._isValidated = false;
             this._rows = 0;
             this._columns = 0;
-            this._hasCollision = false;
 
             this._worker = undefined;
             this._walls = [];
@@ -207,58 +206,6 @@ define([
 
         removeObjectsFromStage: function () {
             this._stage.removeAllChildren();
-        },
-
-        _detectWorkerCollisionWithWalls: function(worker, direction) {
-            var col = worker.getColumn();
-            var row = worker.getRow();
-            var isCollisionExists;
-            switch(direction) {
-                case 'left':
-                    isCollisionExists = !!(
-                        _.find(this._walls, function(wall) {
-                            return ((wall._row === row) && (wall._column + 1 === col));
-                        }) || false);
-                    break;
-                case 'right':
-                    isCollisionExists = !!(
-                        _.find(this._walls, function(wall) {
-                            return ((wall._row === row) && (wall._column - 1 === col));
-                        }) || false);
-                    break;
-                case 'up':
-                    isCollisionExists = !!(
-                        _.find(this._walls, function(wall) {
-                            return ((wall._row + 1 === row) && (wall._column === col));
-                        }) || false);
-                    break;
-                case 'down':
-                    isCollisionExists = !!(
-                        _.find(this._walls, function(wall) {
-                            return ((wall._row - 1 === row) && (wall._column === col));
-                        }) || false);
-                    break;
-            }
-            return isCollisionExists;
-        },
-        // TODO: simplify!!!
-        checkWorkerCollision: function(direction) {
-            var equalToRow = (this._worker._sprite.y % this._worker._height === 0);
-            var equalToColumn = (this._worker._sprite.x % this._worker._width === 0);
-            if (equalToRow && equalToColumn) {
-                this._worker.transformToLocal();
-                this._hasCollision = this._detectWorkerCollisionWithWalls(this._worker, direction);
-                if (this._worker.getPreviousState() !== 'stand' && !this._hasCollision && !this._storekeeper._userAction.isKeyDown) {
-                    this._worker.stopAnimation();
-                    this._hasCollision = true;
-                    this._storekeeper._userAction.keepMoving = false;
-                } else if (this._worker.getPreviousState() !== 'stand' && !this._hasCollision && this._storekeeper._userAction.isKeyDown) {
-                    this._hasCollision = false;
-                } else if (this._hasCollision) {
-                    this._worker.stopAnimation();
-                }
-                return this._hasCollision;
-            }
         }
     };
     return Level;
