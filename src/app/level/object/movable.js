@@ -22,20 +22,18 @@ define([
     Movable.prototype = Object.create(Sprite.prototype);
 
     Movable.prototype._getState = function(state) {
-        if (typeof state !== 'string') return;
+        if (typeof state !== 'string') {
+            // TODO: throw an exception
+            return;
+        }
+
         switch(state) {
-            case 'left':
-                return this.moveLeft;
-            case 'right':
-                return this.moveRight;
-            case 'up':
-                return this.moveUp;
-            case 'down':
-                return this.moveDown;
-            case 'stand':
-                return this.stand;
-            default:
-                throw new Exception('Incorrect state!');
+            case 'left': return this.moveLeft;
+            case 'right': return this.moveRight;
+            case 'up': return this.moveUp;
+            case 'down': return this.moveDown;
+            case 'stand': return this.stand;
+            default: throw new Exception('Incorrect state!');
         }
     };
 

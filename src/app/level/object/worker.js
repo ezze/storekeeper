@@ -5,7 +5,7 @@ define([
     $,
     Movable
 ) {
-    "use strict";
+    'use strict';
 
     var Worker = function(level, row, column) {
         Movable.apply(this, arguments);
@@ -95,8 +95,11 @@ define([
     };
 
     Worker.prototype.setLookDirection = function(direction) {
-            if ($.inArray(direction, ['left', 'right']) === -1)
+            if ($.inArray(direction, ['left', 'right']) === -1) {
+                // TODO: throw an exception
                 return;
+            }
+
             this._lookDirection = direction;
             switch (this._lookDirection) {
                 case 'left':
@@ -107,11 +110,14 @@ define([
                     break;
             }
     };
+
     // @override
     var stopAnimation = Worker.prototype.stopAnimation;
+
     Worker.prototype.stopAnimation = function() {
         this.setLookDirection(this._lookDirection);
         stopAnimation.call(this);
     };
+
     return Worker;
-    });
+});

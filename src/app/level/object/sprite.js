@@ -1,9 +1,11 @@
 define([
-    'easel'
+    'easel',
+    'lodash'
 ], function(
-    Easel
+    Easel,
+    _
 ) {
-    "use strict";
+    'use strict';
 
     var data = {
         images: ['img/sprites.png'],
@@ -27,7 +29,7 @@ define([
 
     var spriteSheet = new Easel.SpriteSheet(data);
 
-    var Object = function(level, row, column) {
+    var Sprite = function(level, row, column) {
         this._level = level;
         this._name = '';
         this._row = row;
@@ -42,25 +44,24 @@ define([
         this._sprite.vY = data.frames.height / this._maxMovesPerCell;
     };
 
-    Object.prototype = {
-
+    Sprite.prototype = {
         getName: function() {
             return this._name;
         },
 
-        getLevel: function () {
+        getLevel: function() {
             return this._level;
         },
 
-        getRow: function () {
+        getRow: function() {
             return this._row;
         },
 
-        getColumn: function () {
+        getColumn: function() {
             return this._column;
         },
 
-        getSprite: function () {
+        getSprite: function() {
             return this._sprite;
         },
 
@@ -71,13 +72,17 @@ define([
             this.setRow(row);
         },
 
-        setRow: function (row) {
-            if (!_.isNumber(row)) return;
+        setRow: function(row) {
+            if (!_.isNumber(row)) {
+                return;
+            }
             this._row = row;
         },
 
         setColumn: function(column) {
-            if (!_.isNumber(column)) return;
+            if (!_.isNumber(column)) {
+                return;
+            }
             this._column = column;
         },
 
@@ -91,8 +96,7 @@ define([
         stopAnimation: function() {
             this._sprite.stop();
         }
-
     };
 
-    return Object;
+    return Sprite;
 });

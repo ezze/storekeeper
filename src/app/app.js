@@ -17,7 +17,7 @@ require([
         var container = document.querySelector('.game-field');
         var jqContainer = $(container);
 
-        var storekeeper = new Storekeeper({
+        new Storekeeper({
             container: container,
             levelSetSource: 'levels/classic.json'
         });

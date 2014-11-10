@@ -14,6 +14,13 @@ module.exports = function(grunt) {
                     'grunt/**/*.js'
                 ]
             }
+        },
+        game: {
+            files: {
+                src: [
+                    'src/app/**/*.js'
+                ]
+            }
         }
     };
 };

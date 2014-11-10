@@ -1,49 +1,54 @@
 define([
     'easel',
     'jquery',
-    './object/worker',
-    './object/wall',
+    'lodash',
     './object/box',
     './object/goal',
+    './object/wall',
+    './object/worker',
     '../exception'
 ], function(
     Easel,
     $,
-    Worker,
-    Wall,
+    _,
     Box,
     Goal,
+    Wall,
+    Worker,
     Exception
 ) {
-    "use strict";
+    'use strict';
 
     var Level = function(storekeeper, data) {
-            this._storekeeper = storekeeper;
-            this._stage = new Easel.Stage($('canvas').get(0));
-            this._name = '';
-            this._description = '';
-            this._items = [];
-            this.__isValidated = false;
-            this._rows = 0;
-            this._columns = 0;
+        this._storekeeper = storekeeper;
+        this._stage = new Easel.Stage($('canvas').get(0));
+        this._name = '';
+        this._description = '';
+        this._items = [];
+        this.__isValidated = false;
+        this._rows = 0;
+        this._columns = 0;
 
-            this._worker = undefined;
-            this._walls = [];
-            this._goals = [];
-            this._boxes = [];
+        this._worker = undefined;
+        this._walls = [];
+        this._goals = [];
+        this._boxes = [];
 
-            if (typeof data.name === 'string')
-                this.setName(data.name);
-            if (typeof data.description === 'string')
-                this.setDescription(data.description);
-            if ($.isArray(data.items)) {
-                this._items = data.items;
-                this.reset();
-            }
-        };
+        if (_.isString(data.name) && !_.isEmpty(data.name)) {
+            this.name = data.name;
+        }
+
+        if (_.isString(data.description) && !_.isEmpty(data.description)) {
+            this.description = data.description;
+        }
+
+        if ($.isArray(data.items)) {
+            this._items = data.items;
+            this.reset();
+        }
+    };
 
     Level.prototype = {
-
         reset: function () {
             this._worker = undefined;
             this._walls = [];
@@ -63,27 +68,11 @@ define([
 
         clone: function () {
             var data = {
-                name: this._name,
-                description: this._description,
+                name: this.name,
+                description: this.description,
                 items: this._items
             };
             return new Level(this._storekeeper, data);
-        },
-
-        getName: function () {
-            return this._name;
-        },
-
-        setName: function (name) {
-            this._name = name;
-        },
-
-        getDescription: function () {
-            return this._description;
-        },
-
-        setDescription: function (description) {
-            this._description = description;
         },
 
         getRowsCount: function () {
@@ -114,13 +103,6 @@ define([
             return this._goals;
         },
 
-        getSize: function () {
-            return {
-                rows: this.getRowsCount(),
-                columns: this.getColumnsCount()
-            }
-        },
-
         addObjectFromCharacter: function (character, row, column) {
             switch (character) {
                 case '@':
@@ -148,22 +130,29 @@ define([
 
         addObject: function (object) {
             var row = object.getRow();
-            if (row + 1 > this._rows)
+            if (row + 1 > this._rows) {
                 this._rows = row + 1;
+            }
+
             var column = object.getColumn();
-            if (column + 1 > this._columns)
+            if (column + 1 > this._columns) {
                 this._columns = column + 1;
+            }
 
             // TODO: check whether we can insert object on this position
 
-            if (object instanceof Worker)
+            if (object instanceof Worker) {
                 this._worker = object;
-            else if (object instanceof Wall)
+            }
+            else if (object instanceof Wall) {
                 this._walls.push(object);
-            else if (object instanceof Goal)
+            }
+            else if (object instanceof Goal) {
                 this._goals.push(object);
-            else if (object instanceof Box)
+            }
+            else if (object instanceof Box) {
                 this._boxes.push(object);
+            }
         },
 
         start: function () {
@@ -177,7 +166,10 @@ define([
         },
 
         update: function () {
-            if (!this._stage) return;
+            if (!this._stage) {
+                // TODO: throw an exception
+                return;
+            }
             this._stage.update();
         },
 
@@ -197,8 +189,10 @@ define([
 
         addObjectToStage: function (object) {
             var sprite = object.getSprite();
-            if (this._stage.contains(sprite))
+            if (this._stage.contains(sprite)) {
+                // TODO: throw an exception
                 return;
+            }
             this._stage.addChild(sprite);
         },
 
@@ -206,5 +200,33 @@ define([
             this._stage.removeAllChildren();
         }
     };
-    return Level;
+
+    Object.defineProperties(Level.prototype, {
+        name: {
+            get: function () {
+                return this._name;
+            },
+            set: function(name) {
+                this._name = name;
+            }
+        },
+        description: {
+            get: function() {
+                return this._description;
+            },
+            set: function(description) {
+                this._description = description;
+            }
+        },
+        size: {
+            get: function() {
+                return {
+                    rows: this.getRowsCount(),
+                    columns: this.getColumnsCount()
+                };
+            }
+        }
     });
+
+    return Level;
+});

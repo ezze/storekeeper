@@ -115,7 +115,7 @@ define([
 
         $(window).keyup(function() {
             that._userAction.isKeyDown = false;
-        })
+        });
     };
 
     Storekeeper.prototype.onAnimationFrame = function() {
@@ -123,7 +123,7 @@ define([
         var worker = level.getWorker();
         if (!worker._hasCollision) {
             var state = worker.getCurrentState();
-            if (typeof state === 'function') {
+            if (_.isFunction(state)) {
                 state.call(worker);
                 level.update();
             }
