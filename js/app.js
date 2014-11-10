@@ -27,6 +27,5 @@ require([
     Storekeeper
 ) {
     "use strict";
-
     var storekeeper = new Storekeeper('.storekeeper-canvas', 'levels/classic.json');
 });
