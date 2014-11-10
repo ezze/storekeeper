@@ -8,10 +8,38 @@ require([
     require.config(config);
 
     require([
+        'jquery',
         './storekeeper'
     ], function(
+        $,
         Storekeeper
     ) {
-        var storekeeper = new Storekeeper('.game-field', 'levels/classic.json');
+        var container = document.querySelector('.game-field');
+        var jqContainer = $(container);
+
+        var storekeeper = new Storekeeper({
+            container: container,
+            levelSetSource: 'levels/classic.json'
+        });
+
+        jqContainer.css('position', 'absolute');
+
+        $(window).resize(function(event) {
+            var top = ($(this).outerHeight() - jqContainer.outerHeight()) / 2;
+            if (top < 0) {
+                top = 0;
+            }
+
+            var left = ($(this).outerWidth() - jqContainer.outerWidth()) / 2;
+            if (left < 0) {
+                left = 0;
+            }
+
+            jqContainer.css('top', top).css('left', left);
+        });
+
+        $(document).ready(function() {
+            $(window).trigger('resize');
+        });
     });
 });
