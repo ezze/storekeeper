@@ -1,0 +1,23 @@
+{
+  "name": "Storekeeper",
+  "version": "0.1.0",
+  "homepage": "https://github.com/ezze/storekeeperjs",
+  "authors": [
+    "Dmitriy Pushkov <ezze@ezze.org>"
+  ],
+  "license": "Apache 2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.0",
+    "easeljs": "*",
+    "jquery": "~2.1.1",
+    "less": "~2.0.0",
+    "lodash": "~2.4.1",
+    "requirejs": "~2.1.14"
+  }
+}
