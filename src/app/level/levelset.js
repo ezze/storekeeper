@@ -28,7 +28,7 @@ define([
             $.ajax({
                 url: this._source,
                 success: function(data, textStatus, jqXHR) {
-                    this.parseLevels(data);
+                    this.parse(data);
                 }.bind(this),
                 complete: function(jqXHR, textStatus) {
                     if (_.isFunction(this._loadCallback)) {
@@ -38,7 +38,7 @@ define([
             });
         },
 
-        parseLevels: function(data) {
+        parse: function(data) {
             if (typeof data.name === 'string') {
                 this.name = data.name;
             }
@@ -50,12 +50,12 @@ define([
             if ($.isArray(data.levels)) {
                 for (var i = 0; i < data.levels.length; i++) {
                     var level = new Level(data.levels[i]);
-                    this.addLevel(level);
+                    this.add(level);
                 }
             }
         },
 
-        addLevel: function(level) {
+        add: function(level) {
             if (!(level instanceof Level)) {
                 // TODO: throw an exception
                 return;
@@ -64,7 +64,7 @@ define([
             this._levels.push(level);
         },
 
-        getLevel: function(index) {
+        find: function(index) {
             // TODO: differ getting level by index and by reference
             if (index < 0 || index >= this._levels.length) {
                 // TODO: throw an exception
@@ -75,7 +75,7 @@ define([
             return this._levels[index];
         },
 
-        removeLevel: function(level) {
+        remove: function(level) {
             if (!(level instanceof Level)) {
                 // TODO: throw an exception
                 return;
@@ -117,7 +117,7 @@ define([
                     // TODO: throw an exception
                 }
 
-                var level = this.getLevel(source);
+                var level = this.find(source);
                 if (!(level instanceof Level)) {
                     // TODO: throw an exception
                     return;

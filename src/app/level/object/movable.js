@@ -81,7 +81,7 @@ define([
 
             // TODO: remove storekeeper reference
             /*
-            if (!this._hasCollision && !this.getLevel()._storekeeper._userAction.isKeyDown) {
+            if (!this._hasCollision && !this.find()._storekeeper._userAction.isKeyDown) {
                 this.stopAnimation();
                 this._hasCollision = true;
             }
@@ -94,8 +94,8 @@ define([
         object.transformToLocal();
         var col = object.getColumn();
         var row = object.getRow();
-        var walls = object.getLevel().walls;
-        var boxes = object.getLevel().boxes;
+        var walls = object.find().walls;
+        var boxes = object.find().boxes;
         var nearbyWall;
         var nearbyBox;
         switch(direction) {

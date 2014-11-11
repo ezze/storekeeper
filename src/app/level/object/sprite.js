@@ -49,7 +49,7 @@ define([
             return this._name;
         },
 
-        getLevel: function() {
+        find: function() {
             return this._level;
         },
 
