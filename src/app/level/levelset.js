@@ -132,6 +132,11 @@ define([
                 this._level = level.clone();
                 this._level.start();
             }
+        },
+        count: {
+            get: function() {
+                return this._levels.length;
+            }
         }
     });
 
