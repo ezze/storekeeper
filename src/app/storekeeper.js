@@ -72,11 +72,13 @@ define([
 
         // TODO: this object might store user actions, i haven't decided yet,
         // TODO : whether it will be Worker's state object or this one
-        that._userAction = {};
+        this._userAction = {};
 
         // TODO: all handlers for user inputs and shortcuts define in separate module, i.e. 'controls'
         $(window).keydown(function(event) {
-            var worker = that._activeLevel.worker;
+            var level = that.levelSet.level;
+            var worker = level.worker;
+
             if (!worker.isMoving) {
                 switch (event.which) {
                     case 87:
@@ -118,11 +120,11 @@ define([
     };
 
     Storekeeper.prototype.onDefaultLevelSetLoaded = function() {
-        this._activeLevel = this.levelSet.selectLevelByIndex(0);
+        this.levelSet.level = 0;
     };
 
     Storekeeper.prototype.onAnimationFrame = function(event) {
-        var level = this._activeLevel;
+        var level = this.levelSet.level;
         var worker = level.worker;
 
         if (!worker._hasCollision) {

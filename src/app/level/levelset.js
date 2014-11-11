@@ -64,12 +64,14 @@ define([
             this._levels.push(level);
         },
 
-        getLevelByIndex: function(index) {
+        getLevel: function(index) {
+            // TODO: differ getting level by index and by reference
             if (index < 0 || index >= this._levels.length) {
                 // TODO: throw an exception
                 return null;
             }
 
+            // TODO: return object containing level's reference and index
             return this._levels[index];
         },
 
@@ -86,28 +88,6 @@ define([
             }
 
             this._level.splice(index, 1);
-        },
-
-        selectLevelByIndex: function(index) {
-            var level = this.getLevelByIndex(index);
-            if (!level) {
-                // TODO: throw an exception
-                return;
-            }
-
-            // TODO: rewrite
-            if (this._level instanceof Level) {
-                this._level.stop();
-            }
-
-            this._levelIndex = index;
-            this._level = level.clone();
-            this._level.start();
-            return level;
-        },
-
-        getActiveLevel: function() {
-            return this._level;
         }
     };
 
@@ -126,6 +106,31 @@ define([
             },
             set: function(description) {
                 this._description = description;
+            }
+        },
+        level: {
+            get: function() {
+                return this._level;
+            },
+            set: function(source) {
+                if (!_.isNumber(source) || source % 1 !== 0) {
+                    // TODO: throw an exception
+                }
+
+                var level = this.getLevel(source);
+                if (!(level instanceof Level)) {
+                    // TODO: throw an exception
+                    return;
+                }
+
+                // TODO: rewrite
+                if (this._level instanceof Level) {
+                    this._level.stop();
+                }
+
+                this._levelIndex = source;
+                this._level = level.clone();
+                this._level.start();
             }
         }
     });
