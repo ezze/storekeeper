@@ -57,29 +57,18 @@ define([
                 .attr('height', jqContainer.height())
                 .appendTo(jqContainer);
 
-            this._levelSet = new LevelSet(this, options.levelSetSource, this.onDefaultLevelSetLoaded.bind(this));
+            this.init();
+            this.loadLevelSet(options.levelSetSource, this.onDefaultLevelSetLoaded.bind(this));
         }.bind(this));
     };
 
-    Storekeeper.prototype.onDefaultLevelSetLoaded = function() {
-        this._activeLevel = this._levelSet.selectLevelByIndex(0);
-
-        // initial render;
-        this._activeLevel.update();
-
-        // attaching handlers
-        this.handleUserInputs();
-
-        // Initializing ticker
-        Easel.Ticker.setFPS(24);
-        Easel.Ticker.addEventListener('tick', function(event) {
-            this.onAnimationFrame.apply(this, arguments);
-        }.bind(this));
+    Storekeeper.prototype.init = function() {
+        this.initUserControls();
+        this.initTicker();
     };
 
-    Storekeeper.prototype.handleUserInputs = function() {
+    Storekeeper.prototype.initUserControls = function() {
         var that = this;
-        var worker = that._activeLevel.worker;
 
         // TODO: this object might store user actions, i haven't decided yet,
         // TODO : whether it will be Worker's state object or this one
@@ -87,6 +76,7 @@ define([
 
         // TODO: all handlers for user inputs and shortcuts define in separate module, i.e. 'controls'
         $(window).keydown(function(event) {
+            var worker = that._activeLevel.worker;
             if (!worker.isMoving) {
                 switch (event.which) {
                     case 87:
@@ -118,7 +108,20 @@ define([
         });
     };
 
-    Storekeeper.prototype.onAnimationFrame = function() {
+    Storekeeper.prototype.initTicker = function() {
+        Easel.Ticker.setFPS(24);
+        Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
+    };
+
+    Storekeeper.prototype.loadLevelSet = function(source, onLoad) {
+        this._levelSet = new LevelSet(source, onLoad);
+    };
+
+    Storekeeper.prototype.onDefaultLevelSetLoaded = function() {
+        this._activeLevel = this.levelSet.selectLevelByIndex(0);
+    };
+
+    Storekeeper.prototype.onAnimationFrame = function(event) {
         var level = this._activeLevel;
         var worker = level.worker;
 
@@ -131,6 +134,20 @@ define([
         }
         worker._hasCollision = false;
     };
+
+    Object.defineProperties(Storekeeper.prototype, {
+        levelSet: {
+            get: function() {
+                return this._levelSet;
+            },
+            set: function(source) {
+                if (!(source instanceof LevelSet)) {
+                    throw new Exception('Level set is not specified or invalid.');
+                }
+                this._levelSet = source;
+            }
+        }
+    });
 
     return Storekeeper;
 });

@@ -78,10 +78,14 @@ define([
             if (this._hasCollision) {
                 this.stopAnimation();
             }
+
+            // TODO: remove storekeeper reference
+            /*
             if (!this._hasCollision && !this.getLevel()._storekeeper._userAction.isKeyDown) {
                 this.stopAnimation();
                 this._hasCollision = true;
             }
+            */
         }
         return this._hasCollision;
     };

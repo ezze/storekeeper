@@ -9,8 +9,7 @@ define([
 ) {
     'use strict';
 
-    var LevelSet = function(storekeeper, source, loadCallback) {
-        this._storekeeper = storekeeper;
+    var LevelSet = function(source, loadCallback) {
         this._source = source;
         this._loadCallback = loadCallback;
 
@@ -50,7 +49,7 @@ define([
 
             if ($.isArray(data.levels)) {
                 for (var i = 0; i < data.levels.length; i++) {
-                    var level = new Level(this._storekeeper, data.levels[i]);
+                    var level = new Level(data.levels[i]);
                     this.addLevel(level);
                 }
             }

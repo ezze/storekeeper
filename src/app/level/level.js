@@ -19,9 +19,7 @@ define([
 ) {
     'use strict';
 
-    var Level = function(storekeeper, data) {
-        this._storekeeper = storekeeper;
-
+    var Level = function(data) {
         // TODO: think of creating canvas here
         this._stage = new Easel.Stage($('canvas').get(0));
 
@@ -75,7 +73,7 @@ define([
                 description: this.description,
                 items: this._items
             };
-            return new Level(this._storekeeper, data);
+            return new Level(data);
         },
 
         addObjectFromCharacter: function (character, row, column) {
@@ -134,10 +132,12 @@ define([
             if (this._isValidated) {
                 this.addObjectsToStage();
             }
+            this.update();
         },
 
         stop: function () {
             this.removeObjectsFromStage();
+            this.update();
         },
 
         update: function () {
