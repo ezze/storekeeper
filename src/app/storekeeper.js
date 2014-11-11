@@ -111,7 +111,7 @@ define([
     };
 
     Storekeeper.prototype.initTicker = function() {
-        Easel.Ticker.setFPS(24);
+        Easel.Ticker.setFPS(35);
         Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
