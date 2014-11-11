@@ -21,7 +21,10 @@ define([
 
     var Level = function(storekeeper, data) {
         this._storekeeper = storekeeper;
+
+        // TODO: think of creating canvas here
         this._stage = new Easel.Stage($('canvas').get(0));
+
         this._name = '';
         this._description = '';
         this._items = [];
@@ -73,34 +76,6 @@ define([
                 items: this._items
             };
             return new Level(this._storekeeper, data);
-        },
-
-        getRowsCount: function () {
-            return this._rows;
-        },
-
-        getColumnsCount: function () {
-            return this._columns;
-        },
-
-        getStage: function () {
-            return this._stage;
-        },
-
-        getWorker: function () {
-            return this._worker;
-        },
-
-        getBoxes: function() {
-            return this._boxes;
-        },
-
-        getWalls: function() {
-            return this._walls;
-        },
-
-        getGoals: function() {
-            return this._goals;
         },
 
         addObjectFromCharacter: function (character, row, column) {
@@ -221,9 +196,44 @@ define([
         size: {
             get: function() {
                 return {
-                    rows: this.getRowsCount(),
-                    columns: this.getColumnsCount()
+                    rows: this.rows,
+                    columns: this.columns
                 };
+            }
+        },
+        rows: {
+            get: function() {
+                return this._rows;
+            }
+        },
+        columns: {
+            get: function() {
+                return this._columns;
+            }
+        },
+        stage: {
+            get: function() {
+                return this._stage;
+            }
+        },
+        worker: {
+            get: function() {
+                return this._worker;
+            }
+        },
+        boxes: {
+            get: function() {
+                return this._boxes;
+            }
+        },
+        walls: {
+            get: function() {
+                return this._walls;
+            }
+        },
+        goals: {
+            get: function() {
+                return this._goals;
             }
         }
     });

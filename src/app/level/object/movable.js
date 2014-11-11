@@ -90,8 +90,8 @@ define([
         object.transformToLocal();
         var col = object.getColumn();
         var row = object.getRow();
-        var walls = object.getLevel().getWalls();
-        var boxes = object.getLevel().getBoxes();
+        var walls = object.getLevel().walls;
+        var boxes = object.getLevel().boxes;
         var nearbyWall;
         var nearbyBox;
         switch(direction) {

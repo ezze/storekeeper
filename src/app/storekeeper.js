@@ -79,7 +79,7 @@ define([
 
     Storekeeper.prototype.handleUserInputs = function() {
         var that = this;
-        var worker = that._activeLevel.getWorker();
+        var worker = that._activeLevel.worker;
 
         // TODO: this object might store user actions, i haven't decided yet,
         // TODO : whether it will be Worker's state object or this one
@@ -120,7 +120,8 @@ define([
 
     Storekeeper.prototype.onAnimationFrame = function() {
         var level = this._activeLevel;
-        var worker = level.getWorker();
+        var worker = level.worker;
+
         if (!worker._hasCollision) {
             var state = worker.getCurrentState();
             if (_.isFunction(state)) {
