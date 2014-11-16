@@ -17,16 +17,13 @@ define([
     /**
      * Represents a movable object of a level.
      *
-     * @param {module:Level} level
-     * @param {Number} row
-     * @param {Number} column
-     *
      * @author Dmitriy Pushkov
      * @since 0.1.0
      * @alias module:Movable
+     * @augments module:SceneObject
      * @class
      */
-    var Movable = function (level, row, column) {
+    var Movable = function (options) {
         SceneObject.apply(this, arguments);
 
         this._moveDirection = Direction.NONE;
@@ -94,7 +91,7 @@ define([
     };
 
     Movable.prototype.play = function(direction, updateLevel) {
-        updateLevel = _.isBoolean(updateLevel) ? updateLevel : true;
+        updateLevel = _.isBoolean(updateLevel) ? updateLevel : false;
 
         if (this._moveDirection !== direction) {
             this.startAnimation(direction);
@@ -109,7 +106,7 @@ define([
     };
 
     Movable.prototype.stop = function(direction, updateLevel) {
-        updateLevel = _.isBoolean(updateLevel) ? updateLevel : true;
+        updateLevel = _.isBoolean(updateLevel) ? updateLevel : false;
 
         if (this._moveDirection !== Direction.NONE || direction !== Direction.NONE) {
             this.stopAnimation();

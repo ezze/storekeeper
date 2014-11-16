@@ -9,7 +9,7 @@ define([
 ) {
     'use strict';
 
-    var Box = function(level, row, column) {
+    var Box = function(options) {
         Movable.apply(this, arguments);
         this._name = 'Box';
         this._sprite.gotoAndStop(['box']);

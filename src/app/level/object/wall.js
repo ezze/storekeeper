@@ -5,9 +5,8 @@ define([
 ) {
     'use strict';
 
-    var Wall = function(level, row, column) {
+    var Wall = function(options) {
         SceneObject.apply(this, arguments);
-
         this._name = 'Wall';
         this._sprite.gotoAndStop('wall');
     };

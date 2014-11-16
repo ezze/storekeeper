@@ -11,17 +11,22 @@ define([
     Movable,
     Wall,
     Direction,
+    Level,
     Exception
 ) {
     'use strict';
 
-    var Worker = function(level, row, column) {
+    var Worker = function(options) {
         Movable.apply(this, arguments);
         this._name = 'Worker';
         this.lookDirection = Direction.LEFT;
     };
 
     Worker.prototype = Object.create(Movable.prototype);
+
+    Worker.prototype.move = function(direction, updateLevel) {
+        Movable.prototype.move.apply(this, arguments);
+    };
 
     Worker.prototype.detectCollision = function(direction) {
         if (Direction.isValidHorizontal(direction)) {

@@ -1,9 +1,11 @@
 define([
+    'require',
     'easel',
     'lodash',
     '../sprite-sheet',
     '../../exception'
 ], function(
+    require,
     Easel,
     _,
     spriteSheet,
@@ -11,12 +13,24 @@ define([
 ) {
     'use strict';
 
-    var SceneObject = function(level, row, column) {
-        this._level = level;
+    var SceneObject = function(options) {
+        if (!options.level instanceof require('../level')) {
+            throw new Exception('Level is invalid or not specified.');
+        }
+
+        if (!_.isNumber(options.row) || options.row % 1 !== 0) {
+            throw new Exception('Scene object\'s row must be an integer.');
+        }
+
+        if (!_.isNumber(options.column) || options.column % 1 !== 0) {
+            throw new Exception('Scene object\'s column must be an integer.');
+        }
+
         this._name = '';
 
-        this._row = row;
-        this._column = column;
+        this._level = options.level;
+        this._row = options.row;
+        this._column = options.column;
 
         this._width = spriteSheet.data.frames.width;
         this._height = spriteSheet.data.frames.height;

@@ -79,26 +79,32 @@ define([
     };
 
     Level.prototype.createObject = function(character, row, column) {
+        var options = {
+            level: this,
+            row: row,
+            column: column
+        };
+
         switch (character) {
             case '@':
-                this.addObject(new Worker(this, row, column));
+                this.addObject(new Worker(options));
                 break;
             case '+':
-                this.addObject(new Goal(this, row, column));
-                this.addObject(new Worker(this, row, column));
+                this.addObject(new Goal(options));
+                this.addObject(new Worker(options));
                 break;
             case '#':
-                this.addObject(new Wall(this, row, column));
+                this.addObject(new Wall(options));
                 break;
             case '.':
-                this.addObject(new Goal(this, row, column));
+                this.addObject(new Goal(options));
                 break;
             case '$':
-                this.addObject(new Box(this, row, column));
+                this.addObject(new Box(options));
                 break;
             case '*':
-                this.addObject(new Goal(this, row, column));
-                this.addObject(new Box(this, row, column));
+                this.addObject(new Goal(options));
+                this.addObject(new Box(options));
                 break;
         }
     };

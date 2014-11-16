@@ -5,9 +5,8 @@ define([
 ) {
     'use strict';
 
-    var Goal = function(level, row, column) {
+    var Goal = function(options) {
         SceneObject.apply(this, arguments);
-
         this._name = 'Goal';
         this._sprite.gotoAndStop(['goal']);
     };
