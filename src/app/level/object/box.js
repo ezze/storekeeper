@@ -7,6 +7,7 @@ define([
 
     var Box = function(level, row, column) {
         Movable.apply(this, arguments);
+
         this._name = 'Box';
         this._sprite.gotoAndStop(['box']);
     };

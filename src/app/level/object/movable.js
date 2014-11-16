@@ -1,16 +1,17 @@
 define([
     'lodash',
-    './sprite',
+    './scene-object',
     '../../exception'
 ], function(
     _,
-    Sprite,
+    SceneObject,
     Exception
 ) {
     'use strict';
 
     var Movable = function (level, row, column) {
-        Sprite.apply(this, arguments);
+        SceneObject.apply(this, arguments);
+
         this.previousState = 'stand';
         this.currentState = 'stand';
         this._animationStarted = false;
@@ -19,7 +20,7 @@ define([
         this._nearbyBox = false;
     };
 
-    Movable.prototype = Object.create(Sprite.prototype);
+    Movable.prototype = Object.create(SceneObject.prototype);
 
     Movable.prototype._getState = function(state) {
         if (typeof state !== 'string') {
@@ -81,7 +82,7 @@ define([
 
             // TODO: remove storekeeper reference
             /*
-            if (!this._hasCollision && !this.find()._storekeeper._userAction.isKeyDown) {
+            if (!this._hasCollision && !this.level._storekeeper._userAction.isKeyDown) {
                 this.stopAnimation();
                 this._hasCollision = true;
             }
@@ -92,10 +93,12 @@ define([
 
     Movable.prototype.collisionWithObject = function(direction, object) {
         object.transformToLocal();
-        var col = object.getColumn();
-        var row = object.getRow();
-        var walls = object.find().walls;
-        var boxes = object.find().boxes;
+
+        var col = object.column;
+        var row = object.row;
+
+        var walls = object.level.walls;
+        var boxes = object.level.boxes;
         var nearbyWall;
         var nearbyBox;
         switch(direction) {
@@ -110,7 +113,7 @@ define([
                         return ((box._row === row) && (box._column + 1 === col));
                     });
                 }
-                if (nearbyBox && object.getName() !== 'Box') {
+                if (nearbyBox && object.name !== 'Box') {
                     this._nearbyBox = nearbyBox;
                     nearbyBox = undefined;
                     nearbyBox = Movable.prototype.collisionWithObject('left', this._nearbyBox);
@@ -127,7 +130,7 @@ define([
                             return ((box._row === row) && (box._column - 1 === col));
                         });
                 }
-                if (nearbyBox && object.getName() !== 'Box') {
+                if (nearbyBox && object.name !== 'Box') {
                     this._nearbyBox = nearbyBox;
                     nearbyBox = undefined;
                     nearbyBox = Movable.prototype.collisionWithObject('right', this._nearbyBox);
@@ -144,7 +147,7 @@ define([
                             return ((box._row + 1 === row) && (box._column === col));
                         });
                 }
-                if (nearbyBox && object.getName() !== 'Box') {
+                if (nearbyBox && object.name !== 'Box') {
                     this._nearbyBox = nearbyBox;
                     nearbyBox = undefined;
                     nearbyBox = Movable.prototype.collisionWithObject('up', this._nearbyBox);
@@ -161,7 +164,7 @@ define([
                             return ((box._row - 1 === row) && (box._column === col));
                         });
                 }
-                if (nearbyBox && object.getName() !== 'Box') {
+                if (nearbyBox && object.name !== 'Box') {
                     this._nearbyBox = nearbyBox;
                     nearbyBox = undefined;
                     nearbyBox = Movable.prototype.collisionWithObject('down', this._nearbyBox);
@@ -172,5 +175,4 @@ define([
     };
 
     return Movable;
-
 });

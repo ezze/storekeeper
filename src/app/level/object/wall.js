@@ -1,17 +1,18 @@
 define([
-     './sprite'
+     './scene-object'
 ], function(
-    Sprite
+    SceneObject
 ) {
     'use strict';
 
     var Wall = function(level, row, column) {
-        Sprite.apply(this, arguments);
+        SceneObject.apply(this, arguments);
+
         this._name = 'Wall';
         this._sprite.gotoAndStop('wall');
     };
 
-    Wall.prototype = Object.create(Sprite.prototype);
+    Wall.prototype = Object.create(SceneObject.prototype);
 
     return Wall;
 });

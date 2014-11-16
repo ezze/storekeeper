@@ -64,7 +64,6 @@ define([
 
     Storekeeper.prototype.init = function() {
         this.initUserControls();
-        this.initTicker();
     };
 
     Storekeeper.prototype.initUserControls = function() {
@@ -121,10 +120,12 @@ define([
 
     Storekeeper.prototype.onDefaultLevelSetLoaded = function() {
         this.levelSet.level = 0;
+        this.initTicker();
     };
 
     Storekeeper.prototype.onAnimationFrame = function(event) {
         var level = this.levelSet.level;
+
         var worker = level.worker;
 
         if (!worker._hasCollision) {

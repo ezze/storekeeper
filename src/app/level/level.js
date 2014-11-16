@@ -102,12 +102,12 @@ define([
         },
 
         addObject: function (object) {
-            var row = object.getRow();
+            var row = object.row;
             if (row + 1 > this._rows) {
                 this._rows = row + 1;
             }
 
-            var column = object.getColumn();
+            var column = object.column;
             if (column + 1 > this._columns) {
                 this._columns = column + 1;
             }
@@ -163,7 +163,7 @@ define([
         },
 
         addObjectToStage: function (object) {
-            var sprite = object.getSprite();
+            var sprite = object.sprite;
             if (this._stage.contains(sprite)) {
                 // TODO: throw an exception
                 return;

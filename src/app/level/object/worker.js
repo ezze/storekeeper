@@ -10,6 +10,7 @@ define([
     var Worker = function(level, row, column) {
         Movable.apply(this, arguments);
         this._name = 'Worker';
+
         this.setLookDirection('left');
     };
 
@@ -91,24 +92,24 @@ define([
     Worker.prototype.stand = {};
 
     Worker.prototype.getLookDirection = function() {
-            return this._lookDirection;
+        return this._lookDirection;
     };
 
     Worker.prototype.setLookDirection = function(direction) {
-            if ($.inArray(direction, ['left', 'right']) === -1) {
-                // TODO: throw an exception
-                return;
-            }
+        if ($.inArray(direction, ['left', 'right']) === -1) {
+            // TODO: throw an exception
+            return;
+        }
 
-            this._lookDirection = direction;
-            switch (this._lookDirection) {
-                case 'left':
-                    this._sprite.gotoAndStop('workerLeftStand');
-                    break;
-                case 'right':
-                    this._sprite.gotoAndStop('workerRightStand');
-                    break;
-            }
+        this._lookDirection = direction;
+        switch (this._lookDirection) {
+            case 'left':
+                this._sprite.gotoAndStop('workerLeftStand');
+                break;
+            case 'right':
+                this._sprite.gotoAndStop('workerRightStand');
+                break;
+        }
     };
 
     // @override
