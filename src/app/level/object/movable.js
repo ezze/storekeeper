@@ -33,7 +33,7 @@ define([
         }
 
         if (direction === Direction.NONE || (!this.isMoving() && this.detectCollision(direction))) {
-            this.stop();
+            this.stop(direction);
             return false;
         }
 
@@ -48,6 +48,21 @@ define([
         return true;
     };
 
+    Movable.prototype.getMoveTargetObjects = function(direction) {
+        var row = this.row;
+        var column = this.column;
+
+        switch (direction) {
+            case Direction.LEFT: column -= 1; break;
+            case Direction.RIGHT: column += 1; break;
+            case Direction.UP: row -= 1; break;
+            case Direction.DOWN: row += 1; break;
+            default: throw new Exception('Direction is invalid.');
+        }
+
+        return this.level.getObjects(row, column);
+    };
+
     Movable.prototype.play = function(direction) {
         if (this._moveDirection !== direction) {
             this.startAnimation(direction);
@@ -55,12 +70,11 @@ define([
 
         this.updatePixels();
         this.level.update();
-
         this._moveDirection = direction;
     };
 
-    Movable.prototype.stop = function() {
-        if (this._moveDirection !== Direction.NONE) {
+    Movable.prototype.stop = function(direction) {
+        if (this._moveDirection !== Direction.NONE || direction !== Direction.NONE) {
             this.stopAnimation();
             this.level.update();
         }

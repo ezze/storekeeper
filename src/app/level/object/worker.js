@@ -1,11 +1,13 @@
 define([
     'jquery',
     './movable',
+    './wall',
     '../direction',
     '../../exception'
 ], function(
     $,
     Movable,
+    Wall,
     Direction,
     Exception
 ) {
@@ -25,7 +27,16 @@ define([
             this.lookDirection = direction;
         }
 
-        return false;
+        var isCollisionDetected = false;
+        var targetObjects = this.getMoveTargetObjects(direction);
+        _.forEach(targetObjects, function(object) {
+            if (object instanceof Wall) {
+                isCollisionDetected = true;
+                return false;
+            }
+        });
+
+        return isCollisionDetected;
     };
 
     Worker.prototype.startAnimation = function(direction) {

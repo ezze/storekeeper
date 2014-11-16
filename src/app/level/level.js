@@ -130,6 +130,30 @@ define([
         }
     };
 
+    Level.prototype.getObjects = function(row, column) {
+        var objects = [];
+
+        if (this._worker.row === row && this._worker.column === column) {
+            objects.push(this._worker);
+        }
+
+        _.forEach([
+            this._walls,
+            this._goals,
+            this._boxes
+        ], function(objectsStack) {
+            _.forEach(objectsStack, function(object) {
+                if (object.row === row && object.column === column) {
+                    objects.push(object);
+                    return false;
+                }
+                return true;
+            });
+        });
+
+        return objects;
+    };
+
     Level.prototype.start = function() {
         if (this._isValidated) {
             this.addObjectsToStage();
