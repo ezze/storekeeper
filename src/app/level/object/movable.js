@@ -16,6 +16,7 @@ define([
 
         this._moveDirection = Direction.NONE;
         this._moveStep = 1 / 8;
+        this._moveCollisionTarget = null;
     };
 
     Movable.prototype = Object.create(SceneObject.prototype);
@@ -31,10 +32,20 @@ define([
         if (this.isMoving()) {
             direction = this._moveDirection;
         }
+        else {
+            this._moveCollisionTarget = null;
+        }
 
-        if (direction === Direction.NONE || (!this.isMoving() && this.detectCollision(direction))) {
+        var collision;
+        if (direction === Direction.NONE ||
+            (!this.isMoving() && (collision = this.detectCollision(direction)).detected)
+        ) {
             this.stop(direction);
             return false;
+        }
+
+        if (collision && !collision.detected && (collision.target instanceof Movable)) {
+            this._moveCollisionTarget = collision.target;
         }
 
         switch (direction) {
@@ -45,6 +56,10 @@ define([
         }
 
         this.play(direction);
+        if (this._moveCollisionTarget !== null) {
+            this._moveCollisionTarget.move(direction);
+        }
+
         return true;
     };
 

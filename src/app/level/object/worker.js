@@ -1,11 +1,13 @@
 define([
     'jquery',
+    './box',
     './movable',
     './wall',
     '../direction',
     '../../exception'
 ], function(
     $,
+    Box,
     Movable,
     Wall,
     Direction,
@@ -16,7 +18,6 @@ define([
     var Worker = function(level, row, column) {
         Movable.apply(this, arguments);
         this._name = 'Worker';
-
         this.lookDirection = Direction.LEFT;
     };
 
@@ -27,16 +28,33 @@ define([
             this.lookDirection = direction;
         }
 
-        var isCollisionDetected = false;
+        var collision = {
+            detected: false,
+            target: null
+        };
+
         var targetObjects = this.getMoveTargetObjects(direction);
         _.forEach(targetObjects, function(object) {
             if (object instanceof Wall) {
-                isCollisionDetected = true;
+                // Wall doesn't allow the worker to move in any case
+                collision = {
+                    detected: true,
+                    target: object
+                };
+                return false;
+            }
+            else if (object instanceof Box) {
+                // Box can be pushed by the worker (and therefore allow him to move)
+                // if there is no any object preventing its movement behind
+                collision = {
+                    detected: object.detectCollision(direction).detected,
+                    target: object
+                };
                 return false;
             }
         });
 
-        return isCollisionDetected;
+        return collision;
     };
 
     Worker.prototype.startAnimation = function(direction) {
