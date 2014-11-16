@@ -21,31 +21,29 @@ define([
         this._width = spriteSheet.data.frames.width;
         this._height = spriteSheet.data.frames.height;
 
-        this._maxMovesPerCell = 16;
-
         this._sprite = new Easel.Sprite(spriteSheet.instance, 'space');
-        this._sprite.x = column * spriteSheet.data.frames.width;
-        this._sprite.y = row * spriteSheet.data.frames.height;
-        this._sprite.vX = spriteSheet.data.frames.width / this._maxMovesPerCell;
-        this._sprite.vY = spriteSheet.data.frames.height / this._maxMovesPerCell;
+        this.updatePixels();
     };
 
-    SceneObject.prototype = {
-        transformToLocal: function() {
-            this.column = this._sprite.x / this._width;
-            this.row = this._sprite.y / this._height;
-        },
+    SceneObject.prototype.columnToPixels = function(column) {
+        return column * this._width;
+    };
 
-        setSpeedMultiplier: function(num) {
-            // TODO: it should be one of allowed values (i.e. pow of 2 or common factor of sprite dimension)
-            if (!_.isNumber(num)) {
-                this._maxMovesPerCell = num;
-            }
-        },
+    SceneObject.prototype.rowToPixels = function(row) {
+        return row * this._height;
+    };
 
-        stopAnimation: function() {
-            this._sprite.stop();
-        }
+    SceneObject.prototype.pixelsToColumn = function(pixels) {
+        return pixels / this._width;
+    };
+
+    SceneObject.prototype.pixelsToRow = function(pixels) {
+        return pixels / this._height;
+    };
+
+    SceneObject.prototype.updatePixels = function() {
+        this._sprite.x = this.columnToPixels(this.column);
+        this._sprite.y = this.rowToPixels(this.row);
     };
 
     Object.defineProperties(SceneObject.prototype, {
@@ -69,8 +67,8 @@ define([
                 return this._row;
             },
             set: function(row) {
-                if (!_.isNumber(row) || row % 1 !== 0) {
-                    throw new Exception('Row must be an integer.');
+                if (!_.isNumber(row)) {
+                    throw new Exception('Row must be a number.');
                 }
                 this._row = row;
             }
@@ -80,8 +78,8 @@ define([
                 return this._column;
             },
             set: function(column) {
-                if (!_.isNumber(column) || column % 1 !== 0) {
-                    throw new Exception('Column must be an integer.');
+                if (!_.isNumber(column)) {
+                    throw new Exception('Column must be a number.');
                 }
                 this._column = column;
             }

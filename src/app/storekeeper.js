@@ -6,12 +6,14 @@ define([
     'jquery',
     'lodash',
     './exception',
+    './level/direction',
     './level/levelset'
 ], function(
     Easel,
     $,
     _,
     Exception,
+    Direction,
     LevelSet
 ) {
     'use strict';
@@ -67,50 +69,39 @@ define([
     };
 
     Storekeeper.prototype.initUserControls = function() {
-        var that = this;
+        this._moveDirection = Direction.NONE;
 
-        // TODO: this object might store user actions, i haven't decided yet,
-        // TODO : whether it will be Worker's state object or this one
-        this._userAction = {};
-
-        // TODO: all handlers for user inputs and shortcuts define in separate module, i.e. 'controls'
-        $(window).keydown(function(event) {
-            var level = that.levelSet.level;
-            var worker = level.worker;
-
-            if (!worker.isMoving) {
-                switch (event.which) {
-                    case 87:
-                    case 38:
-                        worker.setCurrentState('up');
-                        break;
-                    case 83:
-                    case 40:
-                        worker.setCurrentState('down');
-                        break;
-                    case 37:
-                    case 65:
-                        worker.setCurrentState('left');
-                        break;
-                    case 39:
-                    case 68:
-                        worker.setCurrentState('right');
-                        break;
-                    default:
-                        worker.setCurrentState('stand');
-                        break;
+        $(window)
+            .on('keydown', function(event) {
+                var direction = Storekeeper.getDirectionByKeyCode(event.which);
+                if (direction === Direction.NONE) {
+                    return;
                 }
-                that._userAction.isKeyDown = true;
-            }
-        });
 
-        $(window).keyup(function() {
-            that._userAction.isKeyDown = false;
-        });
+                event.preventDefault();
+
+                this._moveDirection = direction;
+            }.bind(this))
+            .on('keyup', function(event) {
+                var direction = Storekeeper.getDirectionByKeyCode(event.which);
+                if (direction === this._moveDirection) {
+                    this._moveDirection = Direction.NONE;
+                }
+            }.bind(this));
+    };
+
+    Storekeeper.getDirectionByKeyCode = function(code) {
+        switch (code) {
+            case 37: case 65: return Direction.LEFT;
+            case 38: case 87: return Direction.UP;
+            case 39: case 68: return Direction.RIGHT;
+            case 40: case 83: return Direction.DOWN;
+            default: return Direction.NONE;
+        }
     };
 
     Storekeeper.prototype.initTicker = function() {
-        Easel.Ticker.setFPS(35);
+        Easel.Ticker.setFPS(30);
         Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
@@ -125,17 +116,11 @@ define([
 
     Storekeeper.prototype.onAnimationFrame = function(event) {
         var level = this.levelSet.level;
-
         var worker = level.worker;
+        worker.move(this._moveDirection);
 
-        if (!worker._hasCollision) {
-            var state = worker.getCurrentState();
-            if (_.isFunction(state)) {
-                state.call(worker);
-                level.update();
-            }
-        }
-        worker._hasCollision = false;
+        // TODO: decide when to update level
+        // level.update();
     };
 
     Object.defineProperties(Storekeeper.prototype, {
