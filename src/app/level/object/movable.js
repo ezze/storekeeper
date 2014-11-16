@@ -1,3 +1,6 @@
+/**
+ * @module Movable
+ */
 define([
     'lodash',
     './scene-object',
@@ -11,6 +14,18 @@ define([
 ) {
     'use strict';
 
+    /**
+     * Represents a movable object of a level.
+     *
+     * @param {module:Level} level
+     * @param {Number} row
+     * @param {Number} column
+     *
+     * @author Dmitriy Pushkov
+     * @since 0.1.0
+     * @alias module:Movable
+     * @class
+     */
     var Movable = function (level, row, column) {
         SceneObject.apply(this, arguments);
 
@@ -25,7 +40,7 @@ define([
         return this.row % 1 !== 0 || this.column % 1 !== 0;
     };
 
-    Movable.prototype.move = function(direction) {
+    Movable.prototype.move = function(direction, updateLevel) {
         var row = this.row;
         var column = this.column;
 
@@ -40,7 +55,7 @@ define([
         if (direction === Direction.NONE ||
             (!this.isMoving() && (collision = this.detectCollision(direction)).detected)
         ) {
-            this.stop(direction);
+            this.stop(direction, updateLevel);
             return false;
         }
 
@@ -55,10 +70,10 @@ define([
             case Direction.DOWN: this.row = row + this._moveStep; break;
         }
 
-        this.play(direction);
         if (this._moveCollisionTarget !== null) {
-            this._moveCollisionTarget.move(direction);
+            this._moveCollisionTarget.move(direction, false);
         }
+        this.play(direction, updateLevel);
 
         return true;
     };
@@ -78,20 +93,31 @@ define([
         return this.level.getObjects(row, column);
     };
 
-    Movable.prototype.play = function(direction) {
+    Movable.prototype.play = function(direction, updateLevel) {
+        updateLevel = _.isBoolean(updateLevel) ? updateLevel : true;
+
         if (this._moveDirection !== direction) {
             this.startAnimation(direction);
         }
 
         this.updatePixels();
-        this.level.update();
+        if (updateLevel) {
+            console.log(this.name);
+            this.level.update();
+        }
+
         this._moveDirection = direction;
     };
 
-    Movable.prototype.stop = function(direction) {
+    Movable.prototype.stop = function(direction, updateLevel) {
+        updateLevel = _.isBoolean(updateLevel) ? updateLevel : true;
+
         if (this._moveDirection !== Direction.NONE || direction !== Direction.NONE) {
             this.stopAnimation();
-            this.level.update();
+            if (updateLevel) {
+                console.log(this.name);
+                this.level.update();
+            }
         }
 
         this._moveDirection = Direction.NONE;
