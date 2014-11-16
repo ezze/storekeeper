@@ -2,6 +2,7 @@
  * @module Storekeeper
  */
 define([
+    'bootstrap',
     'easel',
     'jquery',
     'lodash',
@@ -12,6 +13,7 @@ define([
     './level/object/movable',
     './level/object/worker'
 ], function(
+    Bootstrap,
     Easel,
     $,
     _,
@@ -53,6 +55,17 @@ define([
             if (!_.isString(options.levelSetSource) || _.isEmpty(options.levelSetSource)) {
                 throw new Exception('Level set source is not defined or invalid.');
             }
+
+            $('#main-navbar')
+                .on('click', '.navbar-brand', function(event) {
+                    event.preventDefault();
+                })
+                .on('click', 'a', function(event) {
+                    if ($(this).parent('li').hasClass('disabled')) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                });
 
             var jqContainer = $(options.container);
             if (jqContainer.length === 0) {
