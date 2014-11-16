@@ -1,12 +1,12 @@
 define([
-    'jquery',
+    'lodash',
     './box',
     './movable',
     './wall',
     '../direction',
     '../../exception'
 ], function(
-    $,
+    _,
     Box,
     Movable,
     Wall,

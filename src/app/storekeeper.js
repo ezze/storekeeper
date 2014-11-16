@@ -66,6 +66,7 @@ define([
 
     Storekeeper.prototype.init = function() {
         this.initUserControls();
+        this.initTicker();
     };
 
     Storekeeper.prototype.initUserControls = function() {
@@ -111,16 +112,23 @@ define([
 
     Storekeeper.prototype.onDefaultLevelSetLoaded = function() {
         this.levelSet.level = 0;
-        this.initTicker();
     };
 
     Storekeeper.prototype.onAnimationFrame = function(event) {
-        var level = this.levelSet.level;
-        var worker = level.worker;
-        worker.move(this._moveDirection);
+        if (!this.levelSet) {
+            return;
+        }
 
-        // TODO: decide when to update level
-        // level.update();
+        var level = this.levelSet.level;
+        if (!level) {
+            return;
+        }
+
+        var worker = level.worker;
+        worker.move(this._moveDirection, false);
+
+        // TODO: for performance reasons update level only when it's really necessary
+        this.levelSet.level.update();
     };
 
     Object.defineProperties(Storekeeper.prototype, {

@@ -102,7 +102,6 @@ define([
 
         this.updatePixels();
         if (updateLevel) {
-            console.log(this.name);
             this.level.update();
         }
 
@@ -115,7 +114,6 @@ define([
         if (this._moveDirection !== Direction.NONE || direction !== Direction.NONE) {
             this.stopAnimation();
             if (updateLevel) {
-                console.log(this.name);
                 this.level.update();
             }
         }

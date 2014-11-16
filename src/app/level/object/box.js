@@ -1,11 +1,9 @@
 define([
     'lodash',
-    './box',
     './movable',
     './wall'
 ], function(
     _,
-    Box,
     Movable,
     Wall
 ) {

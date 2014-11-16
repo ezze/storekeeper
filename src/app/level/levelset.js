@@ -17,7 +17,7 @@ define([
         this._description = '';
 
         this._levelIndex = -1;
-        this._level = undefined;
+        this._level = null;
         this._levels = [];
 
         this.load();
