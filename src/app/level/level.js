@@ -6,6 +6,7 @@ define([
     './object/goal',
     './object/wall',
     './object/worker',
+    '../event-manager',
     '../exception'
 ], function(
     Easel,
@@ -15,11 +16,12 @@ define([
     Goal,
     Wall,
     Worker,
+    EventManager,
     Exception
 ) {
     'use strict';
 
-    var Level = function(data) {
+    var Level = function(options) {
         // TODO: think of creating canvas here
         this._stage = new Easel.Stage($('canvas').get(0));
 
@@ -37,16 +39,18 @@ define([
         this._goals = [];
         this._boxes = [];
 
-        if (_.isString(data.name) && !_.isEmpty(data.name)) {
-            this.name = data.name;
+        this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
+
+        if (_.isString(options.name) && !_.isEmpty(options.name)) {
+            this.name = options.name;
         }
 
-        if (_.isString(data.description) && !_.isEmpty(data.description)) {
-            this.description = data.description;
+        if (_.isString(options.description) && !_.isEmpty(options.description)) {
+            this.description = options.description;
         }
 
-        if ($.isArray(data.items)) {
-            this._items = data.items;
+        if ($.isArray(options.items)) {
+            this._items = options.items;
             this.reset();
         }
     };
@@ -57,8 +61,8 @@ define([
         this._goals = [];
         this._boxes = [];
 
-        for (var row = 0; row < this._items.length; row++) {
-            for (var column = 0; column < this._items[row].length; column++) {
+        for (var row = 0; row < this._items.length; row += 1) {
+            for (var column = 0; column < this._items[row].length; column += 1) {
                 this.createObject(this._items[row][column], row, column);
             }
         }
@@ -70,12 +74,12 @@ define([
     };
 
     Level.prototype.clone = function() {
-        var data = {
+        return new Level({
+            eventManager: this.eventManager,
             name: this.name,
             description: this.description,
             items: this._items
-        };
-        return new Level(data);
+        });
     };
 
     Level.prototype.createObject = function(character, row, column) {
@@ -204,8 +208,13 @@ define([
     };
 
     Object.defineProperties(Level.prototype, {
+        eventManager: {
+            get: function() {
+                return this._eventManager;
+            }
+        },
         name: {
-            get: function () {
+            get: function() {
                 return this._name;
             },
             set: function(name) {

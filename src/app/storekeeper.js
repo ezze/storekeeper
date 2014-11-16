@@ -5,16 +5,22 @@ define([
     'easel',
     'jquery',
     'lodash',
+    './event-manager',
     './exception',
     './level/direction',
-    './level/levelset'
+    './level/levelset',
+    './level/object/movable',
+    './level/object/worker'
 ], function(
     Easel,
     $,
     _,
+    EventManager,
     Exception,
     Direction,
-    LevelSet
+    LevelSet,
+    Movable,
+    Worker
 ) {
     'use strict';
 
@@ -60,13 +66,29 @@ define([
                 .appendTo(jqContainer);
 
             this.init();
-            this.loadLevelSet(options.levelSetSource, this.onDefaultLevelSetLoaded.bind(this));
+            this.loadLevelSet(options.levelSetSource);
         }.bind(this));
     };
 
     Storekeeper.prototype.init = function() {
+        this.initEvents();
         this.initUserControls();
         this.initTicker();
+    };
+
+    Storekeeper.prototype.initEvents = function() {
+        var eventManager = this._eventManager = new EventManager();
+
+        eventManager.on(LevelSet.EVENT_LOADED, function(eventName, params) {
+            this.onLevelSetLoaded.bind(this)(params.source);
+        }.bind(this));
+
+        eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
+            if (!(params.object instanceof Worker)) {
+                return;
+            }
+            console.log('Moves count: ' + params.movesCount);
+        }.bind(this));
     };
 
     Storekeeper.prototype.initUserControls = function() {
@@ -106,11 +128,14 @@ define([
         Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
-    Storekeeper.prototype.loadLevelSet = function(source, onLoad) {
-        this._levelSet = new LevelSet(source, onLoad);
+    Storekeeper.prototype.loadLevelSet = function(source) {
+        this._levelSet = new LevelSet({
+            source: source,
+            eventManager: this.eventManager
+        });
     };
 
-    Storekeeper.prototype.onDefaultLevelSetLoaded = function() {
+    Storekeeper.prototype.onLevelSetLoaded = function(source) {
         this.levelSet.level = 0;
     };
 
@@ -132,6 +157,11 @@ define([
     };
 
     Object.defineProperties(Storekeeper.prototype, {
+        eventManager: {
+            get: function() {
+                return this._eventManager;
+            }
+        },
         levelSet: {
             get: function() {
                 return this._levelSet;

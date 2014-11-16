@@ -26,10 +26,14 @@ define([
     var Movable = function (options) {
         SceneObject.apply(this, arguments);
 
+        this._name = 'Movable';
+        this._movesCount = 0;
         this._moveDirection = Direction.NONE;
         this._moveStep = 1 / 8;
         this._moveCollisionTarget = null;
     };
+
+    Movable.EVENT_MOVED = 'movable:moved';
 
     Movable.prototype = Object.create(SceneObject.prototype);
 
@@ -71,6 +75,16 @@ define([
             this._moveCollisionTarget.move(direction, false);
         }
         this.play(direction, updateLevel);
+
+        if (!this.isMoving()) {
+            this._movesCount += 1;
+            if (this.level.eventManager) {
+                this.level.eventManager.raiseEvent(Movable.EVENT_MOVED, {
+                    object: this,
+                    movesCount: this._movesCount
+                });
+            }
+        }
 
         return true;
     };
@@ -129,6 +143,14 @@ define([
     Movable.prototype.stopAnimation = function() {
         this._sprite.stop();
     };
+
+    Object.defineProperties(Movable.prototype, {
+        movesCount: {
+            get: function() {
+                return this._movesCount;
+            }
+        }
+    });
 
     return Movable;
 });

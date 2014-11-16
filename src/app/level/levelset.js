@@ -1,17 +1,20 @@
 define([
     'jquery',
     'lodash',
-    './level'
+    './level',
+    '../event-manager'
 ], function(
     $,
     _,
-    Level
+    Level,
+    EventManager
 ) {
     'use strict';
 
-    var LevelSet = function(source, loadCallback) {
-        this._source = source;
-        this._loadCallback = loadCallback;
+    var LevelSet = function(options) {
+        this._source = options.source;
+        this._onLoad = options.onLoad;
+        this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
 
         this._name = '';
         this._description = '';
@@ -23,16 +26,24 @@ define([
         this.load();
     };
 
+    LevelSet.EVENT_LOADED = 'levelSet:loaded';
+
     LevelSet.prototype = {
         load: function() {
+            // TODO: handle error
             $.ajax({
                 url: this._source,
                 success: function(data, textStatus, jqXHR) {
                     this.parse(data);
-                }.bind(this),
-                complete: function(jqXHR, textStatus) {
-                    if (_.isFunction(this._loadCallback)) {
-                        this._loadCallback.call();
+
+                    if (_.isFunction(this._onLoad)) {
+                        this._onLoad.call();
+                    }
+
+                    if (this.eventManager) {
+                        this.eventManager.raiseEvent(LevelSet.EVENT_LOADED, {
+                            source: this._source
+                        });
                     }
                 }.bind(this)
             });
@@ -49,7 +60,9 @@ define([
 
             if ($.isArray(data.levels)) {
                 for (var i = 0; i < data.levels.length; i++) {
-                    var level = new Level(data.levels[i]);
+                    var level = new Level(_.merge({
+                        eventManager: this.eventManager
+                    }, data.levels[i]));
                     this.add(level);
                 }
             }
@@ -92,6 +105,11 @@ define([
     };
 
     Object.defineProperties(LevelSet.prototype, {
+        eventManager: {
+            get: function() {
+                return this._eventManager;
+            }
+        },
         name: {
             get: function () {
                 return this._name;
