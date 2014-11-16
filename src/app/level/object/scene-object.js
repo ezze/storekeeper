@@ -1,7 +1,7 @@
 define([
     'easel',
     'lodash',
-    './sprite-sheet',
+    '../sprite-sheet',
     '../../exception'
 ], function(
     Easel,
