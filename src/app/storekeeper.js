@@ -87,6 +87,8 @@ define([
             if (!(params.object instanceof Worker)) {
                 return;
             }
+
+            // TODO:
             console.log('Moves count: ' + params.movesCount);
         }.bind(this));
     };

@@ -1,3 +1,6 @@
+/**
+ * @module LevelSet
+ */
 define([
     'jquery',
     'lodash',
@@ -11,6 +14,14 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.0
+     * @alias module:LevelSet
+     * @class
+     */
     var LevelSet = function(options) {
         this._source = options.source;
         this._onLoad = options.onLoad;
@@ -31,8 +42,18 @@ define([
     LevelSet.prototype = {
         load: function() {
             // TODO: handle error
+
+            var url = this._source;
+            if (url.indexOf('?') === -1) {
+                url += '?';
+            }
+            else {
+                url += '&';
+            }
+            url += 'q=' + new Date().getTime();
+
             $.ajax({
-                url: this._source,
+                url: url,
                 success: function(data, textStatus, jqXHR) {
                     this.parse(data);
 

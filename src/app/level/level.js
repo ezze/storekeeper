@@ -1,3 +1,6 @@
+/**
+ * @module Level
+ */
 define([
     'easel',
     'jquery',
@@ -21,6 +24,14 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.0
+     * @alias module:Level
+     * @class
+     */
     var Level = function(options) {
         // TODO: think of creating canvas here
         this._stage = new Easel.Stage($('canvas').get(0));
@@ -104,11 +115,15 @@ define([
                 this.addObject(new Goal(options));
                 break;
             case '$':
-                this.addObject(new Box(options));
+                this.addObject(new Box(_.merge({}, options, {
+                    onGoal: false
+                })));
                 break;
             case '*':
                 this.addObject(new Goal(options));
-                this.addObject(new Box(options));
+                this.addObject(new Box(_.merge({}, options, {
+                    onGoal: true
+                })));
                 break;
         }
     };
