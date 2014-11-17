@@ -5,12 +5,14 @@ define([
     'jquery',
     'lodash',
     './level',
-    '../event-manager'
+    '../event-manager',
+    '../exception'
 ], function(
     $,
     _,
     Level,
-    EventManager
+    EventManager,
+    Exception
 ) {
     'use strict';
 
@@ -23,9 +25,18 @@ define([
      * @class
      */
     var LevelSet = function(options) {
+        if (!_.isString(options.source) || _.isEmpty(options.source)) {
+            throw new Exception('Level set\'s source is invalid or not specified.');
+        }
         this._source = options.source;
-        this._onLoad = options.onLoad;
+
+        if (!(options.container instanceof HTMLElement)) {
+            throw new Exception('Container is invalid or not specified.');
+        }
+        this._container = options.container;
+
         this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
+        this._onLoad = _.isFunction(options.onLoad) ? options.onLoad : null;
 
         this._name = '';
         this._description = '';
@@ -38,6 +49,7 @@ define([
     };
 
     LevelSet.EVENT_LOADED = 'levelSet:loaded';
+    LevelSet.EVENT_LEVEL_CHANGED = 'levelSet:levelChanged';
 
     LevelSet.prototype = {
         load: function() {
@@ -79,34 +91,60 @@ define([
                 this.description = data.description;
             }
 
-            if ($.isArray(data.levels)) {
-                for (var i = 0; i < data.levels.length; i++) {
-                    var level = new Level(_.merge({
+            if (_.isArray(data.levels)) {
+                var jqContainer = $(this.container);
+
+                _.forEach(data.levels, function(levelData) {
+                    var level = new Level(_.merge({}, {
                         eventManager: this.eventManager
-                    }, data.levels[i]));
+                    }, levelData));
+
                     this.add(level);
-                }
+
+                    $(level.canvas)
+                        .attr('width', jqContainer.width())
+                        .attr('height', jqContainer.height());
+                    jqContainer.append(level.canvas);
+                }, this);
             }
         },
 
         add: function(level) {
             if (!(level instanceof Level)) {
-                // TODO: throw an exception
-                return;
+                throw new Exception('Level instance is expected.');
             }
 
             this._levels.push(level);
         },
 
-        find: function(index) {
-            // TODO: differ getting level by index and by reference
-            if (index < 0 || index >= this._levels.length) {
-                // TODO: throw an exception
-                return null;
+        find: function(search) {
+            if (_.isNumber(search)) {
+                if (search % 1 !== 0) {
+                    throw new Exception('Level\'s index must be an integer.');
+                }
+
+                if (search < 0 || search >= this._levels.length) {
+                    throw new Exception('Level\'s index is out of bounds.');
+                }
+
+                return {
+                    index: search,
+                    level: this._levels[search]
+                };
+            }
+            else if (search instanceof Level) {
+                var index = _.findIndex(this._levels, search);
+                if (index === -1) {
+                    throw new Exception('Level is not found.');
+                }
+
+                return {
+                    index: index,
+                    level: search
+                };
             }
 
-            // TODO: return object containing level's reference and index
-            return this._levels[index];
+            throw new Exception('Level\'s search argument is invalid.');
         },
 
         remove: function(level) {
@@ -126,6 +164,11 @@ define([
     };
 
     Object.defineProperties(LevelSet.prototype, {
+        container: {
+            get: function() {
+                return this._container;
+            }
+        },
         eventManager: {
             get: function() {
                 return this._eventManager;
@@ -152,24 +195,30 @@ define([
                 return this._level;
             },
             set: function(source) {
-                if (!_.isNumber(source) || source % 1 !== 0) {
-                    // TODO: throw an exception
-                }
+                var result = this.find(source);
+                this._levelIndex = result.index;
+                this._level = result.level;
+                $(this.container).children('canvas').each(function(index) {
+                    if (index === result.index) {
+                        $(this).css('display', 'block');
+                    }
+                    else {
+                        $(this).css('display', 'none');
+                    }
+                });
 
-                var level = this.find(source);
-                if (!(level instanceof Level)) {
-                    // TODO: throw an exception
-                    return;
+                if (this.eventManager) {
+                    var onLevelChangedParams = {
+                        index: this._levelIndex,
+                        level: this._level
+                    };
+                    this.eventManager.raiseEvent(LevelSet.EVENT_LEVEL_CHANGED, onLevelChangedParams);
                 }
-
-                // TODO: rewrite
-                if (this._level instanceof Level) {
-                    this._level.stop();
-                }
-
-                this._levelIndex = source;
-                this._level = level.clone();
-                this._level.start();
+            }
+        },
+        levelIndex: {
+            get: function() {
+                return this._levelIndex;
             }
         },
         count: {

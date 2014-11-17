@@ -33,8 +33,8 @@ define([
      * @class
      */
     var Level = function(options) {
-        // TODO: think of creating canvas here
-        this._stage = new Easel.Stage($('canvas').get(0));
+        this._canvas = document.createElement('canvas');
+        this._stage = new Easel.Stage(this._canvas);
 
         this._name = '';
         this._description = '';
@@ -60,13 +60,17 @@ define([
             this.description = options.description;
         }
 
-        if ($.isArray(options.items)) {
-            this._items = options.items;
-            this.reset();
+        if (!_.isArray(options.items)) {
+            throw new Exception('Level\'s items are invalid or not specified.');
         }
+
+        this._items = options.items;
+        this.reset();
     };
 
     Level.prototype.reset = function() {
+        this.removeObjectsFromStage();
+
         this._worker = null;
         this._walls = [];
         this._goals = [];
@@ -81,7 +85,36 @@ define([
             throw new Exception('Incorrect ' + this._name + ' level');
         }
         this._isValidated = true;
-        this.start();
+
+        this.addObjectsToStage();
+    };
+
+    Level.prototype.addObjectsToStage = function() {
+        _.forEach(this._walls, function(wall) {
+            this.addObjectToStage(wall);
+        }, this);
+
+        _.forEach(this._goals, function(goal) {
+            this.addObjectToStage(goal);
+        }, this);
+
+        _.forEach(this._boxes, function(box) {
+            this.addObjectToStage(box);
+        }, this);
+
+        this.addObjectToStage(this._worker);
+    };
+
+    Level.prototype.addObjectToStage = function(object) {
+        var sprite = object.sprite;
+        if (this._stage.contains(sprite)) {
+            throw new Exception('Level\'s stage already contains the object.');
+        }
+        this._stage.addChild(sprite);
+    };
+
+    Level.prototype.removeObjectsFromStage = function() {
+        this._stage.removeAllChildren();
     };
 
     Level.prototype.clone = function() {
@@ -179,50 +212,16 @@ define([
         return objects;
     };
 
-    Level.prototype.start = function() {
-        if (this._isValidated) {
-            this.addObjectsToStage();
-        }
-        this.update();
-    };
-
-    Level.prototype.stop = function() {
-        this.removeObjectsFromStage();
-        this.update();
-    };
-
     Level.prototype.update = function() {
         this._stage.update();
     };
 
-    Level.prototype.addObjectsToStage = function() {
-        var i;
-        for (i = 0; i < this._walls.length; i++) {
-            this.addObjectToStage(this._walls[i]);
-        }
-        for (i = 0; i < this._goals.length; i++) {
-            this.addObjectToStage(this._goals[i]);
-        }
-        for (i = 0; i < this._boxes.length; i++) {
-            this.addObjectToStage(this._boxes[i]);
-        }
-        this.addObjectToStage(this._worker);
-    };
-
-    Level.prototype.addObjectToStage = function(object) {
-        var sprite = object.sprite;
-        if (this._stage.contains(sprite)) {
-            // TODO: throw an exception
-            return;
-        }
-        this._stage.addChild(sprite);
-    };
-
-    Level.prototype.removeObjectsFromStage = function() {
-        this._stage.removeAllChildren();
-    };
-
     Object.defineProperties(Level.prototype, {
+        canvas: {
+            get: function() {
+                return this._canvas;
+            }
+        },
         eventManager: {
             get: function() {
                 return this._eventManager;
