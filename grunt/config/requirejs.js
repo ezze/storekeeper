@@ -24,7 +24,7 @@ module.exports = function(grunt) {
                 almond: true,
                 baseUrl: 'src/app',
                 include: ['app'],
-                out: 'assets/storekeeper.' + item + '.js',
+                out: 'assets/js/storekeeper.' + item + '.js',
                 optimize: item === 'combined' ? 'none' : 'uglify2',
                 preserveLicenseComments: false,
                 generateSourceMaps: item === 'min',

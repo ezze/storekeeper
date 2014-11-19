@@ -16,7 +16,7 @@ module.exports = function() {
                 src: [
                     'storekeeper.less'
                 ],
-                dest: 'assets',
+                dest: 'assets/css',
                 ext: '.min.css'
             }]
         }

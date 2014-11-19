@@ -5,7 +5,8 @@ module.exports = function() {
 
     return {
         css: [
-            'assets/css'
+            'assets/css',
+            'assets/fonts'
         ],
         js: [
             'assets/js'
