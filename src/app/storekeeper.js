@@ -105,7 +105,6 @@ define([
 
     Storekeeper.prototype.initEvents = function() {
         var eventManager = this._eventManager = new EventManager();
-        var jqFooter = $('#footer');
 
         eventManager.on(LevelSet.EVENT_LOADED, function(eventName, params) {
             this.onLevelSetLoaded.bind(this)(params.source);
@@ -117,14 +116,17 @@ define([
         ], function(eventName, params) {
             var level = params.level;
 
-            jqFooter.find('.level > .value').text(params.index + 1);
-            jqFooter.find('.moves-count > .value').text(level.worker.movesCount);
-            jqFooter.find('.pushes-count > .value').text(0);
-            jqFooter.find('.boxes-count > .value').text(level.boxesOnGoalCount + '/' + level.boxesCount);
+            this.updateInfo({
+                levelNumber: params.index + 1,
+                boxesCount: level.boxesCount,
+                boxesOnGoalCount: level.boxesOnGoalCount,
+                pushesCount: 0,
+                movesCount: level.worker.movesCount
+            });
 
             level.resize(false);
             level.update();
-        });
+        }.bind(this));
 
         eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
             params.level.update();
@@ -140,8 +142,11 @@ define([
             Box.EVENT_MOVED_OUT_OF_GOAL
         ], function(eventName, params) {
             var level = params.box.level;
-            jqFooter.find('.boxes-count > .value').text(level.boxesOnGoalCount + '/' + level.boxesCount);
-        });
+            this.updateInfo({
+                boxesCount: level.boxesCount,
+                boxesOnGoalCount: level.boxesOnGoalCount
+            });
+        }.bind(this));
 
         eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
             if (params.object instanceof Box) {
@@ -150,12 +155,16 @@ define([
                 _.forEach(params.object.level.boxes, function(box) {
                     pushesCount += box.movesCount;
                 });
-                jqFooter.find('.pushes-count > .value').text(pushesCount);
+                this.updateInfo({
+                    pushesCount: pushesCount
+                });
             }
             else if (params.object instanceof Worker) {
-                jqFooter.find('.moves-count > .value').text(params.object.movesCount);
+                this.updateInfo({
+                    movesCount: params.object.movesCount
+                });
             }
-        });
+        }.bind(this));
 
         eventManager.on([
             Movable.EVENT_ANIMATED,
@@ -281,6 +290,53 @@ define([
 
         var worker = level.worker;
         worker.move(this._moveDirection);
+    };
+
+    Storekeeper.prototype.updateInfo = function(data) {
+        data = data || {};
+        var jqHeader = $('#header');
+
+        if (_.isNumber(data.levelNumber)) {
+            var jqLevel = jqHeader.find('.level');
+            jqLevel.find('.name').text('Level');
+            jqLevel.find('.value').text(Storekeeper.formatInteger(data.levelNumber, 3));
+        }
+
+        if (_.isNumber(data.boxesCount) && _.isNumber(data.boxesOnGoalCount)) {
+            var jqBoxesCount = jqHeader.find('.boxes-count');
+            jqBoxesCount.find('.name').text('Boxes');
+            jqBoxesCount.find('.value').text(Storekeeper.formatInteger(data.boxesOnGoalCount, 3) +
+                '/' + Storekeeper.formatInteger(data.boxesCount, 3)
+            );
+        }
+
+        if (_.isNumber(data.pushesCount)) {
+            var jqPushesCount = jqHeader.find('.pushes-count');
+            jqPushesCount.find('.name').text('Pushes');
+            jqPushesCount.find('.value').text(Storekeeper.formatInteger(data.pushesCount, 5));
+        }
+
+        if (_.isNumber(data.movesCount)) {
+            var jqMovesCount = jqHeader.find('.moves-count');
+            jqMovesCount.find('.name').text('Moves');
+            jqMovesCount.find('.value').text(Storekeeper.formatInteger(data.movesCount, 5));
+        }
+    };
+
+    Storekeeper.formatInteger = function(number, digits) {
+        if (!_.isNumber(number) || number % 1 !== 0) {
+            throw new Exception('Number must be an integer.');
+        }
+
+        if (!_.isNumber(digits) || digits % 1 !== 0) {
+            throw new Exception('Digits must be an integer.');
+        }
+
+        var formatted = '' + number;
+        for (var i = 0; i < digits - number.toString().length; i += 1) {
+            formatted = '0' + formatted;
+        }
+        return formatted;
     };
 
     Object.defineProperties(Storekeeper.prototype, {
