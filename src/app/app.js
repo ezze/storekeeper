@@ -8,16 +8,12 @@ require([
     require.config(config);
 
     require([
-        'jquery',
         './storekeeper'
     ], function(
-        $,
         Storekeeper
     ) {
-        var container = document.querySelector('#game-field');
-
         new Storekeeper({
-            container: container,
+            container: document.querySelector('#game-field'),
             levelSetSource: 'levels/classic.json'
         });
     });
