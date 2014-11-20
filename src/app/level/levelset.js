@@ -61,7 +61,7 @@ define([
             }.bind(this));
         }
 
-        $(window).on('resize', this.onResize.bind(this));
+        $(window).on('resize', this.resize.bind(this));
 
         this._name = '';
         this._description = '';
@@ -202,7 +202,11 @@ define([
         this.onLevelRestarted(onLevelRestartedParams);
     };
 
-    LevelSet.prototype.onResize = function() {
+    LevelSet.prototype.resize = function(smooth) {
+        if (!_.isBoolean(smooth)) {
+            smooth = true;
+        }
+
         var jqContainer = $(this.container);
         var level = this.level;
 
@@ -217,6 +221,12 @@ define([
 
         var cameraOffsetLeft = Math.round((width - size.width) / 2);
         var cameraOffsetTop = Math.round((height - size.height) / 2);
+
+        if (!smooth) {
+            level.camera.x = cameraOffsetLeft;
+            level.camera.y = cameraOffsetTop;
+            return;
+        }
 
         Tween.Tween.get(level.camera, {
             override: true
