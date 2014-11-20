@@ -233,12 +233,50 @@ define([
             smooth = true;
         }
 
-        var jqContainer = $(this.canvas).parent();
+        var jqCanvas = $(this.canvas);
 
         var size = this.size;
 
-        var cameraOffsetLeft = Math.round((jqContainer.width() - size.width) / 2);
-        var cameraOffsetTop = Math.round((jqContainer.height() - size.height) / 2);
+        var cameraOffsetLeft = Math.round((jqCanvas.width() - size.width) / 2);
+        var cameraOffsetTop = Math.round((jqCanvas.height() - size.height) / 2);
+
+        // If the whole level can't be placed within the canvas
+        // we will move the camera to grant worker is visible at each moment of time
+        if (cameraOffsetLeft < 0 || cameraOffsetTop < 0) {
+            var frames = SceneObject.spriteSheet.data.frames;
+            var workerWidth = frames.width;
+            var workerHeight = frames.height;
+
+            // Calculating top left point of the worker relative to the canvas
+            var workerCanvasX = this.worker.sprite.x + cameraOffsetLeft;
+            var workerCanvasY = this.worker.sprite.y + cameraOffsetTop;
+
+            // Checking whether worker is within visible rectangle
+            // that is twice smaller than the canvas and placed in the center of the canvas
+            var workerRectWidth = Math.round(jqCanvas.width() / 2);
+            var workerRectHeight = Math.round(jqCanvas.height() / 2);
+
+            var workerRectCanvasLeft = Math.round(jqCanvas.width() / 4);
+            var workerRectCanvasTop = Math.round(jqCanvas.height() / 4);
+
+            var isWorkerInRect =
+                workerCanvasX >= workerRectCanvasLeft &&
+                workerCanvasX + workerWidth <= workerRectCanvasLeft + workerRectWidth &&
+                workerCanvasY >= workerRectCanvasTop &&
+                workerCanvasY + workerHeight <= workerRectCanvasTop + workerRectHeight;
+
+            if (!isWorkerInRect) {
+                // We have to recalculate camera's position to place the worker in the center
+                var workerCanvasCenterX = Math.round((jqCanvas.width() - workerWidth) / 2);
+                var workerCanvasCenterY = Math.round((jqCanvas.height() - workerHeight) / 2);
+
+                var cameraShiftX = workerCanvasCenterX - workerCanvasX;
+                var cameraShiftY = workerCanvasCenterY - workerCanvasY;
+
+                cameraOffsetLeft += cameraShiftX;
+                cameraOffsetTop += cameraShiftY;
+            }
+        }
 
         if (!smooth) {
             this.camera.x = cameraOffsetLeft;
@@ -324,7 +362,9 @@ define([
                     rows: this.rows,
                     columns: this.columns,
                     width: frames.width * this.columns,
-                    height: frames.height * this.rows
+                    height: frames.height * this.rows,
+                    objectWidth: frames.width,
+                    objectHeight: frames.height
                 };
             }
         },
