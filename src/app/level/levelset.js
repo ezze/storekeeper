@@ -4,7 +4,6 @@
 define([
     'jquery',
     'lodash',
-    'tween',
     './level',
     './object/box',
     '../event-manager',
@@ -12,7 +11,6 @@ define([
 ], function(
     $,
     _,
-    Tween,
     Level,
     Box,
     EventManager,
@@ -61,7 +59,9 @@ define([
             }.bind(this));
         }
 
-        $(window).on('resize', this.resize.bind(this));
+        $(window).on('resize', function() {
+            this.level.resize();
+        }.bind(this));
 
         this._name = '';
         this._description = '';
@@ -201,44 +201,6 @@ define([
         }
         this.onLevelRestarted(onLevelRestartedParams);
     };
-
-    LevelSet.prototype.resize = function(smooth) {
-        if (!_.isBoolean(smooth)) {
-            smooth = true;
-        }
-
-        var jqContainer = $(this.container);
-        var level = this.level;
-
-        var width = jqContainer.width();
-        var height = jqContainer.height();
-
-        $(level.canvas)
-            .attr('width', width)
-            .attr('height', height);
-
-        var size = level.size;
-
-        var cameraOffsetLeft = Math.round((width - size.width) / 2);
-        var cameraOffsetTop = Math.round((height - size.height) / 2);
-
-        if (!smooth) {
-            level.camera.x = cameraOffsetLeft;
-            level.camera.y = cameraOffsetTop;
-            return;
-        }
-
-        Tween.Tween.get(level.camera, {
-            override: true
-        })
-        .wait(500).to({
-            x: cameraOffsetLeft,
-            y: cameraOffsetTop
-        }, 500, Tween.Ease.quadIn)
-        .call(this.onCameraMoved.bind(this));
-    };
-
-    LevelSet.prototype.onCameraMoved = function() {};
 
     LevelSet.prototype.onLevelCompleted = function(params) {};
 

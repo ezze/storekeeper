@@ -5,6 +5,7 @@ define([
     'easel',
     'jquery',
     'lodash',
+    'tween',
     './object/box',
     './object/goal',
     './object/movable',
@@ -17,6 +18,7 @@ define([
     Easel,
     $,
     _,
+    Tween,
     Box,
     Goal,
     Movable,
@@ -215,6 +217,47 @@ define([
     Level.prototype.update = function() {
         this._stage.update();
     };
+
+    Level.prototype.resize = function(smooth) {
+        var jqContainer = $(this.canvas).parent();
+
+        $(this.canvas)
+            .attr('width', jqContainer.width())
+            .attr('height', jqContainer.height());
+
+        this.adjustCamera(smooth);
+    };
+
+    Level.prototype.adjustCamera = function(smooth) {
+        if (!_.isBoolean(smooth)) {
+            smooth = true;
+        }
+
+        var jqContainer = $(this.canvas).parent();
+
+        var size = this.size;
+
+        var cameraOffsetLeft = Math.round((jqContainer.width() - size.width) / 2);
+        var cameraOffsetTop = Math.round((jqContainer.height() - size.height) / 2);
+
+        if (!smooth) {
+            this.camera.x = cameraOffsetLeft;
+            this.camera.y = cameraOffsetTop;
+            return;
+        }
+
+        Tween.Tween.get(this.camera, {
+            override: true
+        })
+        .wait(500)
+        .to({
+            x: cameraOffsetLeft,
+            y: cameraOffsetTop
+        }, 500, Tween.Ease.quadIn)
+        .call(this.onCameraAdjusted.bind(this));
+    };
+
+    Level.prototype.onCameraAdjusted = function() {};
 
     Level.prototype.onBoxOnGoal = function() {
         this._boxesOnGoalCount += 1;

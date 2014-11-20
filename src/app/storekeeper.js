@@ -122,7 +122,7 @@ define([
             jqFooter.find('.pushes-count > .value').text(0);
             jqFooter.find('.boxes-count > .value').text(level.boxesOnGoalCount + '/' + level.boxesCount);
 
-            params.levelSet.resize(false);
+            level.resize(false);
             level.update();
         });
 
