@@ -19,14 +19,14 @@ define([], function() {
             easel: '../lib/easeljs/lib/easeljs-0.7.1.combined',
             jquery: '../lib/jquery/dist/jquery',
             lodash: '../lib/lodash/dist/lodash',
-            tween: '../lib/tweenjs/src/Tween'
+            tween: '../lib/TweenJS/lib/tweenjs-0.5.1.combined'
         },
         shim: {
             easel: {
                 exports: 'createjs'
             },
             tween: {
-                exports: 'TWEEN'
+                exports: 'createjs'
             }
         },
         urlArgs: 'q=' + (new Date()).getTime()

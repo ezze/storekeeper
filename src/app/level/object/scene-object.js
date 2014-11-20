@@ -38,6 +38,7 @@ define([
         this._height = spriteSheet.data.frames.height;
 
         this._sprite = new Easel.Sprite(spriteSheet.instance, 'space');
+
         this.updatePixels();
     };
 
@@ -101,6 +102,8 @@ define([
             }
         }
     });
+
+    SceneObject.spriteSheet = spriteSheet;
 
     return SceneObject;
 });

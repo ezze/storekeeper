@@ -8,6 +8,7 @@ define([
     './object/box',
     './object/goal',
     './object/movable',
+    './object/scene-object',
     './object/wall',
     './object/worker',
     '../event-manager',
@@ -19,6 +20,7 @@ define([
     Box,
     Goal,
     Movable,
+    SceneObject,
     Wall,
     Worker,
     EventManager,
@@ -236,11 +238,6 @@ define([
     };
 
     Object.defineProperties(Level.prototype, {
-        canvas: {
-            get: function() {
-                return this._canvas;
-            }
-        },
         eventManager: {
             get: function() {
                 return this._eventManager;
@@ -262,11 +259,29 @@ define([
                 this._description = description;
             }
         },
+        canvas: {
+            get: function() {
+                return this._canvas;
+            }
+        },
+        stage: {
+            get: function() {
+                return this._stage;
+            }
+        },
+        camera: {
+            get: function() {
+                return this._camera;
+            }
+        },
         size: {
             get: function() {
+                var frames = SceneObject.spriteSheet.data.frames;
                 return {
                     rows: this.rows,
-                    columns: this.columns
+                    columns: this.columns,
+                    width: frames.width * this.columns,
+                    height: frames.height * this.rows
                 };
             }
         },
@@ -278,11 +293,6 @@ define([
         columns: {
             get: function() {
                 return this._columns;
-            }
-        },
-        stage: {
-            get: function() {
-                return this._stage;
             }
         },
         worker: {

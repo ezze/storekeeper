@@ -4,6 +4,7 @@
 define([
     'jquery',
     'lodash',
+    'tween',
     './level',
     './object/box',
     '../event-manager',
@@ -11,6 +12,7 @@ define([
 ], function(
     $,
     _,
+    Tween,
     Level,
     Box,
     EventManager,
@@ -202,9 +204,32 @@ define([
 
     LevelSet.prototype.onResize = function() {
         var jqContainer = $(this.container);
-        $(this.level.canvas)
-            .attr('width', jqContainer.width())
-            .attr('height', jqContainer.height());
+        var level = this.level;
+
+        var width = jqContainer.width();
+        var height = jqContainer.height();
+
+        $(level.canvas)
+            .attr('width', width)
+            .attr('height', height);
+
+        var size = level.size;
+
+        var cameraOffsetLeft = Math.round((width - size.width) / 2);
+        var cameraOffsetTop = Math.round((height - size.height) / 2);
+
+        Tween.Tween.get(level.camera, {
+            override: true
+        })
+        .wait(500).to({
+            x: cameraOffsetLeft,
+            y: cameraOffsetTop
+        }, 500, Tween.Ease.quadIn)
+        .call(this.onCameraMoved.bind(this));
+    };
+
+    LevelSet.prototype.onCameraMoved = function() {
+        console.log('moved');
     };
 
     LevelSet.prototype.onLevelCompleted = function(params) {};
