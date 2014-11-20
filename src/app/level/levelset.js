@@ -59,6 +59,8 @@ define([
             }.bind(this));
         }
 
+        $(window).on('resize', this.onResize.bind(this));
+
         this._name = '';
         this._description = '';
 
@@ -196,6 +198,13 @@ define([
             eventManager.raiseEvent(LevelSet.EVENT_LEVEL_RESTARTED, onLevelRestartedParams);
         }
         this.onLevelRestarted(onLevelRestartedParams);
+    };
+
+    LevelSet.prototype.onResize = function() {
+        var jqContainer = $(this.container);
+        $(this.level.canvas)
+            .attr('width', jqContainer.width())
+            .attr('height', jqContainer.height());
     };
 
     LevelSet.prototype.onLevelCompleted = function(params) {};

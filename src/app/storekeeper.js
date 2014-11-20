@@ -116,10 +116,13 @@ define([
             LevelSet.EVENT_LEVEL_RESTARTED
         ], function(eventName, params) {
             var level = params.level;
+
             jqFooter.find('.level > .value').text(params.index + 1);
             jqFooter.find('.moves-count > .value').text(level.worker.movesCount);
             jqFooter.find('.pushes-count > .value').text(0);
             jqFooter.find('.boxes-count > .value').text(level.boxesOnGoalCount + '/' + level.boxesCount);
+
+            params.levelSet.onResize();
             level.update();
         });
 
