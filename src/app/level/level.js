@@ -38,6 +38,9 @@ define([
         this._canvas = document.createElement('canvas');
         this._stage = new Easel.Stage(this._canvas);
 
+        this._camera = new Easel.Container();
+        this._stage.addChild(this._camera);
+
         this._name = '';
         this._description = '';
         this._items = [];
@@ -173,14 +176,14 @@ define([
 
     Level.prototype.addObjectToStage = function(object) {
         var sprite = object.sprite;
-        if (this._stage.contains(sprite)) {
+        if (this._camera.contains(sprite)) {
             throw new Exception('Level\'s stage already contains the object.');
         }
-        this._stage.addChild(sprite);
+        this._camera.addChild(sprite);
     };
 
     Level.prototype.removeObjectsFromStage = function() {
-        this._stage.removeAllChildren();
+        this._camera.removeAllChildren();
     };
 
     Level.prototype.getObjects = function(row, column) {
