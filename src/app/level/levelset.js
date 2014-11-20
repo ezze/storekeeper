@@ -238,9 +238,7 @@ define([
         .call(this.onCameraMoved.bind(this));
     };
 
-    LevelSet.prototype.onCameraMoved = function() {
-        console.log('moved');
-    };
+    LevelSet.prototype.onCameraMoved = function() {};
 
     LevelSet.prototype.onLevelCompleted = function(params) {};
 
