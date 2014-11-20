@@ -11,7 +11,7 @@ body {
     background: #000;
 }
 
-.game-field {
+#game-field {
     background: #000;
     display: block;
     margin: 0px auto;
@@ -23,14 +23,20 @@ body {
     }
 }
 
-.dropdown-menu > li > a {
-    position: relative;
-    padding-right: 110px;
+.navbar {
+    .dropdown-menu > li > a {
+        position: relative;
+        padding-right: 110px;
 
-    & small {
-        color: @gray-light;
-        position: absolute;
-        top: 5px;
-        right: 20px;
+        & small {
+            color: @gray-light;
+            position: absolute;
+            top: 5px;
+            right: 20px;
+        }
+    }
+
+    .navbar-text {
+        width: 120px;
     }
 }

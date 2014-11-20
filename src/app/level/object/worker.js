@@ -24,7 +24,7 @@ define([
 
     Worker.prototype = Object.create(Movable.prototype);
 
-    Worker.prototype.move = function(direction, updateLevel) {
+    Worker.prototype.move = function(direction) {
         Movable.prototype.move.apply(this, arguments);
     };
 

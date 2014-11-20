@@ -10,6 +10,7 @@ define([
     './exception',
     './level/direction',
     './level/levelset',
+    './level/object/box',
     './level/object/movable',
     './level/object/worker'
 ], function(
@@ -21,6 +22,7 @@ define([
     Exception,
     Direction,
     LevelSet,
+    Box,
     Movable,
     Worker
 ) {
@@ -76,7 +78,7 @@ define([
 
     Storekeeper.prototype.initNavbar = function() {
         $(document).ready(function() {
-            $('#main-navbar')
+            $('#header')
                 .on('click', '.navbar-brand', function(event) {
                     event.preventDefault();
                 })
@@ -103,19 +105,64 @@ define([
 
     Storekeeper.prototype.initEvents = function() {
         var eventManager = this._eventManager = new EventManager();
+        var jqFooter = $('#footer');
 
         eventManager.on(LevelSet.EVENT_LOADED, function(eventName, params) {
             this.onLevelSetLoaded.bind(this)(params.source);
         }.bind(this));
 
+        eventManager.on([
+            LevelSet.EVENT_LEVEL_CHANGED,
+            LevelSet.EVENT_LEVEL_RESTARTED
+        ], function(eventName, params) {
+            var level = params.level;
+            jqFooter.find('.level > .value').text(params.index + 1);
+            jqFooter.find('.moves-count > .value').text(level.worker.movesCount);
+            jqFooter.find('.pushes-count > .value').text(0);
+            jqFooter.find('.boxes-count > .value').text(level.boxesOnGoalCount + '/' + level.boxesCount);
+            level.update();
+        });
+
+        eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
+            params.level.update();
+            setTimeout(function() {
+                alert('Level ' + (params.levelIndex + 1) + ' is completed!');
+                params.level.reset();
+                this.nextLevel();
+            }.bind(this), 50);
+        }.bind(this));
+
+        eventManager.on([
+            Box.EVENT_MOVED_ON_GOAL,
+            Box.EVENT_MOVED_OUT_OF_GOAL
+        ], function(eventName, params) {
+            var level = params.box.level;
+            jqFooter.find('.boxes-count > .value').text(level.boxesOnGoalCount + '/' + level.boxesCount);
+        });
+
         eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
+            if (params.object instanceof Box) {
+                // TODO: optimize if possible
+                var pushesCount = 0;
+                _.forEach(params.object.level.boxes, function(box) {
+                    pushesCount += box.movesCount;
+                });
+                jqFooter.find('.pushes-count > .value').text(pushesCount);
+            }
+            else if (params.object instanceof Worker) {
+                jqFooter.find('.moves-count > .value').text(params.object.movesCount);
+            }
+        });
+
+        eventManager.on([
+            Movable.EVENT_ANIMATED,
+            Movable.EVENT_STOPPED
+        ], function(eventName, params) {
             if (!(params.object instanceof Worker)) {
                 return;
             }
-
-            // TODO:
-            console.log('Moves count: ' + params.movesCount);
-        }.bind(this));
+            params.object.level.update();
+        });
     };
 
     Storekeeper.prototype.initUserControls = function() {
@@ -188,8 +235,7 @@ define([
         if (!this.levelSet) {
             throw new Exception('Level set is not loaded.');
         }
-
-        this.levelSet.level.reset();
+        this.levelSet.restart();
     };
 
     Storekeeper.prototype.previousLevel = function() {
@@ -231,10 +277,7 @@ define([
         }
 
         var worker = level.worker;
-        worker.move(this._moveDirection, false);
-
-        // TODO: for performance reasons update level only when it's really necessary
-        this.levelSet.level.update();
+        worker.move(this._moveDirection);
     };
 
     Object.defineProperties(Storekeeper.prototype, {

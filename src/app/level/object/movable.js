@@ -5,11 +5,13 @@ define([
     'lodash',
     './scene-object',
     '../direction',
+    '../../event-manager',
     '../../exception'
 ], function(
     _,
     SceneObject,
     Direction,
+    EventManager,
     Exception
 ) {
     'use strict';
@@ -33,8 +35,11 @@ define([
         this._moveCollisionTarget = null;
     };
 
+    Movable.EVENT_ANIMATED = 'movable:animated';
     Movable.EVENT_BEFORE_MOVED = 'movable:beforeMoved';
     Movable.EVENT_MOVED = 'movable:moved';
+    Movable.EVENT_COLLIDED = 'movable:collided';
+    Movable.EVENT_STOPPED = 'movable:stopped';
 
     Movable.prototype = Object.create(SceneObject.prototype);
 
@@ -42,7 +47,9 @@ define([
         return this.row % 1 !== 0 || this.column % 1 !== 0;
     };
 
-    Movable.prototype.move = function(direction, updateLevel) {
+    Movable.prototype.move = function(direction) {
+        var eventManager = this.level && this.level.eventManager;
+
         var row = this.row;
         var column = this.column;
 
@@ -56,14 +63,28 @@ define([
             this._moveCollisionTarget = null;
         }
 
+        if (direction === Direction.NONE) {
+            this.stop(direction);
+            return false;
+        }
+
         // If atomic movement of the object is not in progress
         // we will detect possible collision with some other object located relative this object
         // in a given direction
         var collision;
-        if (direction === Direction.NONE ||
-            (!this.isMoving() && (collision = this.detectCollision(direction)).detected)
-        ) {
-            this.stop(direction, updateLevel);
+        if (!this.isMoving() && (collision = this.detectCollision(direction)).detected) {
+            var onCollidedParams = {
+                object: this,
+                direction: direction,
+                target: collision.target
+            };
+
+            if (eventManager instanceof EventManager) {
+                eventManager.raiseEvent(Movable.EVENT_COLLIDED, onCollidedParams);
+            }
+            this.onCollided(onCollidedParams);
+
+            this.stop(direction);
             return false;
         }
 
@@ -71,19 +92,19 @@ define([
             // A chance to prevent atomic movement's start through event handlers
             var onBeforeMovedParams = {
                 object: this,
-                movesCount: this._movesCount,
-                direction: direction
+                direction: direction,
+                movesCount: this._movesCount
             };
 
-            if (this.level.eventManager && !this.level.eventManager.raiseEvent(
+            if (eventManager && !eventManager.raiseEvent(
                 Movable.EVENT_BEFORE_MOVED, onBeforeMovedParams)
             ) {
-                this.stop(direction, updateLevel);
+                this.stop(direction);
                 return false;
             }
 
             if (!this.onBeforeMoved(onBeforeMovedParams)) {
-                this.stop(direction, updateLevel);
+                this.stop(direction);
                 return false;
             }
         }
@@ -108,21 +129,32 @@ define([
 
             var onMovedParams = {
                 object: this,
-                movesCount: this._movesCount,
-                direction: direction
+                direction: direction,
+                movesCount: this._movesCount
             };
 
-            if (this.level.eventManager) {
-                this.level.eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
+            if (eventManager instanceof EventManager) {
+                eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
             }
             this.onMoved(onMovedParams);
         }
 
         // Animating recent calculations - both the object and a target object (if present) affected by collision
         if (this._moveCollisionTarget !== null) {
-            this._moveCollisionTarget.move(direction, false);
+            this._moveCollisionTarget.move(direction);
         }
-        this.play(direction, updateLevel);
+        this.play(direction);
+
+        // Raising an event on each animation frame
+        var onAnimatedParams = {
+            object: this,
+            direction: direction
+        };
+
+        if (eventManager instanceof EventManager) {
+            eventManager.raiseEvent(Movable.EVENT_ANIMATED, onAnimatedParams);
+        }
+        this.onAnimated(onAnimatedParams);
 
         return true;
     };
@@ -142,32 +174,32 @@ define([
         return this.level.getObjects(row, column);
     };
 
-    Movable.prototype.play = function(direction, updateLevel) {
-        updateLevel = _.isBoolean(updateLevel) ? updateLevel : false;
-
+    Movable.prototype.play = function(direction) {
         if (this._moveDirection !== direction) {
             this.startAnimation(direction);
         }
 
         this.updatePixels();
-        if (updateLevel) {
-            this.level.update();
-        }
 
         this._moveDirection = direction;
     };
 
-    Movable.prototype.stop = function(direction, updateLevel) {
-        updateLevel = _.isBoolean(updateLevel) ? updateLevel : false;
-
+    Movable.prototype.stop = function(direction) {
         if (this._moveDirection !== Direction.NONE || direction !== Direction.NONE) {
             this.stopAnimation();
-            if (updateLevel) {
-                this.level.update();
-            }
         }
 
         this._moveDirection = Direction.NONE;
+
+        var onStoppedParams = {
+            object: this,
+            direction: direction
+        };
+
+        if (this.level.eventManager instanceof EventManager) {
+            this.level.eventManager.raiseEvent(Movable.EVENT_STOPPED, onStoppedParams);
+        }
+        this.onStopped(onStoppedParams);
     };
 
     Movable.prototype.detectCollision = function(direction) {
@@ -187,6 +219,12 @@ define([
     };
 
     Movable.prototype.onMoved = function(params) {};
+
+    Movable.prototype.onAnimated = function(params) {};
+
+    Movable.prototype.onCollided = function(params) {};
+
+    Movable.prototype.onStopped = function(params) {};
 
     Object.defineProperties(Movable.prototype, {
         movesCount: {

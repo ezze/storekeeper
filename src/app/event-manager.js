@@ -54,6 +54,8 @@ define([
                 handlers[eventName].push(eventHandler);
             });
         });
+
+        return this;
     };
 
     EventManager.prototype.removeEventHandler = function(name, exactHandler) {
@@ -104,14 +106,16 @@ define([
                 });
             });
         });
+
+        return this;
     };
 
     EventManager.prototype.on = function(name, handler) {
-        this.addEventHandler(name, handler);
+        return this.addEventHandler(name, handler);
     };
 
     EventManager.prototype.off = function(name, handler) {
-        this.removeEventHandler(name, handler);
+        return this.removeEventHandler(name, handler);
     };
 
     EventManager.prototype.raiseEvent = function(name, params) {

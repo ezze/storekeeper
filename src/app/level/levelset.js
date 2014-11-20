@@ -5,12 +5,14 @@ define([
     'jquery',
     'lodash',
     './level',
+    './object/box',
     '../event-manager',
     '../exception'
 ], function(
     $,
     _,
     Level,
+    Box,
     EventManager,
     Exception
 ) {
@@ -35,8 +37,27 @@ define([
         }
         this._container = options.container;
 
-        this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
-        this._onLoad = _.isFunction(options.onLoad) ? options.onLoad : null;
+        this._eventManager = null;
+        if (options.eventManager instanceof EventManager) {
+            var eventManager = this._eventManager = options.eventManager;
+            eventManager.on([
+                Box.EVENT_MOVED_ON_GOAL
+            ], function(eventName, params) {
+                var level = params.box.level;
+                if (!level.isCompleted()) {
+                    return;
+                }
+
+                var onLevelCompletedParams = {
+                    levelSet: this,
+                    level: level,
+                    levelIndex: this.levelIndex
+                };
+
+                eventManager.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
+                this.onLevelCompleted(onLevelCompletedParams);
+            }.bind(this));
+        }
 
         this._name = '';
         this._description = '';
@@ -50,117 +71,141 @@ define([
 
     LevelSet.EVENT_LOADED = 'levelSet:loaded';
     LevelSet.EVENT_LEVEL_CHANGED = 'levelSet:levelChanged';
+    LevelSet.EVENT_LEVEL_COMPLETED = 'levelSet:levelCompleted';
+    LevelSet.EVENT_LEVEL_RESTARTED = 'levelSet:levelRestarted';
 
-    LevelSet.prototype = {
-        load: function() {
-            // TODO: handle error
+    LevelSet.prototype.load = function() {
+        // TODO: handle error
 
-            var url = this._source;
-            if (url.indexOf('?') === -1) {
-                url += '?';
-            }
-            else {
-                url += '&';
-            }
-            url += 'q=' + new Date().getTime();
-
-            $.ajax({
-                url: url,
-                success: function(data, textStatus, jqXHR) {
-                    this.parse(data);
-
-                    if (_.isFunction(this._onLoad)) {
-                        this._onLoad.call();
-                    }
-
-                    if (this.eventManager) {
-                        this.eventManager.raiseEvent(LevelSet.EVENT_LOADED, {
-                            source: this._source
-                        });
-                    }
-                }.bind(this)
-            });
-        },
-
-        parse: function(data) {
-            if (typeof data.name === 'string') {
-                this.name = data.name;
-            }
-
-            if (typeof data.description === 'string') {
-                this.description = data.description;
-            }
-
-            if (_.isArray(data.levels)) {
-                var jqContainer = $(this.container);
-
-                _.forEach(data.levels, function(levelData) {
-                    var level = new Level(_.merge({}, {
-                        eventManager: this.eventManager
-                    }, levelData));
-
-                    this.add(level);
-
-                    $(level.canvas)
-                        .attr('width', jqContainer.width())
-                        .attr('height', jqContainer.height());
-                    jqContainer.append(level.canvas);
-                }, this);
-            }
-        },
-
-        add: function(level) {
-            if (!(level instanceof Level)) {
-                throw new Exception('Level instance is expected.');
-            }
-
-            this._levels.push(level);
-        },
-
-        find: function(search) {
-            if (_.isNumber(search)) {
-                if (search % 1 !== 0) {
-                    throw new Exception('Level\'s index must be an integer.');
-                }
-
-                if (search < 0 || search >= this._levels.length) {
-                    throw new Exception('Level\'s index is out of bounds.');
-                }
-
-                return {
-                    index: search,
-                    level: this._levels[search]
-                };
-            }
-            else if (search instanceof Level) {
-                var index = _.findIndex(this._levels, search);
-                if (index === -1) {
-                    throw new Exception('Level is not found.');
-                }
-
-                return {
-                    index: index,
-                    level: search
-                };
-            }
-
-            throw new Exception('Level\'s search argument is invalid.');
-        },
-
-        remove: function(level) {
-            if (!(level instanceof Level)) {
-                // TODO: throw an exception
-                return;
-            }
-
-            var index = $.inArray(level, this._levels);
-            if (index === -1) {
-                // TODO: throw an exception
-                return;
-            }
-
-            this._level.splice(index, 1);
+        var url = this._source;
+        if (url.indexOf('?') === -1) {
+            url += '?';
         }
+        else {
+            url += '&';
+        }
+        url += 'q=' + new Date().getTime();
+
+        $.ajax({
+            url: url,
+            success: function(data, textStatus, jqXHR) {
+                this.parse(data);
+
+                var eventManager = this.eventManager;
+                if (eventManager instanceof EventManager) {
+                    eventManager.raiseEvent(LevelSet.EVENT_LOADED, {
+                        levelSet: this,
+                        source: this._source
+                    });
+                }
+            }.bind(this)
+        });
+    };
+
+    LevelSet.prototype.parse = function(data) {
+        if (typeof data.name === 'string') {
+            this.name = data.name;
+        }
+
+        if (typeof data.description === 'string') {
+            this.description = data.description;
+        }
+
+        if (_.isArray(data.levels)) {
+            var jqContainer = $(this.container);
+
+            _.forEach(data.levels, function(levelData) {
+                var level = new Level(_.merge({}, {
+                    eventManager: this.eventManager
+                }, levelData));
+
+                this.add(level);
+
+                $(level.canvas)
+                    .attr('width', jqContainer.width())
+                    .attr('height', jqContainer.height());
+                jqContainer.append(level.canvas);
+            }, this);
+        }
+    };
+
+    LevelSet.prototype.add = function(level) {
+        if (!(level instanceof Level)) {
+            throw new Exception('Level instance is expected.');
+        }
+
+        this._levels.push(level);
+    };
+
+    LevelSet.prototype.find = function(search) {
+        if (_.isNumber(search)) {
+            if (search % 1 !== 0) {
+                throw new Exception('Level\'s index must be an integer.');
+            }
+
+            if (search < 0 || search >= this._levels.length) {
+                throw new Exception('Level\'s index is out of bounds.');
+            }
+
+            return {
+                index: search,
+                level: this._levels[search]
+            };
+        }
+        else if (search instanceof Level) {
+            var index = _.findIndex(this._levels, search);
+            if (index === -1) {
+                throw new Exception('Level is not found.');
+            }
+
+            return {
+                index: index,
+                level: search
+            };
+        }
+
+        throw new Exception('Level\'s search argument is invalid.');
+    };
+
+    LevelSet.prototype.remove = function(level) {
+        if (!(level instanceof Level)) {
+            // TODO: throw an exception
+            return;
+        }
+
+        var index = _.inArray(level, this._levels);
+        if (index === -1) {
+            // TODO: throw an exception
+            return;
+        }
+
+        this._levels.splice(index, 1);
+    };
+
+    LevelSet.prototype.restart = function() {
+        this._level.reset();
+
+        var onLevelRestartedParams = {
+            levelSet: this,
+            level: this.level,
+            index: this.levelIndex
+        };
+
+        var eventManager = this.eventManager;
+        if (eventManager instanceof EventManager) {
+            eventManager.raiseEvent(LevelSet.EVENT_LEVEL_RESTARTED, onLevelRestartedParams);
+        }
+        this.onLevelRestarted(onLevelRestartedParams);
+    };
+
+    LevelSet.prototype.onLevelCompleted = function(params) {};
+
+    LevelSet.prototype.onLevelChanged = function(params) {};
+
+    LevelSet.prototype.onLevelRestarted = function(params) {};
+
+    LevelSet.prototype.destroy = function() {
+        // TODO: remove all event handlers registered in constructor
     };
 
     Object.defineProperties(LevelSet.prototype, {
@@ -207,13 +252,17 @@ define([
                     }
                 });
 
-                if (this.eventManager) {
-                    var onLevelChangedParams = {
-                        index: this._levelIndex,
-                        level: this._level
-                    };
-                    this.eventManager.raiseEvent(LevelSet.EVENT_LEVEL_CHANGED, onLevelChangedParams);
+                var onLevelChangedParams = {
+                    levelSet: this,
+                    level: this.level,
+                    index: this.levelIndex
+                };
+
+                var eventManager = this.eventManager;
+                if (eventManager instanceof EventManager) {
+                    eventManager.raiseEvent(LevelSet.EVENT_LEVEL_CHANGED, onLevelChangedParams);
                 }
+                this.onLevelChanged(onLevelChangedParams);
             }
         },
         levelIndex: {

@@ -2,12 +2,16 @@ define([
     'lodash',
     './goal',
     './movable',
-    './wall'
+    './wall',
+    '../direction',
+    '../../event-manager'
 ], function(
     _,
     Goal,
     Movable,
-    Wall
+    Wall,
+    Direction,
+    EventManager
 ) {
     'use strict';
 
@@ -19,8 +23,8 @@ define([
         this._sprite.gotoAndStop(isOnGoal ? 'boxOnGoal' : 'box');
     };
 
-    Box.EVENT_ON_GOAL = 'box:onGoal';
-    Box.EVENT_OFF_GOAL = 'box:offGoal';
+    Box.EVENT_MOVED_ON_GOAL = 'box:movedOnGoal';
+    Box.EVENT_MOVED_OUT_OF_GOAL = 'box:movedOutOfGoal';
 
     Box.prototype = Object.create(Movable.prototype);
 
@@ -50,38 +54,77 @@ define([
     };
 
     Box.prototype.onBeforeMoved = function(params) {
-        var isOffGoal = true;
+        var isOutOfGoal = false;
 
-        var targetObject = params.object.getMoveTargetObjects(params.direction);
-        _.forEach(targetObject, function(object) {
+        var sourceObjects = this.level.getObjects(this.row, this.column);
+        _.forEach(sourceObjects, function(object) {
             if (object instanceof Goal) {
-                isOffGoal = false;
+                // Box is on goal just before moving
+                isOutOfGoal = true;
                 return false;
             }
         });
 
-        if (isOffGoal) {
-            this._sprite.gotoAndStop('box');
+        if (isOutOfGoal) {
+            var targetObjects = this.getMoveTargetObjects(params.direction);
+            _.forEach(targetObjects, function(object) {
+                if (object instanceof Goal) {
+                    // Box will move on another goal
+                    isOutOfGoal = false;
+                    return false;
+                }
+            });
+        }
+
+        if (isOutOfGoal) {
+            this.sprite.gotoAndStop('box');
         }
 
         return Movable.prototype.onBeforeMoved.apply(this, arguments);
     };
 
     Box.prototype.onMoved = function(params) {
+        var isSourceGoal = false;
+        var isTargetGoal = false;
+
+        var sourceOjbects = this.getMoveTargetObjects(Direction.getCounterDirection(params.direction));
+        _.forEach(sourceOjbects, function(object) {
+            if (object instanceof Goal) {
+                // Box is moved from goal
+                isSourceGoal = true;
+                return false;
+            }
+        });
+
         var targetObjects = this.level.getObjects(this.row, this.column);
         _.forEach(targetObjects, function(object) {
             if (object instanceof Goal) {
-                this._sprite.gotoAndStop('boxOnGoal');
-
-                if (this.level.eventManager) {
-                    this.level.eventManager.raiseEvent(Box.EVENT_ON_GOAL, {
-                        box: this
-                    });
-                }
-
+                // Box is moved on goal
+                isTargetGoal = true;
                 return false;
             }
         }, this);
+
+        var eventManager = this.level.eventManager;
+
+        if (!isSourceGoal && isTargetGoal) {
+            this.sprite.gotoAndStop('boxOnGoal');
+
+            this.level.onBoxOnGoal();
+            if (eventManager instanceof EventManager) {
+                eventManager.raiseEvent(Box.EVENT_MOVED_ON_GOAL, {
+                    box: this
+                });
+            }
+        }
+        else if (isSourceGoal && !isTargetGoal) {
+            this.level.onBoxOutOfGoal();
+            if (eventManager instanceof EventManager) {
+                eventManager.raiseEvent(Box.EVENT_MOVED_OUT_OF_GOAL, {
+                    box: this
+                });
+            }
+        }
     };
 
     return Box;

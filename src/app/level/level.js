@@ -7,6 +7,7 @@ define([
     'lodash',
     './object/box',
     './object/goal',
+    './object/movable',
     './object/wall',
     './object/worker',
     '../event-manager',
@@ -17,6 +18,7 @@ define([
     _,
     Box,
     Goal,
+    Movable,
     Wall,
     Worker,
     EventManager,
@@ -43,12 +45,12 @@ define([
         this._rows = 0;
         this._columns = 0;
 
-        this.__isValidated = false;
-
         this._worker = null;
         this._walls = [];
         this._goals = [];
         this._boxes = [];
+
+        this._boxesOnGoalCount = 0;
 
         this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
 
@@ -75,18 +77,82 @@ define([
         this._walls = [];
         this._goals = [];
         this._boxes = [];
+        this._boxesOnGoalCount = 0;
 
         for (var row = 0; row < this._items.length; row += 1) {
             for (var column = 0; column < this._items[row].length; column += 1) {
-                this.createObject(this._items[row][column], row, column);
+                this.createObjectFromPosition(this._items[row][column], row, column);
             }
         }
-        if (this._boxes.length !== this._goals.length || !this._worker) {
+
+        if (this._boxes.length !== this._goals.length || !(this._worker instanceof Worker)) {
             throw new Exception('Incorrect ' + this._name + ' level');
         }
-        this._isValidated = true;
 
         this.addObjectsToStage();
+    };
+
+    Level.prototype.createObjectFromPosition = function(character, row, column) {
+        var options = {
+            level: this,
+            row: row,
+            column: column
+        };
+
+        switch (character) {
+            case '@':
+                this.createObject(new Worker(options));
+                break;
+            case '+':
+                this.createObject(new Goal(options));
+                this.createObject(new Worker(options));
+                break;
+            case '#':
+                this.createObject(new Wall(options));
+                break;
+            case '.':
+                this.createObject(new Goal(options));
+                break;
+            case '$':
+                this.createObject(new Box(_.merge({}, options, {
+                    onGoal: false
+                })));
+                break;
+            case '*':
+                this.createObject(new Goal(options));
+                this.createObject(new Box(_.merge({}, options, {
+                    onGoal: true
+                })));
+                this._boxesOnGoalCount += 1;
+                break;
+        }
+    };
+
+    Level.prototype.createObject = function(object) {
+        var row = object.row;
+        if (row + 1 > this._rows) {
+            this._rows = row + 1;
+        }
+
+        var column = object.column;
+        if (column + 1 > this._columns) {
+            this._columns = column + 1;
+        }
+
+        // TODO: check whether we can insert object on this position
+
+        if (object instanceof Worker) {
+            this._worker = object;
+        }
+        else if (object instanceof Wall) {
+            this._walls.push(object);
+        }
+        else if (object instanceof Goal) {
+            this._goals.push(object);
+        }
+        else if (object instanceof Box) {
+            this._boxes.push(object);
+        }
     };
 
     Level.prototype.addObjectsToStage = function() {
@@ -117,77 +183,6 @@ define([
         this._stage.removeAllChildren();
     };
 
-    Level.prototype.clone = function() {
-        return new Level({
-            eventManager: this.eventManager,
-            name: this.name,
-            description: this.description,
-            items: this._items
-        });
-    };
-
-    Level.prototype.createObject = function(character, row, column) {
-        var options = {
-            level: this,
-            row: row,
-            column: column
-        };
-
-        switch (character) {
-            case '@':
-                this.addObject(new Worker(options));
-                break;
-            case '+':
-                this.addObject(new Goal(options));
-                this.addObject(new Worker(options));
-                break;
-            case '#':
-                this.addObject(new Wall(options));
-                break;
-            case '.':
-                this.addObject(new Goal(options));
-                break;
-            case '$':
-                this.addObject(new Box(_.merge({}, options, {
-                    onGoal: false
-                })));
-                break;
-            case '*':
-                this.addObject(new Goal(options));
-                this.addObject(new Box(_.merge({}, options, {
-                    onGoal: true
-                })));
-                break;
-        }
-    };
-
-    Level.prototype.addObject = function(object) {
-        var row = object.row;
-        if (row + 1 > this._rows) {
-            this._rows = row + 1;
-        }
-
-        var column = object.column;
-        if (column + 1 > this._columns) {
-            this._columns = column + 1;
-        }
-
-        // TODO: check whether we can insert object on this position
-
-        if (object instanceof Worker) {
-            this._worker = object;
-        }
-        else if (object instanceof Wall) {
-            this._walls.push(object);
-        }
-        else if (object instanceof Goal) {
-            this._goals.push(object);
-        }
-        else if (object instanceof Box) {
-            this._boxes.push(object);
-        }
-    };
-
     Level.prototype.getObjects = function(row, column) {
         var objects = [];
 
@@ -214,6 +209,27 @@ define([
 
     Level.prototype.update = function() {
         this._stage.update();
+    };
+
+    Level.prototype.onBoxOnGoal = function() {
+        this._boxesOnGoalCount += 1;
+    };
+
+    Level.prototype.onBoxOutOfGoal = function() {
+        this._boxesOnGoalCount -= 1;
+    };
+
+    Level.prototype.isCompleted = function() {
+        return this.boxesOnGoalCount === this.boxesCount;
+    };
+
+    Level.prototype.clone = function() {
+        return new Level({
+            eventManager: this.eventManager,
+            name: this.name,
+            description: this.description,
+            items: this._items
+        });
     };
 
     Object.defineProperties(Level.prototype, {
@@ -274,6 +290,16 @@ define([
         boxes: {
             get: function() {
                 return this._boxes;
+            }
+        },
+        boxesCount: {
+            get: function() {
+                return this._boxes.length;
+            }
+        },
+        boxesOnGoalCount: {
+            get: function() {
+                return this._boxesOnGoalCount;
             }
         },
         walls: {

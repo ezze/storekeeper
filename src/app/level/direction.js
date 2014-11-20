@@ -37,5 +37,15 @@ define([
         ], direction);
     };
 
+    Direction.getCounterDirection = function(direction) {
+        switch (direction) {
+            case Direction.LEFT: return Direction.RIGHT;
+            case Direction.RIGHT: return Direction.LEFT;
+            case Direction.UP: return Direction.DOWN;
+            case Direction.DOWN: return Direction.UP;
+            default: return Direction.NONE;
+        }
+    };
+
     return Direction;
 });

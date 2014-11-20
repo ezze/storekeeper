@@ -17,7 +17,7 @@
 
     <body>
 
-        <div id="main-navbar" class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div id="header" class="navbar navbar-default navbar-fixed-top" role="navigation">
             <div class="container-fluid">
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-navbar .navbar-collapse">
@@ -67,7 +67,26 @@
             </div>
         </div>
 
-        <div class="game-field"></div>
+        <div id="game-field"></div>
+
+        <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
+            <div class="container-fluid">
+                <div class="navbar-nav">
+                    <div class="level navbar-text">
+                        Level: <span class="value">0</span>
+                    </div>
+                    <div class="boxes-count navbar-text">
+                        Boxes: <span class="value">0/0</span>
+                    </div>
+                    <div class="pushes-count navbar-text">
+                        Pushes: <span class="value">0</span>
+                    </div>
+                    <div class="moves-count navbar-text">
+                        Moves: <span class="value">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
 
 </html>

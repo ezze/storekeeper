@@ -14,7 +14,7 @@ require([
         $,
         Storekeeper
     ) {
-        var container = document.querySelector('.game-field');
+        var container = document.querySelector('#game-field');
         var jqContainer = $(container);
 
         new Storekeeper({
