@@ -92,6 +92,7 @@ define([
 
         $.ajax({
             url: url,
+            dataType: 'json',
             success: function(data, textStatus, jqXHR) {
                 this.parse(data);
 
