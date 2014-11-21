@@ -31,7 +31,7 @@ define([
     'use strict';
 
     /**
-     * Represents game's level.
+     * Represents game's level consisting [of scene objects]{@link module:SceneObject}.
      *
      * @param {Object} options
      * Object with the following properties:

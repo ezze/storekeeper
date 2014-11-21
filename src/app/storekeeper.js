@@ -305,6 +305,8 @@ define([
      *
      * @see module:Storekeeper#previousLevel
      * @see module:Storekeeper#nextLevel
+     * @see module:LevelSet#restart
+     * @see module:Level#reset
      */
     Storekeeper.prototype.restartLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
