@@ -163,6 +163,11 @@ define([
                 this.updateInfo({
                     movesCount: params.object.movesCount
                 });
+                this.levelSet.level.adjustCamera({
+                    cancel: false,
+                    smooth: true,
+                    delay: 50
+                });
             }
         }.bind(this));
 

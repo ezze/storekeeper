@@ -225,57 +225,111 @@ define([
             .attr('width', jqContainer.width())
             .attr('height', jqContainer.height());
 
-        this.adjustCamera(smooth);
+        this.adjustCamera({
+            smooth: smooth
+        });
     };
 
-    Level.prototype.adjustCamera = function(smooth) {
-        if (!_.isBoolean(smooth)) {
-            smooth = true;
+    Level.prototype.adjustCamera = function(options) {
+        var cancel = _.isBoolean(options.cancel) ? options.cancel : true;
+        if (!cancel && this._cameraTween) {
+            return;
         }
+
+        var smooth = _.isBoolean(options.smooth) ? options.smooth : true;
+        var delay = _.isNumber(options.delay) && options.delay % 1 === 0 ? options.delay : 500;
+        var duration = _.isNumber(options.duration) && options.duration % 1 === 0 ? options.duration: 300;
 
         var jqCanvas = $(this.canvas);
 
         var size = this.size;
 
-        var cameraOffsetLeft = Math.round((jqCanvas.width() - size.width) / 2);
-        var cameraOffsetTop = Math.round((jqCanvas.height() - size.height) / 2);
-
         // If the whole level can't be placed within the canvas
         // we will move the camera to grant worker is visible at each moment of time
-        if (cameraOffsetLeft < 0 || cameraOffsetTop < 0) {
-            var frames = SceneObject.spriteSheet.data.frames;
-            var workerWidth = frames.width;
-            var workerHeight = frames.height;
 
-            // Calculating top left point of the worker relative to the canvas
-            var workerCanvasX = this.worker.sprite.x + cameraOffsetLeft;
-            var workerCanvasY = this.worker.sprite.y + cameraOffsetTop;
+        var isWorkerInRectX = true;
+        var cameraOffsetLeft = Math.round((jqCanvas.width() - size.width) / 2);
+        if (size.width > jqCanvas.width()) {
+            var workerWidth = SceneObject.spriteSheet.data.frames.width;
+
+            // Calculating left point of the worker relative to the canvas
+            var workerCanvasX = this.worker.sprite.x + this.camera.x;
 
             // Checking whether worker is within visible rectangle
-            // that is twice smaller than the canvas and placed in the center of the canvas
-            var workerRectWidth = Math.round(jqCanvas.width() / 2);
-            var workerRectHeight = Math.round(jqCanvas.height() / 2);
+            // that is 5/8 of the canvas and placed in the center of the canvas
+            var workerRectCanvasLeft = Math.round(jqCanvas.width() * 3 / 16);
+            var workerRectCanvasRight = jqCanvas.width() - Math.round(jqCanvas.width() * 3 / 16);
 
-            var workerRectCanvasLeft = Math.round(jqCanvas.width() / 4);
-            var workerRectCanvasTop = Math.round(jqCanvas.height() / 4);
-
-            var isWorkerInRect =
-                workerCanvasX >= workerRectCanvasLeft &&
-                workerCanvasX + workerWidth <= workerRectCanvasLeft + workerRectWidth &&
-                workerCanvasY >= workerRectCanvasTop &&
-                workerCanvasY + workerHeight <= workerRectCanvasTop + workerRectHeight;
-
-            if (!isWorkerInRect) {
-                // We have to recalculate camera's position to place the worker in the center
-                var workerCanvasCenterX = Math.round((jqCanvas.width() - workerWidth) / 2);
-                var workerCanvasCenterY = Math.round((jqCanvas.height() - workerHeight) / 2);
-
-                var cameraShiftX = workerCanvasCenterX - workerCanvasX;
-                var cameraShiftY = workerCanvasCenterY - workerCanvasY;
-
-                cameraOffsetLeft += cameraShiftX;
-                cameraOffsetTop += cameraShiftY;
+            if (this.camera.x === jqCanvas.width() - size.width) {
+                workerRectCanvasRight = jqCanvas.width();
             }
+            else if (this.camera.x === 0) {
+                workerRectCanvasLeft = 0;
+            }
+
+            isWorkerInRectX = workerCanvasX >= workerRectCanvasLeft &&
+                workerCanvasX + workerWidth <= workerRectCanvasRight;
+
+            if (!isWorkerInRectX) {
+                // We have to recalculate camera's left position to place the worker in the center
+                var workerCanvasCenterX = Math.round((jqCanvas.width() - workerWidth) / 2);
+                cameraOffsetLeft = this.camera.x + workerCanvasCenterX - workerCanvasX;
+            }
+            else {
+                cameraOffsetLeft = this.camera.x;
+            }
+
+            if (cameraOffsetLeft > 0) {
+                cameraOffsetLeft = 0;
+            }
+            else if (cameraOffsetLeft < jqCanvas.width() - size.width) {
+                cameraOffsetLeft = jqCanvas.width() - size.width;
+            }
+        }
+
+        var isWorkerInRectY = true;
+        var cameraOffsetTop = Math.round((jqCanvas.height() - size.height) / 2);
+        if (size.height > jqCanvas.height()) {
+            var workerHeight = SceneObject.spriteSheet.data.frames.height;
+
+            // Calculating top point of the worker relative to the canvas
+            var workerCanvasY = this.worker.sprite.y + this.camera.y;
+
+            // Checking whether worker is within visible rectangle
+            // that is 5/8 of the canvas and placed in the center of the canvas
+            var workerRectCanvasTop = Math.round(jqCanvas.height() * 3 / 16);
+            var workerRectCanvasBottom = jqCanvas.height() - Math.round(jqCanvas.height() * 3 / 16);
+
+            if (this.camera.y === jqCanvas.height() - size.height) {
+                workerRectCanvasBottom = jqCanvas.height();
+            }
+            else if (this.camera.y === 0) {
+                workerRectCanvasTop = 0;
+            }
+
+            isWorkerInRectY = workerCanvasY >= workerRectCanvasTop &&
+                workerCanvasY + workerHeight <= workerRectCanvasBottom;
+
+            if (!isWorkerInRectY) {
+                // We have to recalculate camera's top position to place the worker in the center
+                var workerCanvasCenterY = Math.round((jqCanvas.height() - workerHeight) / 2);
+                cameraOffsetTop = this.camera.y + workerCanvasCenterY - workerCanvasY;
+            }
+            else {
+                cameraOffsetTop = this.camera.y;
+            }
+
+            if (cameraOffsetTop > 0) {
+                cameraOffsetTop = 0;
+            }
+            else if (cameraOffsetTop < jqCanvas.height() - size.height) {
+                cameraOffsetTop = jqCanvas.height() - size.height;
+            }
+        }
+
+        // Checking whether camera's calculated position differs from the current one
+        if (this.camera.x === cameraOffsetLeft && this.camera.y === cameraOffsetTop) {
+            return;
         }
 
         if (!smooth) {
@@ -284,18 +338,20 @@ define([
             return;
         }
 
-        Tween.Tween.get(this.camera, {
+        this._cameraTween = Tween.Tween.get(this.camera, {
             override: true
         })
-        .wait(500)
+        .wait(delay)
         .to({
             x: cameraOffsetLeft,
             y: cameraOffsetTop
-        }, 500, Tween.Ease.quadIn)
+        }, duration, Tween.Ease.quadIn)
         .call(this.onCameraAdjusted.bind(this));
     };
 
-    Level.prototype.onCameraAdjusted = function() {};
+    Level.prototype.onCameraAdjusted = function() {
+        this._cameraTween = null;
+    };
 
     Level.prototype.onBoxOnGoal = function() {
         this._boxesOnGoalCount += 1;
