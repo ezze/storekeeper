@@ -34,6 +34,10 @@ module.exports = function(grunt) {
         'build'
     ]);
 
+    grunt.registerTask('refdoc', [
+        'jsdoc:reference'
+    ]);
+
     grunt.registerTask('default', [
         'build'
     ]);
