@@ -15,7 +15,7 @@ define([
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
      * @alias module:Direction
-     * @type {Object}
+     * @namespace
      */
     var Direction = {
         /**
