@@ -1,3 +1,6 @@
+/**
+ * @module Direction
+ */
 define([
     'lodash'
 ], function(
@@ -5,14 +8,57 @@ define([
 ) {
     'use strict';
 
+    /**
+     * Object defining [worker]{@link module:Worker}'s possible move directions
+     * and containing few static methods to validate them.
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.0
+     * @alias module:Direction
+     * @type {Object}
+     */
     var Direction = {
+        /**
+         * Means that no direction is set.
+         *
+         * @type {String}
+         */
         NONE: 'none',
+
+        /**
+         * Represents direction to the left.
+         *
+         * @type {String}
+         */
         LEFT: 'left',
+
+        /**
+         * Represents direction to the right.
+         */
         RIGHT: 'right',
+
+        /**
+         * Represents direction to the up.
+         */
         UP: 'up',
+
+        /**
+         * Represents direction to the down.
+         */
         DOWN: 'down'
     };
 
+    /**
+     * Checks whether a given value is a valid direction.
+     *
+     * @param {String} direction
+     * Value to test.
+     *
+     * @returns {Boolean}
+     *
+     * @see module:Direction.isValidHorizontal
+     * @see module:Direction.isValidVertical
+     */
     Direction.isValid = function(direction) {
         return _.contains([
             Direction.NONE,
@@ -23,6 +69,17 @@ define([
         ], direction);
     };
 
+    /**
+     * Checks whether a given value is a valid horizontal direction.
+     *
+     * @param {String} direction
+     * Value to test.
+     *
+     * @returns {Boolean}
+     *
+     * @see module:Direction.isValid
+     * @see module:Direction.isValidVertical
+     */
     Direction.isValidHorizontal = function(direction) {
         return _.contains([
             Direction.LEFT,
@@ -30,6 +87,17 @@ define([
         ], direction);
     };
 
+    /**
+     * Checks whether a given value is a valid vertical direction.
+     *
+     * @param {String} direction
+     * Value to test.
+     *
+     * @returns {Boolean}
+     *
+     * @see module:Direction.isValid
+     * @see module:Direction.isValidHorizontal
+     */
     Direction.isValidVertical = function(direction) {
         return _.contains([
             Direction.UP,
@@ -37,6 +105,14 @@ define([
         ], direction);
     };
 
+    /**
+     * Gets a direction counter to a given one.
+     *
+     * @param {String} direction
+     * Direction to get counter direction for.
+     *
+     * @returns {String}
+     */
     Direction.getCounterDirection = function(direction) {
         switch (direction) {
             case Direction.LEFT: return Direction.RIGHT;
