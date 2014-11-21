@@ -19,7 +19,19 @@ define([
     'use strict';
 
     /**
+     * Represents box' scene object.
+     *
      * @param {Object} options
+     * Object with the following properties:
+     *
+     * @param {module:Level} options.level
+     * Level the box will be added to.
+     *
+     * @param {Number} options.row
+     * Zero-based row of the level the box will be placed in.
+     *
+     * @param {Number} options.column
+     * Zero-based column of the level the box will be placed in.
      *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
@@ -35,7 +47,22 @@ define([
         this._sprite.gotoAndStop(isOnGoal ? 'boxOnGoal' : 'box');
     };
 
+    /**
+     * Name of an event raised when box is moved on goal.
+     *
+     * @type {String}
+     *
+     * @see module:Box#onMoved
+     */
     Box.EVENT_MOVED_ON_GOAL = 'box:movedOnGoal';
+
+    /**
+     * Name of an event raised when box is moved out of goal.
+     *
+     * @type {String}
+     *
+     * @see module:Box#onBeforeMoved
+     */
     Box.EVENT_MOVED_OUT_OF_GOAL = 'box:movedOutOfGoal';
 
     Box.prototype = Object.create(Movable.prototype);
