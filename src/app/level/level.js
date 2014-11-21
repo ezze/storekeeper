@@ -365,6 +365,14 @@ define([
         return this.boxesOnGoalCount === this.boxesCount;
     };
 
+    Level.prototype.enableTouch = function() {
+        Easel.Touch.enable(this._stage);
+    };
+
+    Level.prototype.disableTouch = function() {
+        Easel.Touch.disable(this._stage);
+    };
+
     Level.prototype.clone = function() {
         return new Level({
             eventManager: this.eventManager,

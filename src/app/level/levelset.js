@@ -246,8 +246,16 @@ define([
             },
             set: function(source) {
                 var result = this.find(source);
+
+                if (this._level instanceof Level) {
+                    this._level.disableTouch();
+                }
+
                 this._levelIndex = result.index;
                 this._level = result.level;
+
+                this._level.enableTouch();
+
                 $(this.container).children('canvas').each(function(index) {
                     if (index === result.index) {
                         $(this).css('display', 'block');

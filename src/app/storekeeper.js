@@ -220,43 +220,24 @@ define([
             }
         }.bind(this));
 
-        var touchDirectionPixels = 30;
-        var touchX = null;
-        var touchY = null;
-
-        $(window).on('mousedown', function(event) {
-            if (event.target.tagName.toLowerCase() !== 'canvas') {
-                return;
-            }
-            touchX = event.clientX;
-            touchY = event.clientY;
-        }.bind(this));
-
-        $(window).on('mousemove', function(event) {
-            if (touchX === null || touchY === null || this._moveDirection !== Direction.NONE) {
+        $(window).on('touchstart', function(event) {
+            if (!(event.target instanceof HTMLCanvasElement)) {
                 return;
             }
 
-            var newTouchX = event.clientX;
-            var newTouchY = event.clientY;
+            var canvas = event.target;
+            var jqCanvas = $(canvas);
 
-            if (newTouchX - touchX > touchDirectionPixels) {
-                this._moveDirection = Direction.RIGHT;
-            }
-            else if (touchX - newTouchX > touchDirectionPixels) {
-                this._moveDirection = Direction.LEFT;
-            }
-            else if (newTouchY - touchY > touchDirectionPixels) {
-                this._moveDirection = Direction.DOWN;
-            }
-            else if (touchY - newTouchY > touchDirectionPixels) {
-                this._moveDirection = Direction.UP;
-            }
+            var originalEvent = event.originalEvent;
+            var touch = originalEvent.touches.item(0);
+
+            var touchCanvasX = touch.clientX - jqCanvas.offset().left;
+            var touchCanvasY = touch.clientY - jqCanvas.offset().top;
+
+            this._moveDirection = Storekeeper.getDirectionByTouchPoint(canvas, touchCanvasX, touchCanvasY);
         }.bind(this));
 
-        $(window).on('mouseup', function(event) {
-            touchX = null;
-            touchY = null;
+        $(window).on('touchend', function(event) {
             this._moveDirection = Direction.NONE;
         }.bind(this));
     };
@@ -269,6 +250,32 @@ define([
             case 40: case 83: return Direction.DOWN;        // arrow down or S
             default: return Direction.NONE;
         }
+    };
+
+    Storekeeper.getDirectionByTouchPoint = function(target, x, y) {
+        var jqTarget = $(target);
+        var targetWidth = jqTarget.width();
+        var targetHeight = jqTarget.height();
+
+        var targetRatio = targetHeight / targetWidth;
+
+        if (y < targetRatio * x && y < targetHeight - targetRatio * x) {
+            return Direction.UP;
+        }
+
+        if (y > targetRatio * x && y > targetHeight - targetRatio * x) {
+            return Direction.DOWN;
+        }
+
+        if (y > targetRatio * x && y < targetHeight - targetRatio * x) {
+            return Direction.LEFT;
+        }
+
+        if (y < targetRatio * x && y > targetHeight - targetRatio * x) {
+            return Direction.RIGHT;
+        }
+
+        return Direction.NONE;
     };
 
     Storekeeper.prototype.initTicker = function() {
