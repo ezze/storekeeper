@@ -185,40 +185,80 @@ define([
     Storekeeper.prototype.initUserControls = function() {
         this._moveDirection = Direction.NONE;
 
-        $(window)
-            .on('keydown', function(event) {
-                if (event.ctrlKey && event.altKey && event.which === 82) {
-                    // Ctrl + Alt + R
-                    this.restartLevel();
-                    return;
-                }
+        $(window).on('keydown', function(event) {
+            if (event.ctrlKey && event.altKey && event.which === 82) {
+                // Ctrl + Alt + R
+                this.restartLevel();
+                return;
+            }
 
-                if (event.altKey && event.which === 90) {
-                    // Alt + Z
-                    this.previousLevel();
-                    return;
-                }
+            if (event.altKey && event.which === 90) {
+                // Alt + Z
+                this.previousLevel();
+                return;
+            }
 
-                if (event.altKey && event.which === 88) {
-                    // Alt + X
-                    this.nextLevel();
-                    return;
-                }
+            if (event.altKey && event.which === 88) {
+                // Alt + X
+                this.nextLevel();
+                return;
+            }
 
-                var direction = Storekeeper.getDirectionByKeyCode(event.which);
-                if (direction === Direction.NONE) {
-                    return;
-                }
+            var direction = Storekeeper.getDirectionByKeyCode(event.which);
+            if (direction === Direction.NONE) {
+                return;
+            }
 
-                event.preventDefault();
-                this._moveDirection = direction;
-            }.bind(this))
-            .on('keyup', function(event) {
-                var direction = Storekeeper.getDirectionByKeyCode(event.which);
-                if (direction === this._moveDirection) {
-                    this._moveDirection = Direction.NONE;
-                }
-            }.bind(this));
+            event.preventDefault();
+            this._moveDirection = direction;
+        }.bind(this));
+
+        $(window).on('keyup', function(event) {
+            var direction = Storekeeper.getDirectionByKeyCode(event.which);
+            if (direction === this._moveDirection) {
+                this._moveDirection = Direction.NONE;
+            }
+        }.bind(this));
+
+        var touchDirectionPixels = 30;
+        var touchX = null;
+        var touchY = null;
+
+        $(window).on('mousedown', function(event) {
+            if (event.target.tagName.toLowerCase() !== 'canvas') {
+                return;
+            }
+            touchX = event.clientX;
+            touchY = event.clientY;
+        }.bind(this));
+
+        $(window).on('mousemove', function(event) {
+            if (touchX === null || touchY === null || this._moveDirection !== Direction.NONE) {
+                return;
+            }
+
+            var newTouchX = event.clientX;
+            var newTouchY = event.clientY;
+
+            if (newTouchX - touchX > touchDirectionPixels) {
+                this._moveDirection = Direction.RIGHT;
+            }
+            else if (touchX - newTouchX > touchDirectionPixels) {
+                this._moveDirection = Direction.LEFT;
+            }
+            else if (newTouchY - touchY > touchDirectionPixels) {
+                this._moveDirection = Direction.DOWN;
+            }
+            else if (touchY - newTouchY > touchDirectionPixels) {
+                this._moveDirection = Direction.UP;
+            }
+        }.bind(this));
+
+        $(window).on('mouseup', function(event) {
+            touchX = null;
+            touchY = null;
+            this._moveDirection = Direction.NONE;
+        }.bind(this));
     };
 
     Storekeeper.getDirectionByKeyCode = function(code) {
