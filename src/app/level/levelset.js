@@ -19,7 +19,7 @@ define([
     'use strict';
 
     /**
-     * @param options
+     * @param {Object} options
      *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0

@@ -19,7 +19,7 @@ define([
     /**
      * Represents a movable object of a level.
      *
-     * @author Dmitriy Pushkov
+     * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
      * @alias module:Movable
      * @class

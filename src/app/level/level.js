@@ -31,7 +31,29 @@ define([
     'use strict';
 
     /**
+     * Represents game's level.
+     *
      * @param {Object} options
+     * Object with the following properties:
+     *
+     * @param {module:EventManager} [options.eventManager]
+     * Instance of event manager.
+     *
+     * @param {String} [options.name]
+     * Level's name.
+     *
+     * @param {String} [options.description]
+     * Level's description.
+     *
+     * @param {Array} [options.items]
+     * Array of level's rows defined as strings consisting of special characters:
+     * <ul>
+     * <li><code>@</code> &ndash; {@link module:Worker};</li>
+     * <li><code>#</code> &ndash; {@link module:Wall};</li>
+     * <li><code>.</code> &ndash; {@link module:Goal};</li>
+     * <li><code>$</code> &ndash; {@link module:Box};</li>
+     * <li><code>*</code> &ndash; box on goal.</li>
+     * </ul>
      *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
@@ -77,6 +99,14 @@ define([
         this.reset();
     };
 
+    /**
+     * Resets level's objects to their initial state and adds them to the stage.
+     *
+     * <p>This method can be used to restart the level.</p>
+     *
+     * @see module:Level#addObjectsToStage
+     * @see module:Level#removeObjectsFromStage
+     */
     Level.prototype.reset = function() {
         this.removeObjectsFromStage();
 
@@ -88,7 +118,7 @@ define([
 
         for (var row = 0; row < this._items.length; row += 1) {
             for (var column = 0; column < this._items[row].length; column += 1) {
-                this.createObjectFromPosition(this._items[row][column], row, column);
+                this.createObject(this._items[row][column], row, column);
             }
         }
 
@@ -99,7 +129,29 @@ define([
         this.addObjectsToStage();
     };
 
-    Level.prototype.createObjectFromPosition = function(character, row, column) {
+    /**
+     * Creates an instance of scene object from its character and desired position
+     * and adds it to level's scene objects.
+     *
+     * @param {String} character
+     * Character representing the object being created, one of the following values:
+     * <ul>
+     * <li><code>@</code> &ndash; {@link module:Worker};</li>
+     * <li><code>#</code> &ndash; {@link module:Wall};</li>
+     * <li><code>.</code> &ndash; {@link module:Goal};</li>
+     * <li><code>$</code> &ndash; {@link module:Box};</li>
+     * <li><code>*</code> &ndash; box on goal.</li>
+     * </ul>
+     *
+     * @param {Number} row
+     * Zero-based initial row of the object.
+     *
+     * @param {Number} column
+     * Zero-based initial column of the object.
+     *
+     * @see module:Level#addObject
+     */
+    Level.prototype.createObject = function(character, row, column) {
         var options = {
             level: this,
             row: row,
@@ -108,26 +160,26 @@ define([
 
         switch (character) {
             case '@':
-                this.createObject(new Worker(options));
+                this.addObject(new Worker(options));
                 break;
             case '+':
-                this.createObject(new Goal(options));
-                this.createObject(new Worker(options));
+                this.addObject(new Goal(options));
+                this.addObject(new Worker(options));
                 break;
             case '#':
-                this.createObject(new Wall(options));
+                this.addObject(new Wall(options));
                 break;
             case '.':
-                this.createObject(new Goal(options));
+                this.addObject(new Goal(options));
                 break;
             case '$':
-                this.createObject(new Box(_.merge({}, options, {
+                this.addObject(new Box(_.merge({}, options, {
                     onGoal: false
                 })));
                 break;
             case '*':
-                this.createObject(new Goal(options));
-                this.createObject(new Box(_.merge({}, options, {
+                this.addObject(new Goal(options));
+                this.addObject(new Box(_.merge({}, options, {
                     onGoal: true
                 })));
                 this._boxesOnGoalCount += 1;
@@ -135,7 +187,17 @@ define([
         }
     };
 
-    Level.prototype.createObject = function(object) {
+    /**
+     * Adds a given scene object to level's scene objects.
+     *
+     * @protected
+     *
+     * @param {module:SceneObject} object
+     * Scene object to add.
+     *
+     * @see module:Level#createObject
+     */
+    Level.prototype.addObject = function(object) {
         var row = object.row;
         if (row + 1 > this._rows) {
             this._rows = row + 1;
@@ -162,6 +224,14 @@ define([
         }
     };
 
+    /**
+     * Makes all scene objects added by {@link module:Level#addObject} method visible on the stage.
+     *
+     * @protected
+     *
+     * @see module:Level#addObjectToStage
+     * @see module:Level#reset
+     */
     Level.prototype.addObjectsToStage = function() {
         _.forEach(this._walls, function(wall) {
             this.addObjectToStage(wall);
@@ -178,6 +248,16 @@ define([
         this.addObjectToStage(this._worker);
     };
 
+    /**
+     * Makes a given scene object of level visible on the stage.
+     *
+     * @protected
+     *
+     * @param {module:SceneObject} object
+     *
+     * @see module:Level#addObjectsToStage
+     * @see module:Level#reset
+     */
     Level.prototype.addObjectToStage = function(object) {
         var sprite = object.sprite;
         if (this._camera.contains(sprite)) {
@@ -186,10 +266,26 @@ define([
         this._camera.addChild(sprite);
     };
 
+    /**
+     * Makes all scene objects added by {@link module:Level#addObject} method unvisible on the stage.
+     *
+     * @protected
+     */
     Level.prototype.removeObjectsFromStage = function() {
         this._camera.removeAllChildren();
     };
 
+    /**
+     * Gets instances of all level's scene objects located in a given position.
+     *
+     * @param {Number} row
+     * Zero-based row.
+     *
+     * @param {Number} column
+     * Zero-based column.
+     *
+     * @returns {Array}
+     */
     Level.prototype.getObjects = function(row, column) {
         var objects = [];
 
@@ -214,10 +310,24 @@ define([
         return objects;
     };
 
+    /**
+     * Redraws level's stage.
+     */
     Level.prototype.update = function() {
         this._stage.update();
     };
 
+    /**
+     * Resizes level's canvas so that it fits its container and adjusts camera's position.
+     *
+     * <p>This method should be called each time then canvas' container is resized.</p>
+     *
+     * @param {Boolean} [smooth=true]
+     * Specifies whether camera's adjustment should be smooth. If it's set to <code>false</code>
+     * then camera's position will be changed immediately after the resize.
+     *
+     * @see module:Level#adjustCamera
+     */
     Level.prototype.resize = function(smooth) {
         var jqContainer = $(this.canvas).parent();
 
@@ -230,6 +340,32 @@ define([
         });
     };
 
+    /**
+     * Adjusts camera's position to make worker visible and best fit to current canvas' dimensions.
+     *
+     * @param {Object} options
+     * Object of the following properties influencing the way of position's adjustment:
+     *
+     * @param {Boolean} [options.cancel=true]
+     * Specifies whether previously scheduled adjustment can be cancelled to start the new one.
+     * If it's set to <code>false</code> and another adjustment is scheduled or in progress then
+     * this method will do nothing.
+     *
+     * @param {Boolean} [options.smooth=true]
+     * Specifies whether changing of camera's position should be smooth. If it's set to <code>false</code>
+     * then camera's position will be changed immediately.
+     *
+     * @param {Number} [options.delay=500]
+     * Delay of camera's movement measured in milliseconds. This will make sense only if <code>smooth</code> is
+     * set to <code>true</code>.
+     *
+     * @param {Number} [options.duration=300]
+     * Duration of camera's movement measured in milliseconds. This will make sense only if <code>smooth</code>
+     * is set to <code>true</code>.
+     *
+     * @see module:Level#resize
+     * @see module:Level#onCameraMoved
+     */
     Level.prototype.adjustCamera = function(options) {
         var cancel = _.isBoolean(options.cancel) ? options.cancel : true;
         if (!cancel && this._cameraTween) {
@@ -346,48 +482,105 @@ define([
             x: cameraOffsetLeft,
             y: cameraOffsetTop
         }, duration, Tween.Ease.quadIn)
-        .call(this.onCameraAdjusted.bind(this));
+        .call(this.onCameraMoved.bind(this));
     };
 
-    Level.prototype.onCameraAdjusted = function() {
+    /**
+     * Method that will be called at the end of each smooth movement of the camera
+     * caused by {@link module:Level#adjustCamera} method.
+     *
+     * <p>It signals that there is no active movements of the camera
+     * for further {@link module:Level#adjustCamera} method's calls.</p>
+     *
+     * @protected
+     *
+     * @see module:Level#adjustCamera
+     */
+    Level.prototype.onCameraMoved = function() {
         this._cameraTween = null;
     };
 
+    /**
+     * This method should be called each time when a box is moved on a goal
+     * from a non-goal location.
+     *
+     * <p>It increases a number of boxes located on goals that used to detect
+     * level's completion by {@link module:Level#isCompleted} method.</p>
+     *
+     * @see module:Level#onBoxOutOfGoal
+     * @see module:Level#isCompleted
+     */
     Level.prototype.onBoxOnGoal = function() {
         this._boxesOnGoalCount += 1;
     };
 
+    /**
+     * This method should be called each time when a box is moved out of a goal
+     * to a non-goal location.
+     *
+     * <p>It decreases a number of boxes located on goals that used to detect
+     * level's completion by {@link module:Level#isCompleted} method.</p>
+     *
+     * @see module:Level#onBoxOnGoal
+     * @see module:Level#isCompleted
+     */
     Level.prototype.onBoxOutOfGoal = function() {
         this._boxesOnGoalCount -= 1;
     };
 
+    /**
+     * Tests whether all boxes are on goals and level is completed.
+     *
+     * @returns {Boolean}
+     *
+     * @see module:Level#onBoxOnGoal
+     * @see module:Level#onBoxOutOfGoal
+     */
     Level.prototype.isCompleted = function() {
         return this.boxesOnGoalCount === this.boxesCount;
     };
 
+    /**
+     * Enables raising touch events on level's canvas.
+     *
+     * @see module:Level#disableTouch
+     * @see http://www.createjs.com/Docs/EaselJS/classes/Touch.html
+     */
     Level.prototype.enableTouch = function() {
         Easel.Touch.enable(this._stage);
     };
 
+    /**
+     * Disables raising touch events on level's canvas.
+     *
+     * <p>This method must be called when level becomes inactive
+     * and if raising touch events was enabled before by {@link module:Level#enableTouch} method.</p>
+     *
+     * @see module:Level#enableTouch
+     * @see http://www.createjs.com/Docs/EaselJS/classes/Touch.html
+     */
     Level.prototype.disableTouch = function() {
         Easel.Touch.disable(this._stage);
     };
 
-    Level.prototype.clone = function() {
-        return new Level({
-            eventManager: this.eventManager,
-            name: this.name,
-            description: this.description,
-            items: this._items
-        });
-    };
-
     Object.defineProperties(Level.prototype, {
+        /**
+         * Gets instance of event manager.
+         *
+         * @type {module:EventManager}
+         * @memberof module:Level.prototype
+         */
         eventManager: {
             get: function() {
                 return this._eventManager;
             }
         },
+        /**
+         * Gets or sets level's name.
+         *
+         * @type {String}
+         * @memberof module:Level.prototype
+         */
         name: {
             get: function() {
                 return this._name;
@@ -396,6 +589,12 @@ define([
                 this._name = name;
             }
         },
+        /**
+         * Gets or sets level's description.
+         *
+         * @type {String}
+         * @memberof module:Level.prototype
+         */
         description: {
             get: function() {
                 return this._description;
@@ -404,21 +603,58 @@ define([
                 this._description = description;
             }
         },
+        /**
+         * Gets level's HTML canvas.
+         *
+         * @type {HTMLCanvasElement}
+         * @memberof module:Level.prototype
+         */
         canvas: {
             get: function() {
                 return this._canvas;
             }
         },
+        /**
+         * Gets level's stage.
+         *
+         * @type {Object}
+         * @memberof module:Level.prototype
+         * @see http://www.createjs.com/Docs/EaselJS/classes/Stage.html
+         */
         stage: {
             get: function() {
                 return this._stage;
             }
         },
+        /**
+         * Gets level's camera.
+         *
+         * @type {Object}
+         * @memberof module:Level.prototype
+         * @see http://www.createjs.com/Docs/EaselJS/classes/Container.html
+         */
         camera: {
             get: function() {
                 return this._camera;
             }
         },
+        /**
+         * Gets level's dimensions as an object consisting of the following properties:
+         *
+         * <ul>
+         * <li><code>rows</code> - rows' count;</li>
+         * <li><code>columns</code> - columns' count;</li>
+         * <li><code>width</code> - width in pixels;</li>
+         * <li><code>height</code> - height in pixels;</li>
+         * <li><code>objectWidth</code> - width of a single scene object in pixels;</li>
+         * <li><code>objectHeight</code> - height of a single scene object in pixels.</li>
+         * </ul>
+         *
+         * @type {Object}
+         * @memberof module:Level.prototype
+         * @see module:Level#rows
+         * @see module:Level#columns
+         */
         size: {
             get: function() {
                 var frames = SceneObject.spriteSheet.data.frames;
@@ -432,41 +668,99 @@ define([
                 };
             }
         },
+        /**
+         * Gets rows' count.
+         *
+         * @type {Number}
+         * @memberof module:Level.prototype
+         * @see module:Level#size
+         * @see module:Level#columns
+         */
         rows: {
             get: function() {
                 return this._rows;
             }
         },
+        /**
+         * Gets columns' count.
+         *
+         * @type {Number}
+         * @memberof module:Level.prototype
+         * @see module:Level#size
+         * @see module:Level#rows
+         */
         columns: {
             get: function() {
                 return this._columns;
             }
         },
+        /**
+         * Gets worker's instance.
+         *
+         * @type {module:Worker}
+         * @memberof module:Level.prototype
+         */
         worker: {
             get: function() {
                 return this._worker;
             }
         },
+        /**
+         * Gets array of level's [boxes]{@link module:Box}.
+         *
+         * @type {Array}
+         * @memberof module:Level.prototype
+         * @see module:Level#boxesCount
+         * @see module:Level#boxesOnGoalCount
+         */
         boxes: {
             get: function() {
                 return this._boxes;
             }
         },
+        /**
+         * Gets overall count of level's boxes.
+         *
+         * @type {Number}
+         * @memberof module:Level.prototype
+         * @see module:Level#boxes
+         * @see module:Level#boxesOnGoalCount
+         */
         boxesCount: {
             get: function() {
                 return this._boxes.length;
             }
         },
+        /**
+         * Gets count of level's boxes located on goals.
+         *
+         * @type {Number}
+         * @memberof module:Level.prototype
+         * @see module:Level#boxes
+         * @see module:Level#boxesCount
+         */
         boxesOnGoalCount: {
             get: function() {
                 return this._boxesOnGoalCount;
             }
         },
+        /**
+         * Gets array of level's [walls]{@link module:Wall}.
+         *
+         * @type {Array}
+         * @memberof module:Level.prototype
+         */
         walls: {
             get: function() {
                 return this._walls;
             }
         },
+        /**
+         * Gets array of level's [goals]{@link module:Goal}.
+         *
+         * @type {Array}
+         * @memberof module:Level.prototype
+         */
         goals: {
             get: function() {
                 return this._goals;

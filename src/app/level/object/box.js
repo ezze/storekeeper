@@ -1,3 +1,6 @@
+/**
+ * @module Box
+ */
 define([
     'lodash',
     './goal',
@@ -15,6 +18,15 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.0
+     * @alias module:Box
+     * @class
+     * @augments module:Movable
+     */
     var Box = function(options) {
         Movable.apply(this, arguments);
         this._name = 'Box';

@@ -1,3 +1,6 @@
+/**
+ * @module Worker
+ */
 define([
     'lodash',
     './box',
@@ -16,6 +19,15 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.0
+     * @alias module:Worker
+     * @class
+     * @augments module:Movable
+     */
     var Worker = function(options) {
         Movable.apply(this, arguments);
         this._name = 'Worker';

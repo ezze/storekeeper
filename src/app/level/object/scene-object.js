@@ -1,3 +1,6 @@
+/**
+ * @module SceneObject
+ */
 define([
     'require',
     'easel',
@@ -15,6 +18,14 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.0
+     * @alias module:SceneObject
+     * @class
+     */
     var SceneObject = function(options) {
         if (!options.level instanceof require('../level')) {
             throw new Exception('Level is invalid or not specified.');
