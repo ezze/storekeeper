@@ -9,6 +9,7 @@ define([
     './event-manager',
     './exception',
     './level/direction',
+    './level/level',
     './level/levelset',
     './level/object/box',
     './level/object/movable',
@@ -21,6 +22,7 @@ define([
     EventManager,
     Exception,
     Direction,
+    Level,
     LevelSet,
     Box,
     Movable,
@@ -65,10 +67,15 @@ define([
             this._container = jqContainer.get(0);
 
             this.init();
-            this.loadLevelSet(options.levelSetSource, this.container);
+            this.loadLevelSet(options.levelSetSource);
         }.bind(this));
     };
 
+    /**
+     * Initializes the game.
+     *
+     * @protected
+     */
     Storekeeper.prototype.init = function() {
         this.initNavbar();
         this.initEvents();
@@ -76,6 +83,11 @@ define([
         this.initTicker();
     };
 
+    /**
+     * Initializes controls of navigation bar.
+     *
+     * @protected
+     */
     Storekeeper.prototype.initNavbar = function() {
         $(document).ready(function() {
             $('#header')
@@ -103,6 +115,11 @@ define([
         }.bind(this));
     };
 
+    /**
+     * Initializes events' handlers.
+     *
+     * @protected
+     */
     Storekeeper.prototype.initEvents = function() {
         var eventManager = this._eventManager = new EventManager();
 
@@ -182,6 +199,11 @@ define([
         });
     };
 
+    /**
+     * Initializes user's controls.
+     *
+     * @protected
+     */
     Storekeeper.prototype.initUserControls = function() {
         this._moveDirection = Direction.NONE;
 
@@ -242,68 +264,63 @@ define([
         }.bind(this));
     };
 
-    Storekeeper.getDirectionByKeyCode = function(code) {
-        switch (code) {
-            case 37: case 65: return Direction.LEFT;        // arrow left or A
-            case 38: case 87: return Direction.UP;          // arrow up or W
-            case 39: case 68: return Direction.RIGHT;       // arrow right or D
-            case 40: case 83: return Direction.DOWN;        // arrow down or S
-            default: return Direction.NONE;
-        }
-    };
-
-    Storekeeper.getDirectionByTouchPoint = function(target, x, y) {
-        var jqTarget = $(target);
-        var targetWidth = jqTarget.width();
-        var targetHeight = jqTarget.height();
-
-        var targetRatio = targetHeight / targetWidth;
-
-        if (y < targetRatio * x && y < targetHeight - targetRatio * x) {
-            return Direction.UP;
-        }
-
-        if (y > targetRatio * x && y > targetHeight - targetRatio * x) {
-            return Direction.DOWN;
-        }
-
-        if (y > targetRatio * x && y < targetHeight - targetRatio * x) {
-            return Direction.LEFT;
-        }
-
-        if (y < targetRatio * x && y > targetHeight - targetRatio * x) {
-            return Direction.RIGHT;
-        }
-
-        return Direction.NONE;
-    };
-
+    /**
+     * Initializes rendering ticker.
+     */
     Storekeeper.prototype.initTicker = function() {
         Easel.Ticker.setFPS(30);
         Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
-    Storekeeper.prototype.loadLevelSet = function(source, container) {
+    /**
+     * Loads levels' set by a given source.
+     *
+     * @param {String} source
+     * URL of levels' set to load.
+     */
+    Storekeeper.prototype.loadLevelSet = function(source) {
         this._levelSet = new LevelSet({
             source: source,
-            container: container,
+            container: this.container,
             eventManager: this.eventManager
         });
     };
 
+    /**
+     * A method to invoke when levels' set is loaded.
+     *
+     * <p>Starts playing a first level of loaded set.</p>
+     *
+     * @protected
+     *
+     * @param {String} source
+     * Source levels' set was loaded by.
+     */
     Storekeeper.prototype.onLevelSetLoaded = function(source) {
         this.levelSet.level = 0;
     };
 
+    /**
+     * Restarts currently active level.
+     *
+     * @see module:Storekeeper#previousLevel
+     * @see module:Storekeeper#nextLevel
+     */
     Storekeeper.prototype.restartLevel = function() {
-        if (!this.levelSet) {
+        if (!(this.levelSet instanceof LevelSet)) {
             throw new Exception('Level set is not loaded.');
         }
         this.levelSet.restart();
     };
 
+    /**
+     * Switches to the previous level of current levels' set.
+     *
+     * @see module:Storekeeper#nextLevel
+     * @see module:Storekeeper#restartLevel
+     */
     Storekeeper.prototype.previousLevel = function() {
-        if (!this.levelSet) {
+        if (!(this.levelSet instanceof LevelSet)) {
             throw new Exception('Level set is not loaded.');
         }
 
@@ -316,8 +333,14 @@ define([
         this.levelSet.level = levelIndex;
     };
 
+    /**
+     * Switches to the next level of current levels' set.
+     *
+     * @see module:Storekeeper#previousLevel
+     * @see module:Storekeeper#restartLevel
+     */
     Storekeeper.prototype.nextLevel = function() {
-        if (!this.levelSet) {
+        if (!(this.levelSet instanceof LevelSet)) {
             throw new Exception('Level set is not loaded.');
         }
 
@@ -330,13 +353,23 @@ define([
         this.levelSet.level = levelIndex;
     };
 
+    /**
+     * This method will be invoked on each animation frame of the game.
+     *
+     * <p>It checks where some direction is set by the user and tries to cause
+     * worker's move in this direction.</p>
+     *
+     * @protected
+     *
+     * @param {Object} event
+     */
     Storekeeper.prototype.onAnimationFrame = function(event) {
-        if (!this.levelSet) {
+        if (!(this.levelSet instanceof LevelSet)) {
             return;
         }
 
         var level = this.levelSet.level;
-        if (!level) {
+        if (!(level instanceof Level)) {
             return;
         }
 
@@ -344,6 +377,27 @@ define([
         worker.move(this._moveDirection);
     };
 
+    /**
+     * Updates current game information in navigation bar.
+     *
+     * @param {Object} data
+     * Object consisting of values to update:
+     *
+     * @param {Number} [data.levelNumber]
+     * Order number of current active level.
+     *
+     * @param {Number} [data.boxesCount]
+     * Overall count of boxes belonging to current level.
+     *
+     * @param {Number} [data.boxesOnGoalCount]
+     * Count of boxes belonging to current level and already placed on goals.
+     *
+     * @param {Number} [data.pushesCount]
+     * Count of boxes' pushes caused by the worker.
+     *
+     * @param {Number} [data.movesCount]
+     * Count of moves performed by the worker.
+     */
     Storekeeper.prototype.updateInfo = function(data) {
         data = data || {};
         var jqHeader = $('#header');
@@ -375,6 +429,84 @@ define([
         }
     };
 
+    /**
+     * Gets worker's desired direction by key code.
+     *
+     * @param {Number} code
+     * Code of a key.
+     *
+     * @returns {String}
+     *
+     * @see module:Storekeeper.getDirectionByTouchPoint
+     */
+    Storekeeper.getDirectionByKeyCode = function(code) {
+        switch (code) {
+            case 37: case 65: return Direction.LEFT;        // arrow left or A
+            case 38: case 87: return Direction.UP;          // arrow up or W
+            case 39: case 68: return Direction.RIGHT;       // arrow right or D
+            case 40: case 83: return Direction.DOWN;        // arrow down or S
+            default: return Direction.NONE;
+        }
+    };
+
+    /**
+     * Gets worker's desired direction by pixel coordinates of a touch
+     * relative to top left corner of touched HTML element.
+     *
+     * <p>In order to determine a direction the touched HTML element (generally, a canvas)
+     * is splitted by two diagonals into four sections, each corresponding to possible
+     * worker's direction. The result direction depends on which section touch point belongs to.</p>
+     *
+     * @param {HTMLElement} target
+     * HTML element where touch event is occurred.
+     *
+     * @param {Number} x
+     * Horizontal coordinate of touch point relative to <code>target</code>.
+     *
+     * @param {Number} y
+     * Vertical coordinate of touch point relative to <code>target</code>.
+     *
+     * @returns {String}
+     *
+     * @see module:Storekeeper.getDirectionByKeyCode
+     */
+    Storekeeper.getDirectionByTouchPoint = function(target, x, y) {
+        var jqTarget = $(target);
+        var targetWidth = jqTarget.width();
+        var targetHeight = jqTarget.height();
+
+        var targetRatio = targetHeight / targetWidth;
+
+        if (y < targetRatio * x && y < targetHeight - targetRatio * x) {
+            return Direction.UP;
+        }
+
+        if (y > targetRatio * x && y > targetHeight - targetRatio * x) {
+            return Direction.DOWN;
+        }
+
+        if (y > targetRatio * x && y < targetHeight - targetRatio * x) {
+            return Direction.LEFT;
+        }
+
+        if (y < targetRatio * x && y > targetHeight - targetRatio * x) {
+            return Direction.RIGHT;
+        }
+
+        return Direction.NONE;
+    };
+
+    /**
+     * Formats an integer by prepending leading zeros.
+     *
+     * @param {Number} number
+     * Integer number to format.
+     *
+     * @param {Number} digits
+     * Count of digits in formatted string.
+     *
+     * @returns {String}
+     */
     Storekeeper.formatInteger = function(number, digits) {
         if (!_.isNumber(number) || number % 1 !== 0) {
             throw new Exception('Number must be an integer.');
@@ -392,16 +524,34 @@ define([
     };
 
     Object.defineProperties(Storekeeper.prototype, {
+        /**
+         * Gets game's container HTML element.
+         *
+         * @type HTMLElement
+         * @memberof module:Storekeeper.prototype
+         */
         container: {
             get: function() {
                 return this._container;
             }
         },
+        /**
+         * Gets game's event manager.
+         *
+         * @type {module:EventManager}
+         * @memberof module:Storekeeper.prototype
+         */
         eventManager: {
             get: function() {
                 return this._eventManager;
             }
         },
+        /**
+         * Gets or sets loaded levels' set.
+         *
+         * @type {module:LevelSet}
+         * @memberof module:Storekeeper.prototype
+         */
         levelSet: {
             get: function() {
                 return this._levelSet;
