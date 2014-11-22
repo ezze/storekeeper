@@ -1,0 +1,28 @@
+{
+  "name": "Storekeeper",
+  "version": "0.1.0",
+  "description": "JavaScript implementation of Sokoban game",
+  "main": "src/app/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ezze/storekeeperjs"
+  },
+  "author": "Dmitriy Pushkov",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/ezze/storekeeperjs/issues"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-contrib-copy": "~0.7.0",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-less": "~0.11.3",
+    "grunt-jsdoc": "~0.5.7",
+    "grunt-requirejs": "~0.4.2",
+    "load-grunt-config": "~0.16.0"
+  }
+}
