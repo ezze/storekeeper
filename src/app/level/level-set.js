@@ -296,10 +296,7 @@ define([
             index: this.levelIndex
         };
 
-        var eventManager = this.eventManager;
-        if (eventManager instanceof EventManager) {
-            eventManager.raiseEvent(LevelSet.EVENT_LEVEL_RESTARTED, onLevelRestartedParams);
-        }
+        EventManager.instance.raiseEvent(LevelSet.EVENT_LEVEL_RESTARTED, onLevelRestartedParams);
         this.onLevelRestarted(onLevelRestartedParams);
     };
 
