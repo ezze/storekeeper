@@ -10,7 +10,7 @@ define([
     './exception',
     './level/direction',
     './level/level',
-    './level/levelset',
+    './level/level-set',
     './level/object/box',
     './level/object/movable',
     './level/object/worker'
