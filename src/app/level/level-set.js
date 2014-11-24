@@ -5,6 +5,8 @@ define([
     'jquery',
     'lodash',
     './level',
+    './loader/loader',
+    './loader/loader-json',
     './object/box',
     '../event-manager',
     '../exception'
@@ -12,6 +14,8 @@ define([
     $,
     _,
     Level,
+    Loader,
+    LoaderJson,
     Box,
     EventManager,
     Exception
@@ -50,6 +54,7 @@ define([
         this._container = options.container;
 
         var eventManager = EventManager.instance;
+
         eventManager.on([
             Box.EVENT_MOVED_ON_GOAL
         ], function(eventName, params) {
@@ -125,75 +130,71 @@ define([
      * @protected
      */
     LevelSet.prototype.load = function() {
-        // TODO: handle error
-
         var url = this._source;
-        if (url.indexOf('?') === -1) {
+        var cleanUrl;
+
+        var queryStringPos = url.indexOf('?');
+        if (queryStringPos === -1) {
+            cleanUrl = url;
             url += '?';
         }
         else {
+            cleanUrl = url.slice(0, queryStringPos);
             url += '&';
         }
+
         url += 'q=' + new Date().getTime();
 
-        $.ajax({
-            url: url,
-            dataType: 'json',
-            success: function(data, textStatus, jqXHR) {
-                this.parse(data);
+        var dotPos = cleanUrl.lastIndexOf('.');
+        var extension = dotPos === -1 ? 'json' : url.slice(dotPos + 1, cleanUrl.length);
 
-                EventManager.instance.raiseEvent(LevelSet.EVENT_LOADED, {
-                    levelSet: this,
-                    source: this._source
-                });
-            }.bind(this)
-        });
-    };
+        var loader;
 
-    /**
-     * Parses set's data and levels on successful {@link module:LevelSet#load}.
-     *
-     * @protected
-     *
-     * @param {Object} data
-     * Object containing the following properties:
-     *
-     * @param {String} [data.name]
-     * Set's name.
-     *
-     * @param {String} [data.description]
-     * Set's description.
-     *
-     * @param {Array} [data.levels]
-     * Array consisting of objects, each representing data of a single [level]{@link module:Level}.
-     */
-    LevelSet.prototype.parse = function(data) {
-        // TODO: rewrite with Lo-Dash
-        if (typeof data.name === 'string') {
-            this.name = data.name;
+        var loaderOptions = {
+            source: url,
+            onSucceed: function(params) {
+                var loader = params.loader;
+                this.name = loader.name;
+                this.description = loader.description;
+
+                var jqContainer = $(this.container);
+                _.forEach(loader.levels, function(levelData) {
+                    var level = new Level(levelData);
+                    this.add(level);
+                    $(level.canvas)
+                        .attr('width', jqContainer.width())
+                        .attr('height', jqContainer.height());
+                    jqContainer.append(level.canvas);
+                }, this);
+
+                EventManager.instance.raiseEvent(LevelSet.EVENT_LOADED, onLoadedParams);
+            }.bind(this),
+            onFailed: function(params) {
+                // TODO: handle error
+            }
+        };
+
+        switch (extension) {
+            case 'sok':
+                // TODO: implement SOK-loader
+                break;
+
+            case 'json':
+            default:
+                loader = new LoaderJson(loaderOptions);
+                break;
+        }
+        if (!(loader instanceof Loader)) {
+            throw new Exception('Unable to determine loader for "' + this._source + '".');
         }
 
-        if (typeof data.description === 'string') {
-            this.description = data.description;
-        }
+        var onLoadedParams = {
+            loader: loader,
+            levelSet: this,
+            source: this._source
+        };
 
-        // TODO: throw an exception if there are no levels' data
-        if (_.isArray(data.levels)) {
-            var jqContainer = $(this.container);
-
-            _.forEach(data.levels, function(levelData) {
-                var level = new Level(_.merge({}, {
-                    eventManager: this.eventManager
-                }, levelData));
-
-                this.add(level);
-
-                $(level.canvas)
-                    .attr('width', jqContainer.width())
-                    .attr('height', jqContainer.height());
-                jqContainer.append(level.canvas);
-            }, this);
-        }
+        loader.load();
     };
 
     /**
@@ -355,17 +356,6 @@ define([
             }
         },
         /**
-         * Gets instance of event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:LevelSet.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
-            }
-        },
-        /**
          * Gets or sets a name of the set.
          *
          * @type {String}
@@ -376,6 +366,9 @@ define([
                 return this._name;
             },
             set: function(name) {
+                if (!_.isString(name)) {
+                    throw new Exception('Level set\'s name must be a string.');
+                }
                 this._name = name;
             }
         },
@@ -390,6 +383,9 @@ define([
                 return this._description;
             },
             set: function(description) {
+                if (!_.isString(description)) {
+                    throw new Exception('Level set\'s description must be a string.');
+                }
                 this._description = description;
             }
         },

@@ -563,17 +563,6 @@ define([
 
     Object.defineProperties(Level.prototype, {
         /**
-         * Gets instance of event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:Level.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
-            }
-        },
-        /**
          * Gets or sets level's name.
          *
          * @type {String}
