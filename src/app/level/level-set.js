@@ -178,7 +178,6 @@ define([
                 break;
 
             case 'json':
-            default:
                 loader = new LoaderJson(loaderOptions);
                 break;
         }

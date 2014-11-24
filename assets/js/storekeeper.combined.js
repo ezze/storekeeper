@@ -31006,7 +31006,7 @@ define('event-manager',[
          * @param {String|Array} name
          * Name of a single event or names of few events handling functions should be unregistered for.
          *
-         * @param {Function|Array} exactHandler
+         * @param {Function|Array} [exactHandler]
          * Single function or few functions that should be unregistered for given events.
          *
          * @returns {module:EventManager}
@@ -31045,6 +31045,11 @@ define('event-manager',[
             var handlers = this._handlers;
 
             _.forEach(name, function(eventName) {
+                if (exactHandler === null) {
+                    delete handlers[name];
+                    return;
+                }
+
                 _.forEach(exactHandler, function(exactEventHandler) {
                     handlers = _.filter(handlers, function(eventHandlers, handlersEventName) {
                         if (eventName !== handlersEventName) {
@@ -35690,17 +35695,6 @@ define('level/level',[
 
     Object.defineProperties(Level.prototype, {
         /**
-         * Gets instance of event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:Level.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
-            }
-        },
-        /**
          * Gets or sets level's name.
          *
          * @type {String}
@@ -35896,12 +35890,255 @@ define('level/level',[
     return Level;
 });
 /**
+ * @module Loader
+ */
+define('level/loader/loader',[
+    'jquery',
+    'lodash',
+    '../../event-manager',
+    '../../exception'
+], function(
+    $,
+    _,
+    EventManager,
+    Exception
+) {
+    
+
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.1
+     * @alias module:Loader
+     * @class
+     */
+    var Loader = function(options) {
+        if (!_.isString(options.source) || _.isEmpty(options.source)) {
+            throw new Exception('Level set\'s data source is invalid or not specified.');
+        }
+        this._source = options.source;
+
+        this._dataType = _.isString(options.dataType) ? options.dataType : null;
+
+        this._onSucceed = _.isFunction(options.onSucceed) ? options.onSucceed : null;
+        this._onFailed = _.isFunction(options.onFailed) ? options.onFailed : null;
+        this._onCompleted = _.isFunction(options.onCompleted) ? options.onCompleted : null;
+
+        this._name = '';
+        this._description = '';
+        this._levels = [];
+    };
+
+    Loader.prototype.load = function() {
+        var eventParams = {
+            loader: this
+        };
+
+        var loadOptions = {
+            url: this._source,
+            success: function(data, textStatus, jqXHT) {
+                _.merge(eventParams, {
+                    data: data
+                });
+                this.onSucceed(eventParams);
+                if (this._onSucceed !== null) {
+                    this._onSucceed(eventParams);
+                }
+            }.bind(this),
+            error: function(jqXHR, textStatus, errorThrown) {
+                this.onFailed(eventParams);
+                if (this._onFailed !== null) {
+                    this._onFailed(eventParams);
+                }
+            }.bind(this),
+            complete: function(jqXHR, textStatus) {
+                this.onCompleted(eventParams);
+                if (this._onCompleted !== null) {
+                    this._onCompleted(eventParams);
+                }
+            }.bind(this)
+        };
+
+        if (_.isString(this._dataType)) {
+            loadOptions.dataType = this._dataType;
+        }
+
+        $.ajax(loadOptions);
+    };
+
+    Loader.prototype.onSucceed = function(params) {
+        params.loader.parse(params.data);
+    };
+
+    Loader.prototype.onFailed = function(params) {
+};
+
+    Loader.prototype.onCompleted = function(params) {
+    };
+
+    Loader.prototype.parse = function(data) {
+        throw new Exception('Method "parse" is not implemented.');
+    };
+
+    Object.defineProperties(Loader.prototype, {
+        name: {
+            get: function() {
+                return this._name;
+            },
+            set: function(name) {
+                if (!_.isString(name)) {
+                    throw new Exception('Level set\'s name must be a string.');
+                }
+                this._name = name;
+            }
+        },
+        description: {
+            get: function() {
+                return this._description;
+            },
+            set: function(description) {
+                if (!_.isString(name)) {
+                    throw new Exception('Level set\'s description must be a string.');
+                }
+                this._description = description;
+            }
+        },
+        levels: {
+            get: function() {
+                return this._levels;
+            },
+            set: function(levels) {
+                if (!_.isArray(levels)) {
+                    throw new Exception('Levels\' data must be an array.');
+                }
+                this._levels = levels;
+            }
+        }
+    });
+
+    return Loader;
+});
+/**
+ * @module LoaderJson
+ */
+define('level/loader/loader-json',[
+    'lodash',
+    './loader'
+], function(
+    _,
+    Loader
+) {
+    
+
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.1
+     * @alias module:LoaderJson
+     * @class
+     */
+    var LoaderJson = function(options) {
+        _.merge(options, {
+            dataType: 'json'
+        });
+        Loader.apply(this, arguments);
+    };
+
+    LoaderJson.prototype = Object.create(Loader.prototype);
+
+    LoaderJson.prototype.parse = function(data) {
+        this.name = data.name;
+        this.description = data.description;
+        this.levels = data.levels;
+    };
+
+    return LoaderJson;
+});
+/**
+ * @module LoaderSok
+ */
+define('level/loader/loader-sok',[
+    'lodash',
+    './loader',
+    '../../exception'
+], function(
+    _,
+    Loader,
+    Exception
+) {
+    
+
+    var commentRegExp = /^::/;
+    var rowRegExp = /^[@+#.$* ]+$/;
+
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.1
+     * @alias module:LoaderSok
+     * @class
+     * @augments module:Loader
+     */
+    var LoaderSok = function(options) {
+        _.merge(options, {
+            dataType: 'text'
+        });
+        Loader.apply(this, arguments);
+    };
+
+    LoaderSok.prototype = Object.create(Loader.prototype);
+
+    LoaderSok.prototype.parse = function(data) {
+        var lines = data.split('\n');
+
+        var levels = [];
+        var level = null;
+
+        // TODO: implement reading metadata (titles, descriptions, etc.)
+
+        _.forEach(lines, function(line, i) {
+            line = line.replace(/\r$/, '');
+
+            if (commentRegExp.test(line)) {
+                return;
+            }
+
+            if (rowRegExp.test(line)) {
+                if (level === null) {
+                    level = {
+                        name: '',
+                        description: '',
+                        items: []
+                    };
+                }
+                level.items.push(line);
+            }
+            else {
+                if (level !== null) {
+                    levels.push(level);
+                }
+                level = null;
+            }
+        });
+
+        this.levels = levels;
+    };
+
+    return LoaderSok;
+});
+/**
  * @module LevelSet
  */
-define('level/levelset',[
+define('level/level-set',[
     'jquery',
     'lodash',
     './level',
+    './loader/loader',
+    './loader/loader-json',
+    './loader/loader-sok',
     './object/box',
     '../event-manager',
     '../exception'
@@ -35909,6 +36146,9 @@ define('level/levelset',[
     $,
     _,
     Level,
+    Loader,
+    LoaderJson,
+    LoaderSok,
     Box,
     EventManager,
     Exception
@@ -35947,6 +36187,7 @@ define('level/levelset',[
         this._container = options.container;
 
         var eventManager = EventManager.instance;
+
         eventManager.on([
             Box.EVENT_MOVED_ON_GOAL
         ], function(eventName, params) {
@@ -35963,10 +36204,6 @@ define('level/levelset',[
 
             eventManager.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
             this.onLevelCompleted(onLevelCompletedParams);
-        }.bind(this));
-
-        $(window).on('resize', function() {
-            this.level.resize();
         }.bind(this));
 
         this._name = '';
@@ -36022,75 +36259,70 @@ define('level/levelset',[
      * @protected
      */
     LevelSet.prototype.load = function() {
-        // TODO: handle error
-
         var url = this._source;
-        if (url.indexOf('?') === -1) {
+        var cleanUrl;
+
+        var queryStringPos = url.indexOf('?');
+        if (queryStringPos === -1) {
+            cleanUrl = url;
             url += '?';
         }
         else {
+            cleanUrl = url.slice(0, queryStringPos);
             url += '&';
         }
+
         url += 'q=' + new Date().getTime();
 
-        $.ajax({
-            url: url,
-            dataType: 'json',
-            success: function(data, textStatus, jqXHR) {
-                this.parse(data);
+        var dotPos = cleanUrl.lastIndexOf('.');
+        var extension = dotPos === -1 ? 'json' : url.slice(dotPos + 1, cleanUrl.length);
 
-                EventManager.instance.raiseEvent(LevelSet.EVENT_LOADED, {
-                    levelSet: this,
-                    source: this._source
-                });
-            }.bind(this)
-        });
-    };
+        var loader;
 
-    /**
-     * Parses set's data and levels on successful {@link module:LevelSet#load}.
-     *
-     * @protected
-     *
-     * @param {Object} data
-     * Object containing the following properties:
-     *
-     * @param {String} [data.name]
-     * Set's name.
-     *
-     * @param {String} [data.description]
-     * Set's description.
-     *
-     * @param {Array} [data.levels]
-     * Array consisting of objects, each representing data of a single [level]{@link module:Level}.
-     */
-    LevelSet.prototype.parse = function(data) {
-        // TODO: rewrite with Lo-Dash
-        if (typeof data.name === 'string') {
-            this.name = data.name;
+        var loaderOptions = {
+            source: url,
+            onSucceed: function(params) {
+                var loader = params.loader;
+                this.name = loader.name;
+                this.description = loader.description;
+
+                var jqContainer = $(this.container);
+                _.forEach(loader.levels, function(levelData) {
+                    var level = new Level(levelData);
+                    this.add(level);
+                    $(level.canvas)
+                        .attr('width', jqContainer.width())
+                        .attr('height', jqContainer.height());
+                    jqContainer.append(level.canvas);
+                }, this);
+
+                EventManager.instance.raiseEvent(LevelSet.EVENT_LOADED, onLoadedParams);
+            }.bind(this),
+            onFailed: function(params) {
+                // TODO: handle error
+            }
+        };
+
+        switch (extension) {
+            case 'sok':
+                loader = new LoaderSok(loaderOptions);
+                break;
+
+            case 'json':
+                loader = new LoaderJson(loaderOptions);
+                break;
+        }
+        if (!(loader instanceof Loader)) {
+            throw new Exception('Unable to determine loader for "' + this._source + '".');
         }
 
-        if (typeof data.description === 'string') {
-            this.description = data.description;
-        }
+        var onLoadedParams = {
+            loader: loader,
+            levelSet: this,
+            source: this._source
+        };
 
-        // TODO: throw an exception if there are no levels' data
-        if (_.isArray(data.levels)) {
-            var jqContainer = $(this.container);
-
-            _.forEach(data.levels, function(levelData) {
-                var level = new Level(_.merge({}, {
-                    eventManager: this.eventManager
-                }, levelData));
-
-                this.add(level);
-
-                $(level.canvas)
-                    .attr('width', jqContainer.width())
-                    .attr('height', jqContainer.height());
-                jqContainer.append(level.canvas);
-            }, this);
-        }
+        loader.load();
     };
 
     /**
@@ -36236,7 +36468,17 @@ define('level/levelset',[
      * Method that should be called to unload the set.
      */
     LevelSet.prototype.destroy = function() {
-        // TODO: remove all event handlers registered in constructor
+        EventManager.instance.off(Box.EVENT_MOVED_ON_GOAL);
+
+        if (this._level instanceof Level) {
+            this._level.disableTouch();
+        }
+
+        _.forEach(this._levels, function(level) {
+            // TODO: think of destroying level
+        });
+
+        $(this.container).find('canvas').remove();
     };
 
     Object.defineProperties(LevelSet.prototype, {
@@ -36252,17 +36494,6 @@ define('level/levelset',[
             }
         },
         /**
-         * Gets instance of event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:LevelSet.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
-            }
-        },
-        /**
          * Gets or sets a name of the set.
          *
          * @type {String}
@@ -36273,6 +36504,9 @@ define('level/levelset',[
                 return this._name;
             },
             set: function(name) {
+                if (!_.isString(name)) {
+                    throw new Exception('Level set\'s name must be a string.');
+                }
                 this._name = name;
             }
         },
@@ -36287,6 +36521,9 @@ define('level/levelset',[
                 return this._description;
             },
             set: function(description) {
+                if (!_.isString(description)) {
+                    throw new Exception('Level set\'s description must be a string.');
+                }
                 this._description = description;
             }
         },
@@ -36372,7 +36609,7 @@ define('storekeeper',[
     './exception',
     './level/direction',
     './level/level',
-    './level/levelset',
+    './level/level-set',
     './level/object/box',
     './level/object/movable',
     './level/object/worker'
@@ -36431,6 +36668,12 @@ define('storekeeper',[
             this.init();
             this.loadLevelSet(options.levelSetSource);
         }.bind(this));
+
+        $(window).on('resize', function() {
+            if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
+                this.levelSet.level.resize();
+            }
+        }.bind(this));
     };
 
     /**
@@ -36451,6 +36694,8 @@ define('storekeeper',[
      * @protected
      */
     Storekeeper.prototype.initNavbar = function() {
+        var storekeeper = this;
+
         $(document).ready(function() {
             $('#header')
                 .on('click', '.navbar-brand', function(event) {
@@ -36462,19 +36707,24 @@ define('storekeeper',[
                         event.stopPropagation();
                     }
                 })
+                .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
+                    event.preventDefault();
+                    var source = $(this).attr('href');
+                    storekeeper.loadLevelSet(source);
+                })
                 .on('click', 'a[href="#restart-level"]', function(event) {
                     event.preventDefault();
-                    this.restartLevel();
-                }.bind(this))
+                    storekeeper.restartLevel();
+                })
                 .on('click', 'a[href="#previous-level"]', function(event) {
                     event.preventDefault();
-                    this.previousLevel();
-                }.bind(this))
+                    storekeeper.previousLevel();
+                })
                 .on('click', 'a[href="#next-level"]', function(event) {
                     event.preventDefault();
-                    this.nextLevel();
-                }.bind(this));
-        }.bind(this));
+                    storekeeper.nextLevel();
+                });
+        });
     };
 
     /**
@@ -36641,6 +36891,10 @@ define('storekeeper',[
      * URL of levels' set to load.
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
+        if (this._levelSet instanceof LevelSet) {
+            this._levelSet.destroy();
+        }
+
         this._levelSet = new LevelSet({
             source: source,
             container: this.container
@@ -36658,6 +36912,16 @@ define('storekeeper',[
      * Source levels' set was loaded by.
      */
     Storekeeper.prototype.onLevelSetLoaded = function(source) {
+        var jqLevelsDropdown = $('#header').find('a[href="#levels"] ~ .dropdown-menu');
+        jqLevelsDropdown.find('a').each(function() {
+            if ($(this).attr('href') === source) {
+                $(this).parent('li').addClass('active');
+            }
+            else {
+                $(this).parent('li').removeClass('active');
+            }
+        });
+
         this.levelSet.level = 0;
     };
 

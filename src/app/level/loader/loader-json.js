@@ -2,8 +2,10 @@
  * @module LoaderJson
  */
 define([
+    'lodash',
     './loader'
 ], function(
+    _,
     Loader
 ) {
     'use strict';
