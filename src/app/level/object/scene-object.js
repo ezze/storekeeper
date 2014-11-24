@@ -6,14 +6,12 @@ define([
     'easel',
     'lodash',
     '../sprite-sheet',
-    '../../event-manager',
     '../../exception'
 ], function(
     require,
     Easel,
     _,
     spriteSheet,
-    EventManager,
     Exception
 ) {
     'use strict';

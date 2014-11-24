@@ -144,25 +144,21 @@ define([
             }
         }, this);
 
-        var eventManager = this.level.eventManager;
+        var eventManager = EventManager.instance;
 
         if (!isSourceGoal && isTargetGoal) {
             this.sprite.gotoAndStop('boxOnGoal');
 
             this.level.onBoxOnGoal();
-            if (eventManager instanceof EventManager) {
-                eventManager.raiseEvent(Box.EVENT_MOVED_ON_GOAL, {
-                    box: this
-                });
-            }
+            eventManager.raiseEvent(Box.EVENT_MOVED_ON_GOAL, {
+                box: this
+            });
         }
         else if (isSourceGoal && !isTargetGoal) {
             this.level.onBoxOutOfGoal();
-            if (eventManager instanceof EventManager) {
-                eventManager.raiseEvent(Box.EVENT_MOVED_OUT_OF_GOAL, {
-                    box: this
-                });
-            }
+            eventManager.raiseEvent(Box.EVENT_MOVED_OUT_OF_GOAL, {
+                box: this
+            });
         }
     };
 

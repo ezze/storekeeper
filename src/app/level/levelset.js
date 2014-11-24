@@ -49,27 +49,24 @@ define([
         }
         this._container = options.container;
 
-        this._eventManager = null;
-        if (options.eventManager instanceof EventManager) {
-            var eventManager = this._eventManager = options.eventManager;
-            eventManager.on([
-                Box.EVENT_MOVED_ON_GOAL
-            ], function(eventName, params) {
-                var level = params.box.level;
-                if (!level.isCompleted()) {
-                    return;
-                }
+        var eventManager = EventManager.instance;
+        eventManager.on([
+            Box.EVENT_MOVED_ON_GOAL
+        ], function(eventName, params) {
+            var level = params.box.level;
+            if (!level.isCompleted()) {
+                return;
+            }
 
-                var onLevelCompletedParams = {
-                    levelSet: this,
-                    level: level,
-                    levelIndex: this.levelIndex
-                };
+            var onLevelCompletedParams = {
+                levelSet: this,
+                level: level,
+                levelIndex: this.levelIndex
+            };
 
-                eventManager.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
-                this.onLevelCompleted(onLevelCompletedParams);
-            }.bind(this));
-        }
+            eventManager.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
+            this.onLevelCompleted(onLevelCompletedParams);
+        }.bind(this));
 
         $(window).on('resize', function() {
             this.level.resize();
@@ -145,13 +142,10 @@ define([
             success: function(data, textStatus, jqXHR) {
                 this.parse(data);
 
-                var eventManager = this.eventManager;
-                if (eventManager instanceof EventManager) {
-                    eventManager.raiseEvent(LevelSet.EVENT_LOADED, {
-                        levelSet: this,
-                        source: this._source
-                    });
-                }
+                EventManager.instance.raiseEvent(LevelSet.EVENT_LOADED, {
+                    levelSet: this,
+                    source: this._source
+                });
             }.bind(this)
         });
     };
@@ -439,10 +433,7 @@ define([
                     index: this.levelIndex
                 };
 
-                var eventManager = this.eventManager;
-                if (eventManager instanceof EventManager) {
-                    eventManager.raiseEvent(LevelSet.EVENT_LEVEL_CHANGED, onLevelChangedParams);
-                }
+                EventManager.instance.raiseEvent(LevelSet.EVENT_LEVEL_CHANGED, onLevelChangedParams);
                 this.onLevelChanged(onLevelChangedParams);
             }
         },

@@ -81,8 +81,6 @@ define([
 
         this._boxesOnGoalCount = 0;
 
-        this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
-
         if (_.isString(options.name) && !_.isEmpty(options.name)) {
             this.name = options.name;
         }

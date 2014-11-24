@@ -121,7 +121,7 @@ define([
      * @protected
      */
     Storekeeper.prototype.initEvents = function() {
-        var eventManager = this._eventManager = new EventManager();
+        var eventManager = EventManager.instance;
 
         eventManager.on(LevelSet.EVENT_LOADED, function(eventName, params) {
             this.onLevelSetLoaded.bind(this)(params.source);
@@ -281,8 +281,7 @@ define([
     Storekeeper.prototype.loadLevelSet = function(source) {
         this._levelSet = new LevelSet({
             source: source,
-            container: this.container,
-            eventManager: this.eventManager
+            container: this.container
         });
     };
 
@@ -535,17 +534,6 @@ define([
         container: {
             get: function() {
                 return this._container;
-            }
-        },
-        /**
-         * Gets game's event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:Storekeeper.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
             }
         },
         /**
