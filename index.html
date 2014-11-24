@@ -4,11 +4,75 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Storekeeper</title>
-        <link rel="stylesheet" type="text/css" href="assets/css/storekeeper.min.css" />
-        <script src="assets/js/storekeeper.min.js"></script>
+        <style type="text/css">
+            body.loading * {
+                display: none;
+            }
+        </style>
+        <script type="text/javascript">
+            (function() {
+                var isLoaded = false;
+                window.onload = function onLoaded() {
+                    if (!isLoaded) {
+                        setTimeout(onLoaded, 10);
+                        return;
+                    }
+                    document.querySelector('body').className = '';
+                }
+
+                var headElement = document.querySelector('head');
+
+                if (new RegExp('^\\?debug', 'i').test(window.location.search)) {
+                    // Debug mode
+                    var lessLinkElement = document.createElement('link');
+                    lessLinkElement.setAttribute('rel', 'stylesheet/less');
+                    lessLinkElement.setAttribute('type', 'text/css');
+                    lessLinkElement.setAttribute('href', 'src/less/storekeeper.less');
+                    headElement.appendChild(lessLinkElement);
+
+                    var configScriptElement = document.createElement('script');
+                    configScriptElement.innerHTML = 'var less = less || {}; less.env = \'development\'; ' +
+                        'var require = { urlArgs: \'q=\' + (new Date()).getTime() };';
+                    headElement.appendChild(configScriptElement);
+
+                    var lessScriptElement = document.createElement('script');
+                    lessScriptElement.setAttribute('type', 'text/javascript');
+                    lessScriptElement.setAttribute('src', 'src/lib/less/dist/less.js');
+
+                    lessScriptElement.onload = function() {
+                        var requireScriptElement = document.createElement('script');
+                        requireScriptElement.setAttribute('type', 'text/javascript');
+                        requireScriptElement.setAttribute('data-main', 'src/app/app');
+                        requireScriptElement.setAttribute('src', 'src/lib/requirejs/require.js');
+                        requireScriptElement.onload = function() {
+                            isLoaded = true;
+                        };
+                        headElement.appendChild(requireScriptElement);
+                    };
+                    headElement.appendChild(lessScriptElement);
+                }
+                else {
+                    // Production mode
+
+                    var cssLinkElement = document.createElement('link');
+                    cssLinkElement.setAttribute('rel', 'stylesheet');
+                    cssLinkElement.setAttribute('type', 'text/css');
+                    cssLinkElement.setAttribute('href', 'assets/css/storekeeper.min.css');
+                    headElement.appendChild(cssLinkElement);
+
+                    var scriptElement = document.createElement('script');
+                    scriptElement.setAttribute('type', 'text/javascript');
+                    scriptElement.setAttribute('src', 'assets/js/storekeeper.min.js');
+                    scriptElement.onload = function() {
+                        isLoaded = true;
+                    };
+                    headElement.appendChild(scriptElement);
+                }
+            }());
+        </script>
     </head>
 
-    <body>
+    <body class="loading">
 
         <div id="header" class="navbar navbar-default navbar-fixed-top" role="navigation">
             <div class="container-fluid">
