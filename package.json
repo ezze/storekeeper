@@ -1,6 +1,6 @@
 {
   "name": "Storekeeper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "JavaScript implementation of Sokoban game",
   "main": "src/app/app.js",
   "scripts": {
