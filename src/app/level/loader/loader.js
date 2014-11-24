@@ -14,6 +14,14 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.1
+     * @alias module:Loader
+     * @class
+     */
     var Loader = function(options) {
         if (!_.isString(options.source) || _.isEmpty(options.source)) {
             throw new Exception('Level set\'s data source is invalid or not specified.');

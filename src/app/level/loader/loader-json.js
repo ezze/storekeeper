@@ -1,3 +1,6 @@
+/**
+ * @module LoaderJson
+ */
 define([
     './loader'
 ], function(
@@ -5,6 +8,14 @@ define([
 ) {
     'use strict';
 
+    /**
+     * @param {Object} options
+     *
+     * @author Dmitriy Pushkov <ezze@ezze.org>
+     * @since 0.1.1
+     * @alias module:LoaderJson
+     * @class
+     */
     var LoaderJson = function(options) {
         _.merge(options, {
             dataType: 'json'

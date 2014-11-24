@@ -7,6 +7,7 @@ define([
     './level',
     './loader/loader',
     './loader/loader-json',
+    './loader/loader-sok',
     './object/box',
     '../event-manager',
     '../exception'
@@ -16,6 +17,7 @@ define([
     Level,
     Loader,
     LoaderJson,
+    LoaderSok,
     Box,
     EventManager,
     Exception
@@ -172,7 +174,7 @@ define([
 
         switch (extension) {
             case 'sok':
-                // TODO: implement SOK-loader
+                loader = new LoaderSok(loaderOptions);
                 break;
 
             case 'json':
