@@ -73,10 +73,6 @@ define([
             this.onLevelCompleted(onLevelCompletedParams);
         }.bind(this));
 
-        $(window).on('resize', function() {
-            this.level.resize();
-        }.bind(this));
-
         this._name = '';
         this._description = '';
 
@@ -349,7 +345,7 @@ define([
         _.forEach(this._levels, function(level) {
             // TODO: think of destroying level
         });
-        
+
         $(this.container).find('canvas').remove();
     };
 

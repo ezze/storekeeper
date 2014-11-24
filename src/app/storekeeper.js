@@ -69,6 +69,12 @@ define([
             this.init();
             this.loadLevelSet(options.levelSetSource);
         }.bind(this));
+
+        $(window).on('resize', function() {
+            if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
+                this.levelSet.level.resize();
+            }
+        }.bind(this));
     };
 
     /**
