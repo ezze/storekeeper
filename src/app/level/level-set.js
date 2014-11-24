@@ -340,7 +340,17 @@ define([
      * Method that should be called to unload the set.
      */
     LevelSet.prototype.destroy = function() {
-        // TODO: remove all event handlers registered in constructor
+        EventManager.instance.off(Box.EVENT_MOVED_ON_GOAL);
+
+        if (this._level instanceof Level) {
+            this._level.disableTouch();
+        }
+
+        _.forEach(this._levels, function(level) {
+            // TODO: think of destroying level
+        });
+        
+        $(this.container).find('canvas').remove();
     };
 
     Object.defineProperties(LevelSet.prototype, {

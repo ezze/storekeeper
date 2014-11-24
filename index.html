@@ -91,7 +91,13 @@
                 <div class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
                         <li>
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Game <span class="caret"></span></a>
+                            <a href="#levels" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Levels <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="levels/classic.json">Classic</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#game" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Game <span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
                                 <li>
                                     <a href="#next-level">
@@ -110,12 +116,27 @@
                                 </li>
                             </ul>
                         </li>
+                        <li>
+                            <a href="#more" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">More <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href="https://github.com/ezze/storekeeperjs">
+                                        <span>View source</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://github.com/ezze/storekeeperjs/issues">
+                                        <span>Report a bug</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
 
                     <p class="level navbar-text">
                         <strong class="name"></strong> <span class="value"></span>
                     </p>
-                    <div class="navbar-right">
+                    <div class="navbar-right hidden-md">
                         <p class="boxes-count navbar-text">
                             <strong class="name"></strong> <span class="value"></span>
                         </p>

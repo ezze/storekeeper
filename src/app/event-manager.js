@@ -79,7 +79,7 @@ define([
          * @param {String|Array} name
          * Name of a single event or names of few events handling functions should be unregistered for.
          *
-         * @param {Function|Array} exactHandler
+         * @param {Function|Array} [exactHandler]
          * Single function or few functions that should be unregistered for given events.
          *
          * @returns {module:EventManager}
@@ -118,6 +118,11 @@ define([
             var handlers = this._handlers;
 
             _.forEach(name, function(eventName) {
+                if (exactHandler === null) {
+                    delete handlers[name];
+                    return;
+                }
+
                 _.forEach(exactHandler, function(exactEventHandler) {
                     handlers = _.filter(handlers, function(eventHandlers, handlersEventName) {
                         if (eventName !== handlersEventName) {

@@ -89,6 +89,8 @@ define([
      * @protected
      */
     Storekeeper.prototype.initNavbar = function() {
+        var storekeeper = this;
+
         $(document).ready(function() {
             $('#header')
                 .on('click', '.navbar-brand', function(event) {
@@ -100,19 +102,24 @@ define([
                         event.stopPropagation();
                     }
                 })
+                .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
+                    event.preventDefault();
+                    var source = $(this).attr('href');
+                    storekeeper.loadLevelSet(source);
+                })
                 .on('click', 'a[href="#restart-level"]', function(event) {
                     event.preventDefault();
-                    this.restartLevel();
-                }.bind(this))
+                    storekeeper.restartLevel();
+                })
                 .on('click', 'a[href="#previous-level"]', function(event) {
                     event.preventDefault();
-                    this.previousLevel();
-                }.bind(this))
+                    storekeeper.previousLevel();
+                })
                 .on('click', 'a[href="#next-level"]', function(event) {
                     event.preventDefault();
-                    this.nextLevel();
-                }.bind(this));
-        }.bind(this));
+                    storekeeper.nextLevel();
+                });
+        });
     };
 
     /**
@@ -279,6 +286,10 @@ define([
      * URL of levels' set to load.
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
+        if (this._levelSet instanceof LevelSet) {
+            this._levelSet.destroy();
+        }
+
         this._levelSet = new LevelSet({
             source: source,
             container: this.container
@@ -296,6 +307,16 @@ define([
      * Source levels' set was loaded by.
      */
     Storekeeper.prototype.onLevelSetLoaded = function(source) {
+        var jqLevelsDropdown = $('#header').find('a[href="#levels"] ~ .dropdown-menu');
+        jqLevelsDropdown.find('a').each(function() {
+            if ($(this).attr('href') === source) {
+                $(this).parent('li').addClass('active');
+            }
+            else {
+                $(this).parent('li').removeClass('active');
+            }
+        });
+
         this.levelSet.level = 0;
     };
 
