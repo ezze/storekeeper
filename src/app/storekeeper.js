@@ -107,6 +107,13 @@ define([
                         event.preventDefault();
                         event.stopPropagation();
                     }
+
+                    if ($(this).siblings('.dropdown-menu').length === 0) {
+                        var jqNavbarCollapse = $(this).parents('.navbar-collapse');
+                        if (jqNavbarCollapse.hasClass('in')) {
+                            jqNavbarCollapse.collapse('hide');
+                        }
+                    }
                 })
                 .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
                     event.preventDefault();

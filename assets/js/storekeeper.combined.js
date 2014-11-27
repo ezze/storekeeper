@@ -9647,8 +9647,6 @@ return jQuery;
 
 }));
 
-define("jquery", function(){});
-
 define('no-conflict/jquery',[
     'jquery'
 ], function(
@@ -36702,6 +36700,13 @@ define('storekeeper',[
                     if ($(this).parent('li').hasClass('disabled')) {
                         event.preventDefault();
                         event.stopPropagation();
+                    }
+
+                    if ($(this).siblings('.dropdown-menu').length === 0) {
+                        var jqNavbarCollapse = $(this).parents('.navbar-collapse');
+                        if (jqNavbarCollapse.hasClass('in')) {
+                            jqNavbarCollapse.collapse('hide');
+                        }
                     }
                 })
                 .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
