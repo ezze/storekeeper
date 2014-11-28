@@ -47,11 +47,7 @@ define([
         }
         this._container = options.container;
 
-        var eventManager = EventManager.instance;
-
-        eventManager.on([
-            Box.EVENT_MOVED_ON_GOAL
-        ], function(eventName, params) {
+        this._onBoxMovedOnGoal = function(eventName, params) {
             var level = params.box.level;
             if (!level.isCompleted()) {
                 return;
@@ -63,9 +59,13 @@ define([
                 levelIndex: this.levelIndex
             };
 
-            eventManager.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
+            EventManager.instance.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
             this.onLevelCompleted(onLevelCompletedParams);
-        }.bind(this));
+        }.bind(this);
+
+        EventManager.instance.on([
+            Box.EVENT_MOVED_ON_GOAL
+        ], this._onBoxMovedOnGoal);
 
         this._name = '';
         this._description = '';
@@ -334,7 +334,9 @@ define([
      * Method that should be called to unload the set.
      */
     LevelSet.prototype.destroy = function() {
-        EventManager.instance.off(Box.EVENT_MOVED_ON_GOAL);
+        if (_.isFunction(this._onBoxMovedOnGoal)) {
+            EventManager.instance.off(Box.EVENT_MOVED_ON_GOAL, this._onBoxMovedOnGoal);
+        }
 
         _.forEach(this._levels, function(level) {
             level.destroy();

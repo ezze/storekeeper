@@ -11,7 +11,7 @@ define([
     'use strict';
 
     var instance = {
-        _handlers: [],
+        _handlers: {},
 
         /**
          * Adds handling functions to given events.
