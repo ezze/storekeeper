@@ -323,6 +323,11 @@ define([
         Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
+    /**
+     * Opens a dialog to choose a level set to load from local computer.
+     *
+     * @see module:Storekeeper#loadLevelSet
+     */
     Storekeeper.prototype.browseLevelSet = function() {
         $('#header').find('input.load-level-set:first').trigger('click');
     };
@@ -332,6 +337,9 @@ define([
      *
      * @param {String} source
      * URL of levels' set to load.
+     *
+     * @see module:Storekeeper#browseLevelSet
+     * @see module:Storekeeper#onLevelSetLoaded
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
         var levelSet = new LevelSet({

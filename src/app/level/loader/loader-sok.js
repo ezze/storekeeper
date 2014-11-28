@@ -16,6 +16,10 @@ define([
     var rowRegExp = /^[@+#.$* ]+$/;
 
     /**
+     * Loads level set from SOK-file.
+     *
+     * <p>See SOK-file's format description [here]{@link http://www.sokobano.de/wiki/index.php?title=Sok_format}.</p>
+     *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.1
      * @alias module:LoaderSok
@@ -35,6 +39,12 @@ define([
         Loader.prototype.load.apply(this, arguments);
     };
 
+    /**
+     * Parses level set's data from SOK string.
+     *
+     * @param {String} data
+     * Level set's data in SOK format.
+     */
     LoaderSok.prototype.parse = function(data) {
         var lines = data.split('\n');
 

@@ -80,7 +80,8 @@ define([
          * Name of a single event or names of few events handling functions should be unregistered for.
          *
          * @param {Function|Array} [exactHandler]
-         * Single function or few functions that should be unregistered for given events.
+         * Single function or few functions that should be unregistered for given events. If it's not set
+         * then all handling functions for given events will be removed.
          *
          * @returns {module:EventManager}
          *

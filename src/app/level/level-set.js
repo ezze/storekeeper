@@ -33,9 +33,6 @@ define([
      * @param {HTMLElement} options.container
      * HTML container to place levels' HTML canvases in.
      *
-     * @param {module:EventManager} [options.eventManager]
-     * Instance of event manager.
-     *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
      * @alias module:LevelSet
@@ -104,9 +101,21 @@ define([
     LevelSet.EVENT_LEVEL_RESTARTED = 'levelSet:levelRestarted';
 
     /**
-     * Loads levels' set by source URL passed to its constructor.
+     * Loads level set.
      *
      * @protected
+     *
+     * @param {Object} options
+     * Object with the following properties:
+     *
+     * @param {String|File} options.source
+     * URL of level set or its file instance.
+     *
+     * @param {Function} [options.onSucceed]
+     * Function to invoke on successful level set's load.
+     *
+     * @param {Function} [options.onFailed]
+     * Function to invoke on failed level set's load.
      */
     LevelSet.prototype.load = function(options) {
         if ((window.File && !(options.source instanceof window.File)) &&
@@ -119,7 +128,6 @@ define([
 
         var onSucceed = _.isFunction(options.onSucceed) ? options.onSucceed : null;
         var onFailed = _.isFunction(options.onFailed) ? options.onFailed: null;
-        var onCompleted = _.isFunction(options.onCompleted) ? options.onCompleted : null;
 
         var cleanSource;
         if (window.File && options.source instanceof window.File) {
@@ -182,11 +190,6 @@ define([
                 // TODO: handle error
                 if (onFailed !== null) {
                     onFailed(params);
-                }
-            },
-            onCompleted: function(params) {
-                if (onCompleted !== null) {
-                    onCompleted(params);
                 }
             }
         };

@@ -36,9 +36,6 @@ define([
      * @param {Object} options
      * Object with the following properties:
      *
-     * @param {module:EventManager} [options.eventManager]
-     * Instance of event manager.
-     *
      * @param {String} [options.name]
      * Level's name.
      *
