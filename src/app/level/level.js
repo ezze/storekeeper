@@ -561,6 +561,16 @@ define([
         Easel.Touch.disable(this._stage);
     };
 
+    /**
+     * Destroys level's canvas and and disables touch controls.
+     *
+     * @see module Level#disableTouch
+     */
+    Level.prototype.destroy = function() {
+        this.disableTouch();
+        $(this.canvas).remove();
+    };
+
     Object.defineProperties(Level.prototype, {
         /**
          * Gets or sets level's name.

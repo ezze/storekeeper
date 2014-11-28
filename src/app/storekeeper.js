@@ -98,7 +98,13 @@ define([
         var storekeeper = this;
 
         $(document).ready(function() {
-            $('#header')
+            var jqHeader = $('#header');
+
+            if (!window.File || !window.FileList) {
+                jqHeader.find('a[href="#load-level-set"]').parent('li').addClass('disabled');
+            }
+
+            jqHeader
                 .on('click', '.navbar-brand', function(event) {
                     event.preventDefault();
                 })
@@ -106,6 +112,7 @@ define([
                     if ($(this).parent('li').hasClass('disabled')) {
                         event.preventDefault();
                         event.stopPropagation();
+                        return;
                     }
 
                     if ($(this).siblings('.dropdown-menu').length === 0) {
@@ -117,8 +124,29 @@ define([
                 })
                 .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
                     event.preventDefault();
+                    if ($(this).parent('li').hasClass('disabled')) {
+                        return;
+                    }
+
                     var source = $(this).attr('href');
-                    storekeeper.loadLevelSet(source);
+                    if (!source) {
+                        return;
+                    }
+
+                    if (source === '#load-level-set') {
+                        storekeeper.browseLevelSet();
+                    }
+                    else {
+                        storekeeper.loadLevelSet(source);
+                    }
+                })
+                .on('change', 'input.load-level-set', function(event) {
+                    var files = event.target.files;
+                    if (files.length === 0) {
+                        return;
+                    }
+                    var file = files[0];
+                    storekeeper.loadLevelSet(file);
                 })
                 .on('click', 'a[href="#restart-level"]', function(event) {
                     event.preventDefault();
@@ -142,10 +170,6 @@ define([
      */
     Storekeeper.prototype.initEvents = function() {
         var eventManager = EventManager.instance;
-
-        eventManager.on(LevelSet.EVENT_LOADED, function(eventName, params) {
-            this.onLevelSetLoaded.bind(this)(params.source);
-        }.bind(this));
 
         eventManager.on([
             LevelSet.EVENT_LEVEL_CHANGED,
@@ -228,6 +252,13 @@ define([
         this._moveDirection = Direction.NONE;
 
         $(window).on('keydown', function(event) {
+            if (event.ctrlKey && event.which === 79) {
+                // Ctrl + O
+                event.preventDefault();     // preventing a browser from showing open file dialog
+                this.browseLevelSet();
+                return;
+            }
+
             if (event.ctrlKey && event.altKey && event.which === 82) {
                 // Ctrl + Alt + R
                 this.restartLevel();
@@ -292,6 +323,10 @@ define([
         Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
+    Storekeeper.prototype.browseLevelSet = function() {
+        $('#header').find('input.load-level-set:first').trigger('click');
+    };
+
     /**
      * Loads levels' set by a given source.
      *
@@ -299,13 +334,19 @@ define([
      * URL of levels' set to load.
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
-        if (this._levelSet instanceof LevelSet) {
-            this._levelSet.destroy();
-        }
-
-        this._levelSet = new LevelSet({
-            source: source,
+        var levelSet = new LevelSet({
             container: this.container
+        });
+
+        levelSet.load({
+            source: source,
+            onSucceed: function(params) {
+                if (this._levelSet instanceof LevelSet) {
+                    this._levelSet.destroy();
+                }
+                this._levelSet = levelSet;
+                this.onLevelSetLoaded(source);
+            }.bind(this)
         });
     };
 
@@ -329,6 +370,33 @@ define([
                 $(this).parent('li').removeClass('active');
             }
         });
+
+        var jqLoadLevelSetItem = jqLevelsDropdown.find('a[href="#load-level-set"]').parent('li');
+        var jqLocalLevelSetItem = jqLevelsDropdown.find('.local-level-set');
+
+        if (window.File && source instanceof window.File) {
+            var levelSetName = source.name;
+
+            if (jqLocalLevelSetItem.length === 0) {
+                jqLocalLevelSetItem = $('<li></li>')
+                    .addClass('local-level-set')
+                    .addClass('active')
+                    .append($('<a></a>')
+                        .text(levelSetName)
+                    );
+                jqLoadLevelSetItem.after(jqLocalLevelSetItem);
+                jqLoadLevelSetItem.after($('<li></li>')
+                    .addClass('divider')
+                );
+            }
+            else {
+                jqLocalLevelSetItem.children('a').text(levelSetName);
+            }
+        }
+        else {
+            jqLocalLevelSetItem.prev('li').remove();
+            jqLocalLevelSetItem.remove();
+        }
 
         this.levelSet.level = 0;
     };

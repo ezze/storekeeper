@@ -21,7 +21,7 @@
                         return;
                     }
                     document.querySelector('body').className = '';
-                }
+                };
 
                 var headElement = document.querySelector('head');
 
@@ -93,6 +93,13 @@
                         <li>
                             <a href="#levels" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Levels <span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href="#load-level-set">
+                                        <span>Load... <small>Ctrl+O</small></span>
+                                    </a>
+                                    <input class="load-level-set" type="file" />
+                                </li>
+                                <li class="divider"></li>
                                 <li><a href="levels/classic.json">Classic</a></li>
                                 <li class="divider"></li>
                                 <li><a href="levels/sasquatch-01.sok">Sasquatch 1</a></li>

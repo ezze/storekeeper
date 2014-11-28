@@ -16,22 +16,24 @@ define([
     var rowRegExp = /^[@+#.$* ]+$/;
 
     /**
-     * @param {Object} options
-     *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.1
      * @alias module:LoaderSok
      * @class
      * @augments module:Loader
      */
-    var LoaderSok = function(options) {
-        _.merge(options, {
-            dataType: 'text'
-        });
+    var LoaderSok = function() {
         Loader.apply(this, arguments);
     };
 
     LoaderSok.prototype = Object.create(Loader.prototype);
+
+    LoaderSok.prototype.load = function(options) {
+        _.merge(options, {
+            dataType: 'text'
+        });
+        Loader.prototype.load.apply(this, arguments);
+    };
 
     LoaderSok.prototype.parse = function(data) {
         var lines = data.split('\n');

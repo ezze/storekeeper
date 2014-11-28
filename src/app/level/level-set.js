@@ -30,9 +30,6 @@ define([
      * @param {Object} options
      * Object with the following properties:
      *
-     * @param {String} options.source
-     * URL to load levels' set by.
-     *
      * @param {HTMLElement} options.container
      * HTML container to place levels' HTML canvases in.
      *
@@ -45,11 +42,6 @@ define([
      * @class
      */
     var LevelSet = function(options) {
-        if (!_.isString(options.source) || _.isEmpty(options.source)) {
-            throw new Exception('Level set\'s source is invalid or not specified.');
-        }
-        this._source = options.source;
-
         if (!(options.container instanceof HTMLElement)) {
             throw new Exception('Container is invalid or not specified.');
         }
@@ -81,18 +73,7 @@ define([
         this._levelIndex = -1;
         this._level = null;
         this._levels = [];
-
-        this.load();
     };
-
-    /**
-     * Name of an event raised when levels' set is loaded.
-     *
-     * @type {String}
-     *
-     * @see module:LevelSet#load
-     */
-    LevelSet.EVENT_LOADED = 'levelSet:loaded';
 
     /**
      * Name of an event raised when active level is changed.
@@ -127,29 +108,57 @@ define([
      *
      * @protected
      */
-    LevelSet.prototype.load = function() {
-        var url = this._source;
-        var cleanUrl;
+    LevelSet.prototype.load = function(options) {
+        if ((window.File && !(options.source instanceof window.File)) &&
+            (!_.isString(options.source) || _.isEmpty(options.source))
+        ) {
+            throw new Exception('Level set\'s source is invalid or not specified.');
+        }
 
-        var queryStringPos = url.indexOf('?');
-        if (queryStringPos === -1) {
-            cleanUrl = url;
-            url += '?';
+        var source = options.source;
+
+        var onSucceed = _.isFunction(options.onSucceed) ? options.onSucceed : null;
+        var onFailed = _.isFunction(options.onFailed) ? options.onFailed: null;
+        var onCompleted = _.isFunction(options.onCompleted) ? options.onCompleted : null;
+
+        var cleanSource;
+        if (window.File && options.source instanceof window.File) {
+            cleanSource = options.source.name;
         }
         else {
-            cleanUrl = url.slice(0, queryStringPos);
-            url += '&';
+            var queryStringPos = source.indexOf('?');
+            if (queryStringPos === -1) {
+                cleanSource = source;
+                source += '?';
+            }
+            else {
+                cleanSource = source.slice(0, queryStringPos);
+                source += '&';
+            }
+
+            source += 'q=' + new Date().getTime();
         }
 
-        url += 'q=' + new Date().getTime();
+        var dotPos = cleanSource.lastIndexOf('.');
+        var extension = dotPos === -1 ? 'json' : cleanSource.slice(dotPos + 1, cleanSource.length);
 
-        var dotPos = cleanUrl.lastIndexOf('.');
-        var extension = dotPos === -1 ? 'json' : url.slice(dotPos + 1, cleanUrl.length);
-
+        // Determining a loader to use by source extension
         var loader;
+        switch (extension) {
+            case 'sok':
+                loader = new LoaderSok();
+                break;
+
+            case 'json':
+                loader = new LoaderJson();
+                break;
+        }
+        if (!(loader instanceof Loader)) {
+            throw new Exception('Unable to determine loader for "' + source + '".');
+        }
 
         var loaderOptions = {
-            source: url,
+            source: source,
             onSucceed: function(params) {
                 var loader = params.loader;
                 this.name = loader.name;
@@ -165,33 +174,24 @@ define([
                     jqContainer.append(level.canvas);
                 }, this);
 
-                EventManager.instance.raiseEvent(LevelSet.EVENT_LOADED, onLoadedParams);
+                if (onSucceed !== null) {
+                    onSucceed(params);
+                }
             }.bind(this),
             onFailed: function(params) {
                 // TODO: handle error
+                if (onFailed !== null) {
+                    onFailed(params);
+                }
+            },
+            onCompleted: function(params) {
+                if (onCompleted !== null) {
+                    onCompleted(params);
+                }
             }
         };
 
-        switch (extension) {
-            case 'sok':
-                loader = new LoaderSok(loaderOptions);
-                break;
-
-            case 'json':
-                loader = new LoaderJson(loaderOptions);
-                break;
-        }
-        if (!(loader instanceof Loader)) {
-            throw new Exception('Unable to determine loader for "' + this._source + '".');
-        }
-
-        var onLoadedParams = {
-            loader: loader,
-            levelSet: this,
-            source: this._source
-        };
-
-        loader.load();
+        loader.load(loaderOptions);
     };
 
     /**
@@ -336,15 +336,9 @@ define([
     LevelSet.prototype.destroy = function() {
         EventManager.instance.off(Box.EVENT_MOVED_ON_GOAL);
 
-        if (this._level instanceof Level) {
-            this._level.disableTouch();
-        }
-
         _.forEach(this._levels, function(level) {
-            // TODO: think of destroying level
+            level.destroy();
         });
-
-        $(this.container).find('canvas').remove();
     };
 
     Object.defineProperties(LevelSet.prototype, {
