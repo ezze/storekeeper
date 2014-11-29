@@ -78,6 +78,8 @@ define([
 
         this._boxesOnGoalCount = 0;
 
+        this._isTouchEnabled = false;
+
         if (_.isString(options.name) && !_.isEmpty(options.name)) {
             this.name = options.name;
         }
@@ -543,6 +545,7 @@ define([
      */
     Level.prototype.enableTouch = function() {
         Easel.Touch.enable(this._stage);
+        this._isTouchEnabled = true;
     };
 
     /**
@@ -555,7 +558,11 @@ define([
      * @see http://www.createjs.com/Docs/EaselJS/classes/Touch.html
      */
     Level.prototype.disableTouch = function() {
+        if (!this._isTouchEnabled) {
+            return;
+        }
         Easel.Touch.disable(this._stage);
+        this._isTouchEnabled = false;
     };
 
     /**
