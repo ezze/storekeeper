@@ -8,6 +8,7 @@ define([
     'lodash',
     './event-manager',
     './exception',
+    './show-modal',
     './level/direction',
     './level/level',
     './level/level-set',
@@ -21,6 +22,7 @@ define([
     _,
     EventManager,
     Exception,
+    showModal,
     Direction,
     Level,
     LevelSet,
@@ -192,9 +194,15 @@ define([
         eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
             params.level.update();
             setTimeout(function() {
-                alert('Level ' + (params.levelIndex + 1) + ' is completed!');
-                params.level.reset();
-                this.nextLevel();
+                var deferred = showModal({
+                    title: 'Congratulations!',
+                    html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
+                    closeButton: true
+                });
+                deferred.done(function() {
+                    params.level.reset();
+                    this.nextLevel();
+                }.bind(this));
             }.bind(this), 50);
         }.bind(this));
 
@@ -480,7 +488,7 @@ define([
         }
 
         var level = this.levelSet.level;
-        if (!(level instanceof Level)) {
+        if (!(level instanceof Level) || level.isCompleted()) {
             return;
         }
 
