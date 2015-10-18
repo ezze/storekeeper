@@ -206,6 +206,18 @@ define([
         }
 
         // TODO: check whether we can insert object on this position
+        if(object.row > this._rows) {
+            throw new Exception('Can\'t add object on scene! Incorrect row' + object.row + ' for object' + object.name);
+        }
+        if(object.column > this._columns) {
+            throw new Exception('Can\'t add object on scene! Incorrect column' +
+                object.column + ' for object' + object.name);
+        }
+        var objects = this.getObjects(object.row, object.column);
+        if(objects.length > 0 && !(objects[0] instanceof Goal)){
+            throw new Exception('Can\'t add object on scene! Another object is already present on these coordinates: row ' +
+                object.row + ', column ' + object.column);
+        }
 
         if (object instanceof Worker) {
             this._worker = object;
@@ -256,7 +268,7 @@ define([
      * @see module:Level#reset
      */
     Level.prototype.addObjectToStage = function(object) {
-        var sprite = object.sprite;
+        var sprite = object._sprite;
         if (this._camera.contains(sprite)) {
             throw new Exception('Level\'s stage already contains the object.');
         }
@@ -286,7 +298,7 @@ define([
     Level.prototype.getObjects = function(row, column) {
         var objects = [];
 
-        if (this._worker.row === row && this._worker.column === column) {
+        if (this._worker && this._worker.row === row && this._worker.column === column) {
             objects.push(this._worker);
         }
 
@@ -573,6 +585,60 @@ define([
     Level.prototype.destroy = function() {
         this.disableTouch();
         $(this.canvas).remove();
+    };
+    /**
+     * Renders level with the given options
+     * Takes into account when Box @see {module: Box} is placed on goal field
+     * Takes into account Worker's @see {module: Worker} turn direction
+     * @protected
+     * @param options
+     * @author Ivan Lobanov <arkhemlol@gmail.com>
+     * @since 0.1.0
+     */
+    Level.prototype._render = function(options) {
+        this.removeObjectsFromStage();
+        this._worker = null;
+        this._walls = [];
+        this._goals = [];
+        this._boxes = [];
+
+        _.forEach(options._walls, function(wall) {
+          this.addObject(new Wall({
+              row: wall._row,
+              column: wall._column,
+              level: this
+          }));
+        }.bind(this));
+
+        _.forEach(options._goals, function(goal) {
+            this.addObject(new Goal({
+                row: goal._row,
+                column: goal._column,
+                level: this
+            }));
+        }.bind(this));
+
+        _.forEach(options._boxes, function(box) {
+            this.addObject(new Box({
+                row: box._row,
+                column: box._column,
+                level: this,
+                onGoal: box._onGoal
+            }));
+        }.bind(this));
+
+        this.addObject(new Worker({
+            row: options._worker._row,
+            column: options._worker._column,
+            level: this,
+            lookDirection: options._worker._lookDirection
+        }));
+
+        if (this._boxes.length !== this._goals.length || !(this._worker instanceof Worker)) {
+            throw new Exception('Incorrect ' + this._name + ' level');
+        }
+
+        this.addObjectsToStage();
     };
 
     Object.defineProperties(Level.prototype, {

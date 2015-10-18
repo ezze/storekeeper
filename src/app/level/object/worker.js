@@ -34,6 +34,9 @@ define([
      * @param {Number} options.column
      * Zero-based column of the level the worker will be placed in.
      *
+     * @param {String} options.lookDirection
+     * Worker's look direction. Represented as string
+     *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
      * @alias module:Worker
@@ -43,7 +46,7 @@ define([
     var Worker = function(options) {
         Movable.apply(this, arguments);
         this._name = 'Worker';
-        this.lookDirection = Direction.LEFT;
+        this.lookDirection = options.lookDirection || Direction.LEFT;
     };
 
     Worker.prototype = Object.create(Movable.prototype);

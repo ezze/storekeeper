@@ -186,15 +186,13 @@ define([
         // Checking whether atomic move of the object is finished
         if (!this.isMoving()) {
             this._movesCount += 1;
-
             var onMovedParams = {
                 object: this,
                 direction: direction,
                 movesCount: this._movesCount
             };
-
-            eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
             this.onMoved(onMovedParams);
+            eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
         }
 
         // Animating recent calculations - both the object and a target object (if present) affected by collision
@@ -436,14 +434,21 @@ define([
     Movable.prototype.onStopped = function(params) {};
 
     Object.defineProperties(Movable.prototype, {
-        /**
-         * Gets count of moves performed by this scene object.
-         */
         movesCount: {
+            /**
+             * Gets count of moves performed by this scene object.
+             */
             get: function() {
                 return this._movesCount;
+            },
+            /**
+             * Sets count of moves performed by this scene object.
+             */
+            set: function(count) {
+                this._movesCount = count;
             }
         }
+
     });
 
     return Movable;

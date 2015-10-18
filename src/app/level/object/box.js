@@ -33,18 +33,20 @@ define([
      * @param {Number} options.column
      * Zero-based column of the level the box will be placed in.
      *
+     * @param {Boolean} options.onGoal
+     * Whether the box should be placed on goal
+     *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
-     * @alias module:Box
+     * @module Box
      * @class
      * @augments module:Movable
      */
     var Box = function(options) {
         Movable.apply(this, arguments);
         this._name = 'Box';
-
-        var isOnGoal = _.isBoolean(options.onGoal) ? options.onGoal : false;
-        this._sprite.gotoAndStop(isOnGoal ? 'boxOnGoal' : 'box');
+        this._onGoal = !!options.onGoal;
+        this._sprite.gotoAndStop(this._onGoal ? 'boxOnGoal' : 'box');
     };
 
     /**
@@ -125,7 +127,7 @@ define([
     Box.prototype.onMoved = function(params) {
         var isSourceGoal = false;
         var isTargetGoal = false;
-
+        this._onGoal = this.isOnGoal();
         var sourceOjbects = this.getMoveTargetObjects(Direction.getCounterDirection(params.direction));
         _.forEach(sourceOjbects, function(object) {
             if (object instanceof Goal) {
@@ -160,6 +162,16 @@ define([
                 box: this
             });
         }
+    };
+    /**
+     * Checks if the box is on goal
+     * @returns {boolean}
+     */
+    Box.prototype.isOnGoal = function() {
+        var targetObjects = this.level.getObjects(this.row, this.column);
+        return _.filter(targetObjects, function(obj) {
+           return obj instanceof Goal;
+        }).length >= 1;
     };
 
     return Box;
