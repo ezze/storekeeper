@@ -215,7 +215,8 @@ define([
         }
         var objects = this.getObjects(object.row, object.column);
         if(objects.length > 0 && !(objects[0] instanceof Goal)){
-            throw new Exception('Can\'t add object on scene! Another object is already present on these coordinates: row ' +
+            throw new Exception('Can\'t add object on scene! Another object is already present ' +
+                'on these coordinates: row ' +
                 object.row + ', column ' + object.column);
         }
 

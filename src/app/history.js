@@ -232,13 +232,10 @@ define([
         /**
          * Rebuilds history based on the current state
          * This method called when player has performed a move right after he has travelled through the history
-         * The current history state becomes the last one, all entries newer than this entry become
-         * entry's parents in reversed order
+         * The current history state becomes the last one, all entries newer than this entry deleted
          */
         rebuild: function() {
-            var reversed = this._history.slice(0, this._index + 1).reverse();
-            // apply reversed as a list of arguments
-            this._history.splice.apply(this._history, [0, this._index].concat(reversed));
+            return this._history.splice(0, this._index);
         }
     };
 
