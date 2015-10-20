@@ -34,8 +34,11 @@ define([
      * @param {Number} options.column
      * Zero-based column of the level the worker will be placed in.
      *
-     * @param {String} options.lookDirection
+     * @param {String} [options.lookDirection]
      * Worker's look direction. Represented as string
+     *
+     * @param {Number} [options.movesCount]
+     * Worker's moves count
      *
      * @author Dmitriy Pushkov <ezze@ezze.org>
      * @since 0.1.0
@@ -47,6 +50,8 @@ define([
         Movable.apply(this, arguments);
         this._name = 'Worker';
         this.lookDirection = options.lookDirection || Direction.LEFT;
+        // override moves count if it was specified in options
+        this._movesCount = options.movesCount || this._movesCount;
     };
 
     Worker.prototype = Object.create(Movable.prototype);

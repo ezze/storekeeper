@@ -20,30 +20,33 @@ define([
          * This storage behaves like a [LIFO stack] {@link https://en.wikipedia.org/wiki/Stack_(abstract_data_type)}
          * @type {[]} _history
          * @private
-         * @static
          */
         _history: [],
         /**
          * Stores current history entry
          * @type {Object} current
          * @private
-         * @static
          */
         _state: {},
         /**
          * Stores the index of current entry
          * @type {Number}
          * @private
-         * @static
          */
         _index: 0,
         /**
          * Stores history length
          * @type {Number}
          * @private
-         * @static
          */
         _length: 0,
+
+        /**
+         * Shows whether history is in traverse mode
+         * @type {Boolean}
+         * @private
+         */
+        _traversed: false,
 
         /**
          * Name of an event raised when new entry is pushed to history
@@ -128,11 +131,11 @@ define([
                 timestamp: _.now(),
                 eventName: eventName,
                 object: _.cloneDeep(params.object),
-                moves: this._state.moves + 1,
+                moves: params.object._movesCount,
                 pushes: this._state.pushes,
                 goals: this._state.goals,
                 boxesCount: this._state.boxesCount,
-                boxesOnGoal: params.object._level._boxesOnGoalCount,
+                boxesOnGoalCount: params.object._level._boxesOnGoalCount,
                 levelNumber: this._state.levelNumber
             };
             this._index = 0;
@@ -166,7 +169,7 @@ define([
                 pushes: this._state.pushes + 1,
                 goals: this._state.goals,
                 boxesCount: this._state.boxesCount,
-                boxesOnGoal: params.object._level._boxesOnGoalCount,
+                boxesOnGoalCount: params.object._level._boxesOnGoalCount,
                 levelNumber: this._state.levelNumber
             };
             this._index = 0;
@@ -235,6 +238,7 @@ define([
          * The current history state becomes the last one, all entries newer than this entry deleted
          */
         rebuild: function() {
+            this._traversed = false;
             return this._history.splice(0, this._index);
         }
     };
@@ -288,6 +292,22 @@ define([
         length: {
             get: function() {
                 return instance._length;
+            }
+        },
+        /**
+         * Gets or sets history traverse mode
+         * @type module:History
+         * @memberof module:History
+         */
+        traversed: {
+            get: function() {
+                return instance._traversed;
+            },
+            set: function(traversed) {
+                if(!_.isBoolean(traversed)) {
+                    throw new Exception('This parameter expected to be boolean! Instead got: ' + typeof traversed);
+                }
+                instance._traversed = traversed;
             }
         }
     });

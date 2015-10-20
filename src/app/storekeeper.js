@@ -211,7 +211,8 @@ define([
                 boxesCount: level.boxesCount,
                 boxesOnGoalCount: level.boxesOnGoalCount,
                 pushesCount: 0,
-                movesCount: level.worker.movesCount
+                movesCount: level.worker.movesCount,
+                edges: 'both'
             });
 
             level.resize(false);
@@ -248,12 +249,13 @@ define([
 
         eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
             if (params.object instanceof Worker) {
-                if(params.object.movesCount === 1 && History.length > 1) {
+                if(History.traversed) {
                     history.rebuild();
                 }
                 history.pushState(eventName, params);
                 this.updateInfo({
-                    movesCount: History.state.moves
+                    movesCount: History.state.moves,
+                    edges: 'forward'
                 });
                 this.levelSet.level.adjustCamera({
                     cancel: false,
@@ -264,7 +266,8 @@ define([
                 history.replaceState(eventName, params);
                 this.updateInfo({
                     pushesCount: History.state.pushes,
-                    movesCount: History.state.moves
+                    movesCount: History.state.moves,
+                    edges: 'forward'
                 });
             }
         }.bind(this));
@@ -279,13 +282,10 @@ define([
             params.object.level.update();
         });
 
-        eventManager.on([history.EVENT_PUSH, history.EVENT_REPLACE], function (eventName, params) {
-            this.updateInfo({
-                edges: params.edges
-            });
-        }.bind(this));
-
         eventManager.on(history.EVENT_CHANGED, function(eventName, params) {
+            if(History.traversed === false) {
+                History.traversed = true;
+            }
             if (params.object._name === 'Worker') {
                 this.levelSet.level.adjustCamera({
                     cancel: false,
@@ -297,11 +297,11 @@ define([
                 edges: params.edges,
                 pushesCount: params.pushes,
                 boxesCount: params.boxesCount,
-                boxesOnGoalCount: params.boxesOnGoal,
+                boxesOnGoalCount: params.boxesOnGoalCount,
                 movesCount: params.moves,
                 levelNumber: params.levelNumber
             });
-            this.levelSet.level._render(params.object._level);
+            this.levelSet.level.render(params.object._level);
         }.bind(this));
     };
 
@@ -588,8 +588,6 @@ define([
         data = data || {};
         var jqHeader = $('#header');
 
-        jqHeader.find('li.disabled').removeClass('disabled');
-
         if (_.isNumber(data.levelNumber)) {
             var jqLevel = jqHeader.find('.level');
             jqLevel.find('.name').text('Level');
@@ -615,8 +613,13 @@ define([
             jqMovesCount.find('.name').text('Moves');
             jqMovesCount.find('.value').text(Storekeeper.formatInteger(data.movesCount, 5));
         }
-        if(data.edges && _.isString(data.edges)) {
-            jqHeader.find('a[href="#history-' + data.edges + '"]').parent().addClass('disabled');
+
+        jqHeader.find('li.history').removeClass('disabled');
+
+        if(data.edges && data.edges === 'forward' || data.edges === 'back') {
+            jqHeader.find('a[href="#history-' + data.edges +'"]').parent().addClass('disabled');
+        } else if (data.edges && data.edges === 'both') {
+            jqHeader.find('li.history').addClass('disabled');
         }
     };
 

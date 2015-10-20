@@ -205,7 +205,6 @@ define([
             this._columns = column + 1;
         }
 
-        // TODO: check whether we can insert object on this position
         if(object.row > this._rows) {
             throw new Exception('Can\'t add object on scene! Incorrect row' + object.row + ' for object' + object.name);
         }
@@ -590,18 +589,19 @@ define([
     /**
      * Renders level with the given options
      * Takes into account when Box @see {module: Box} is placed on goal field
-     * Takes into account Worker's @see {module: Worker} turn direction
+     * Takes into account Worker's @see {module: Worker} turn direction and moves count
      * @protected
      * @param options
      * @author Ivan Lobanov <arkhemlol@gmail.com>
      * @since 0.1.0
      */
-    Level.prototype._render = function(options) {
+    Level.prototype.render = function(options) {
         this.removeObjectsFromStage();
         this._worker = null;
         this._walls = [];
         this._goals = [];
         this._boxes = [];
+        this._boxesOnGoalCount = options._boxesOnGoalCount || 0;
 
         _.forEach(options._walls, function(wall) {
           this.addObject(new Wall({
@@ -632,7 +632,8 @@ define([
             row: options._worker._row,
             column: options._worker._column,
             level: this,
-            lookDirection: options._worker._lookDirection
+            lookDirection: options._worker._lookDirection,
+            movesCount: options._worker._movesCount
         }));
 
         if (this._boxes.length !== this._goals.length || !(this._worker instanceof Worker)) {
