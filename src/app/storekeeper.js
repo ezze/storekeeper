@@ -7,6 +7,7 @@ define([
     'jquery',
     'lodash',
     './event-manager',
+    './history',
     './exception',
     './show-modal',
     './level/direction',
@@ -21,6 +22,7 @@ define([
     $,
     _,
     EventManager,
+    History,
     Exception,
     showModal,
     Direction,
@@ -89,6 +91,19 @@ define([
         this.initEvents();
         this.initUserControls();
         this.initTicker();
+        this.initHistory();
+    };
+
+    /**
+     * Initializes history
+     *
+     * @protected
+     */
+    Storekeeper.prototype.initHistory = function() {
+        var eventManager = EventManager.instance;
+        eventManager.on('levelSet:levelChanged', function(eventName, params) {
+            History.instance.setInitial(eventName, _.extend(params, {object: params.level._worker}));
+        });
     };
 
     /**
@@ -98,6 +113,7 @@ define([
      */
     Storekeeper.prototype.initNavbar = function() {
         var storekeeper = this;
+        var history = History.instance;
 
         $(document).ready(function() {
             var jqHeader = $('#header');
@@ -161,6 +177,14 @@ define([
                 .on('click', 'a[href="#next-level"]', function(event) {
                     event.preventDefault();
                     storekeeper.nextLevel();
+                })
+                .on('click', 'a[href="#history-back"]', function (event) {
+                    event.preventDefault();
+                    history.back();
+                })
+                .on('click', 'a[href="#history-forward"]', function (event) {
+                    event.preventDefault();
+                    history.forward();
                 });
         });
     };
@@ -172,19 +196,23 @@ define([
      */
     Storekeeper.prototype.initEvents = function() {
         var eventManager = EventManager.instance;
+        var history = History.instance;
 
         eventManager.on([
             LevelSet.EVENT_LEVEL_CHANGED,
             LevelSet.EVENT_LEVEL_RESTARTED
         ], function(eventName, params) {
+            history.clear();
             var level = params.level;
+            History.state.levelNumber = params.index + 1;
 
             this.updateInfo({
                 levelNumber: params.index + 1,
                 boxesCount: level.boxesCount,
                 boxesOnGoalCount: level.boxesOnGoalCount,
                 pushesCount: 0,
-                movesCount: level.worker.movesCount
+                movesCount: level.worker.movesCount,
+                edges: 'both'
             });
 
             level.resize(false);
@@ -192,6 +220,8 @@ define([
         }.bind(this));
 
         eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
+            history.clear();
+            History.state.level = params.index + 1;
             params.level.update();
             setTimeout(function() {
                 var deferred = showModal({
@@ -218,24 +248,26 @@ define([
         }.bind(this));
 
         eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
-            if (params.object instanceof Box) {
-                // TODO: optimize if possible
-                var pushesCount = 0;
-                _.forEach(params.object.level.boxes, function(box) {
-                    pushesCount += box.movesCount;
-                });
+            if (params.object instanceof Worker) {
+                if(History.traversed) {
+                    history.rebuild();
+                }
+                history.pushState(eventName, params);
                 this.updateInfo({
-                    pushesCount: pushesCount
-                });
-            }
-            else if (params.object instanceof Worker) {
-                this.updateInfo({
-                    movesCount: params.object.movesCount
+                    movesCount: History.state.moves,
+                    edges: 'forward'
                 });
                 this.levelSet.level.adjustCamera({
                     cancel: false,
                     smooth: true,
                     delay: 50
+                });
+            } else if (params.object instanceof Box) {
+                history.replaceState(eventName, params);
+                this.updateInfo({
+                    pushesCount: History.state.pushes,
+                    movesCount: History.state.moves,
+                    edges: 'forward'
                 });
             }
         }.bind(this));
@@ -249,6 +281,28 @@ define([
             }
             params.object.level.update();
         });
+
+        eventManager.on(history.EVENT_CHANGED, function(eventName, params) {
+            if(History.traversed === false) {
+                History.traversed = true;
+            }
+            if (params.object._name === 'Worker') {
+                this.levelSet.level.adjustCamera({
+                    cancel: false,
+                    smooth: true,
+                    delay: 50
+                });
+            }
+            this.updateInfo({
+                edges: params.edges,
+                pushesCount: params.pushes,
+                boxesCount: params.boxesCount,
+                boxesOnGoalCount: params.boxesOnGoalCount,
+                movesCount: params.moves,
+                levelNumber: params.levelNumber
+            });
+            this.levelSet.level.render(params.object._level);
+        }.bind(this));
     };
 
     /**
@@ -258,12 +312,25 @@ define([
      */
     Storekeeper.prototype.initUserControls = function() {
         this._moveDirection = Direction.NONE;
+        var history = History.instance;
 
         $(window).on('keydown', function(event) {
             if (event.ctrlKey && event.which === 79) {
                 // Ctrl + O
                 event.preventDefault();     // preventing a browser from showing open file dialog
                 this.browseLevelSet();
+                return;
+            }
+
+            if (event.ctrlKey && event.which === 37) {
+                // Ctrl + Left
+                history.back();
+                return;
+            }
+
+            if (event.ctrlKey && event.which === 39) {
+                // Ctrl + Right
+                history.forward();
                 return;
             }
 
@@ -545,6 +612,14 @@ define([
             var jqMovesCount = jqHeader.find('.moves-count');
             jqMovesCount.find('.name').text('Moves');
             jqMovesCount.find('.value').text(Storekeeper.formatInteger(data.movesCount, 5));
+        }
+
+        jqHeader.find('li.history').removeClass('disabled');
+
+        if(data.edges && data.edges === 'forward' || data.edges === 'back') {
+            jqHeader.find('a[href="#history-' + data.edges +'"]').parent().addClass('disabled');
+        } else if (data.edges && data.edges === 'both') {
+            jqHeader.find('li.history').addClass('disabled');
         }
     };
 
