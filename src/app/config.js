@@ -16,10 +16,10 @@ define([], function() {
         },
         paths: {
             bootstrap: '../lib/bootstrap/dist/js/bootstrap',
-            easel: '../lib/easeljs/lib/easeljs-0.7.1.combined',
+            easel: '../lib/easeljs/lib/easeljs-0.8.1.combined',
             jquery: '../lib/jquery/dist/jquery',
             lodash: '../lib/lodash/dist/lodash',
-            tween: '../lib/TweenJS/lib/tweenjs-0.5.1.combined'
+            tween: '../lib/TweenJS/lib/tweenjs-0.6.1.combined'
         },
         shim: {
             easel: {

@@ -1,5 +1,5 @@
 /*!
- * Less - Leaner CSS v2.1.0
+ * Less - Leaner CSS v2.1.2
  * http://lesscss.org
  *
  * Copyright (c) 2009-2014, Alexis Sellier <self@cloudhead.net>
@@ -794,7 +794,10 @@ module.exports = {
                 if (opt === "env" || opt === "dumpLineNumbers" || opt === "rootpath" || opt === "errorReporting") {
                     options[opt] = tag.dataset[opt];
                 } else {
-                    options[opt] = JSON.parse(tag.dataset[opt]);
+                    try {
+                        options[opt] = JSON.parse(tag.dataset[opt]);
+                    }
+                    catch(_) {}
                 }
             }
         }
@@ -1214,6 +1217,7 @@ abstractFileManager.prototype.extractUrlParts = function extractUrlParts(url, ba
 module.exports = abstractFileManager;
 
 },{}],15:[function(require,module,exports){
+var logger = require("../logger");
 var environment = function(externalEnvironment, fileManagers) {
     this.fileManagers = fileManagers || [];
     externalEnvironment = externalEnvironment || {};
@@ -1234,6 +1238,14 @@ var environment = function(externalEnvironment, fileManagers) {
 };
 
 environment.prototype.getFileManager = function (filename, currentDirectory, options, environment, isSync) {
+
+    if (!filename) {
+        logger.warn("getFileManager called with no filename.. Please report this issue. continuing.");
+    }
+    if (currentDirectory == null) {
+        logger.warn("getFileManager called with null directory.. Please report this issue. continuing.");
+    }
+
     var fileManagers = this.fileManagers;
     if (options.pluginManager) {
         fileManagers = [].concat(fileManagers).concat(options.pluginManager.getFileManagers());
@@ -1257,7 +1269,7 @@ environment.prototype.clearFileManagers = function () {
 
 module.exports = environment;
 
-},{}],16:[function(require,module,exports){
+},{"../logger":31}],16:[function(require,module,exports){
 var Color = require("../tree/color"),
     functionRegistry = require("./function-registry");
 
@@ -1624,20 +1636,15 @@ module.exports = function(environment) {
 
     functionRegistry.add("data-uri", function(mimetypeNode, filePathNode) {
 
-        var mimetype = mimetypeNode.value;
-        var filePath = (filePathNode && filePathNode.value);
-
-        var fileManager = environment.getFileManager(filePath, this.context.currentFileInfo, this.context, environment, true);
-
-        if (!fileManager) {
-            return fallback(this, filePathNode || mimetypeNode);
+        if (!filePathNode) {
+            filePathNode = mimetypeNode;
+            mimetypeNode = null;
         }
 
-        var useBase64 = false;
-
-        if (arguments.length < 2) {
-            filePath = mimetype;
-        }
+        var mimetype = mimetypeNode && mimetypeNode.value;
+        var filePath = filePathNode.value;
+        var currentDirectory = filePathNode.currentFileInfo.relativeUrls ?
+            filePathNode.currentFileInfo.currentDirectory : filePathNode.currentFileInfo.entryPath;
 
         var fragmentStart = filePath.indexOf('#');
         var fragment = '';
@@ -1646,11 +1653,16 @@ module.exports = function(environment) {
             filePath = filePath.slice(0, fragmentStart);
         }
 
-        var currentDirectory = this.currentFileInfo.relativeUrls ?
-            this.currentFileInfo.currentDirectory : this.currentFileInfo.entryPath;
+        var fileManager = environment.getFileManager(filePath, currentDirectory, this.context, environment, true);
+
+        if (!fileManager) {
+            return fallback(this, filePathNode);
+        }
+
+        var useBase64 = false;
 
         // detect the mimetype if not given
-        if (arguments.length < 2) {
+        if (!mimetypeNode) {
 
             mimetype = environment.mimeLookup(filePath);
 
@@ -2222,7 +2234,7 @@ module.exports = function(environment, fileManagers) {
     var SourceMapOutput, SourceMapBuilder, ParseTree, ImportManager, Environment;
 
     var less = {
-        version: [2, 1, 0],
+        version: [2, 1, 2],
         data: require('./data'),
         tree: require('./tree'),
         Environment: (Environment = require("./environment/environment")),
@@ -2233,7 +2245,7 @@ module.exports = function(environment, fileManagers) {
         functions: require('./functions')(environment),
         contexts: require("./contexts"),
         SourceMapOutput: (SourceMapOutput = require('./source-map-output')(environment)),
-        SourceMapBuilder: (SourceMapBuilder = require('./source-map-builder')(SourceMapOutput)),
+        SourceMapBuilder: (SourceMapBuilder = require('./source-map-builder')(SourceMapOutput, environment)),
         ParseTree: (ParseTree = require('./parse-tree')(SourceMapBuilder)),
         ImportManager: (ImportManager = require('./import-manager')(environment)),
         render: require("./render")(environment, ParseTree, ImportManager),
@@ -4472,8 +4484,9 @@ module.exports = function(environment, ParseTree, ImportManager) {
         }
 
         if (!callback) {
+            var self = this;
             return new PromiseConstructor(function (resolve, reject) {
-                render(input, options, function(err, output) {
+                render.call(self, input, options, function(err, output) {
                     if (err) {
                         reject(err);
                     } else {
@@ -4511,12 +4524,13 @@ module.exports = function(environment, ParseTree, ImportManager) {
             new Parser(context, imports, rootFileInfo)
                 .parse(input, function (e, root) {
                 if (e) { return callback(e); }
+                var result;
                 try {
                     var parseTree = new ParseTree(root, imports);
-                    var result = parseTree.toCSS(options);
-                    callback(null, result);
+                    result = parseTree.toCSS(options);
                 }
-                catch (err) { callback( err); }
+                catch (err) { return callback( err); }
+                callback(null, result);
             }, options);
         }
     };
@@ -4524,7 +4538,7 @@ module.exports = function(environment, ParseTree, ImportManager) {
 };
 
 },{"./contexts":10,"./parser/parser":35,"./plugin-manager":36,"promise":undefined}],38:[function(require,module,exports){
-module.exports = function (SourceMapOutput) {
+module.exports = function (SourceMapOutput, environment) {
 
     var SourceMapBuilder = function (options) {
         this.options = options;
@@ -4552,7 +4566,19 @@ module.exports = function (SourceMapOutput) {
         if (this.options.sourceMapInputFilename) {
             this.sourceMapInputFilename = sourceMapOutput.normalizeFilename(this.options.sourceMapInputFilename);
         }
-        return css;
+        return css + this.getCSSAppendage();
+    };
+
+    SourceMapBuilder.prototype.getCSSAppendage = function() {
+        var sourceMapURL = this.sourceMapURL;
+        if (this.options.sourceMapFileInline) {
+            sourceMapURL = "data:application/json;base64," + environment.encodeBase64(this.sourceMap);
+        }
+
+        if (sourceMapURL) {
+            return "/*# sourceMappingURL=" + sourceMapURL + " */";
+        }
+        return "";
     };
 
     SourceMapBuilder.prototype.getExternalSourceMap = function() {
@@ -4604,7 +4630,6 @@ module.exports = function (environment) {
         }
         this._outputSourceFiles = options.outputSourceFiles;
         this._sourceMapGeneratorConstructor = environment.getSourceMapGenerator();
-        this._sourceMapFileInline = options.sourceMapFileInline;
 
         this._lineNumber = 0;
         this._column = 0;
@@ -4711,15 +4736,7 @@ module.exports = function (environment) {
             }
             this.sourceMapURL = sourceMapURL;
 
-            if (!this._sourceMapFileInline) {
-                this.sourceMap = sourceMapContent;
-            } else {
-                sourceMapURL = "data:application/json;base64," + environment.encodeBase64(sourceMapContent);
-            }
-
-            if (sourceMapURL) {
-                this._css.push("/*# sourceMappingURL=" + sourceMapURL + " */");
-            }
+            this.sourceMap = sourceMapContent;
         }
 
         return this._css.join('');
@@ -6713,7 +6730,7 @@ var Node = require("./node"),
     Variable = require("./variable");
 
 var Quoted = function (str, content, escaped, index, currentFileInfo) {
-    this.escaped = escaped;
+    this.escaped = (escaped == null) ? true : escaped;
     this.value = content || '';
     this.quote = str.charAt(0);
     this.index = index;

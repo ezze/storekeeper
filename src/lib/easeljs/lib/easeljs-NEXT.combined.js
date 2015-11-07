@@ -1,3 +1,30 @@
+/*!
+* EaselJS
+* Visit http://createjs.com/ for documentation, updates and examples.
+*
+* Copyright (c) 2010 gskinner.com, inc.
+*
+* Permission is hereby granted, free of charge, to any person
+* obtaining a copy of this software and associated documentation
+* files (the "Software"), to deal in the Software without
+* restriction, including without limitation the rights to use,
+* copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the
+* Software is furnished to do so, subject to the following
+* conditions:
+*
+* The above copyright notice and this permission notice shall be
+* included in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+* HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+* OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 
 //##############################################################################
@@ -17,13 +44,13 @@ this.createjs = this.createjs||{};
  *
  * 	function MySubClass() {}
  * 	createjs.extend(MySubClass, MySuperClass);
- * 	ClassB.prototype.doSomething = function() { }
+ * 	MySubClass.prototype.doSomething = function() { }
  *
  * 	var foo = new MySubClass();
  * 	console.log(foo instanceof MySuperClass); // true
  * 	console.log(foo.prototype.constructor === MySubClass); // true
  *
- * @method extends
+ * @method extend
  * @param {Function} subclass The subclass.
  * @param {Function} superclass The superclass to extend.
  * @return {Function} Returns the subclass's new prototype.
@@ -263,12 +290,25 @@ this.createjs = this.createjs||{};
 		this.removed = false;
 	}
 	var p = Event.prototype;
-	
+
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
 
 // public methods:
 	/**
-	 * Sets {{#crossLink "Event/defaultPrevented"}}{{/crossLink}} to true.
-	 * Mirrors the DOM event standard.
+	 * Sets {{#crossLink "Event/defaultPrevented"}}{{/crossLink}} to true if the event is cancelable.
+	 * Mirrors the DOM level 2 event standard. In general, cancelable events that have `preventDefault()` called will
+	 * cancel the default behaviour associated with the event.
 	 * @method preventDefault
 	 **/
 	p.preventDefault = function() {
@@ -323,6 +363,7 @@ this.createjs = this.createjs||{};
 	 * @method set
 	 * @param {Object} props A generic object containing properties to copy to the instance.
 	 * @return {Event} Returns the instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	*/
 	p.set = function(props) {
 		for (var n in props) { this[n] = props[n]; }
@@ -421,6 +462,19 @@ this.createjs = this.createjs||{};
 	}
 	var p = EventDispatcher.prototype;
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 
 // static public methods:
 	/**
@@ -485,7 +539,11 @@ this.createjs = this.createjs||{};
 	 * only run once, associate arbitrary data with the listener, and remove the listener.
 	 * 
 	 * This method works by creating an anonymous wrapper function and subscribing it with addEventListener.
-	 * The created anonymous function is returned for use with .removeEventListener (or .off).
+	 * The wrapper function is returned for use with `removeEventListener` (or `off`).
+	 * 
+	 * <b>IMPORTANT:</b> To remove a listener added with `on`, you must pass in the returned wrapper function as the listener, or use
+	 * {{#crossLink "Event/remove"}}{{/crossLink}}. Likewise, each time you call `on` a NEW wrapper function is subscribed, so multiple calls
+	 * to `on` with the same params will create multiple listeners.
 	 * 
 	 * <h4>Example</h4>
 	 * 
@@ -555,6 +613,9 @@ this.createjs = this.createjs||{};
 	/**
 	 * A shortcut to the removeEventListener method, with the same parameters and return value. This is a companion to the
 	 * .on method.
+	 * 
+	 * <b>IMPORTANT:</b> To remove a listener added with `on`, you must pass in the returned wrapper function as the listener. See 
+	 * {{#crossLink "EventDispatcher/on"}}{{/crossLink}} for an example.
 	 *
 	 * @method off
 	 * @param {String} type The string type of the event.
@@ -600,19 +661,24 @@ this.createjs = this.createjs||{};
 	 * @method dispatchEvent
 	 * @param {Object | String | Event} eventObj An object with a "type" property, or a string type.
 	 * While a generic object will work, it is recommended to use a CreateJS Event instance. If a string is used,
-	 * dispatchEvent will construct an Event instance with the specified type.
-	 * @return {Boolean} Returns the value of eventObj.defaultPrevented.
+	 * dispatchEvent will construct an Event instance if necessary with the specified type. This latter approach can
+	 * be used to avoid event object instantiation for non-bubbling events that may not have any listeners.
+	 * @param {Boolean} [bubbles] Specifies the `bubbles` value when a string was passed to eventObj.
+	 * @param {Boolean} [cancelable] Specifies the `cancelable` value when a string was passed to eventObj.
+	 * @return {Boolean} Returns false if `preventDefault()` was called on a cancelable event, true otherwise.
 	 **/
-	p.dispatchEvent = function(eventObj) {
+	p.dispatchEvent = function(eventObj, bubbles, cancelable) {
 		if (typeof eventObj == "string") {
-			// won't bubble, so skip everything if there's no listeners:
+			// skip everything if there's no listeners and it doesn't bubble:
 			var listeners = this._listeners;
-			if (!listeners || !listeners[eventObj]) { return false; }
-			eventObj = new createjs.Event(eventObj);
+			if (!bubbles && (!listeners || !listeners[eventObj])) { return true; }
+			eventObj = new createjs.Event(eventObj, bubbles, cancelable);
 		} else if (eventObj.target && eventObj.clone) {
 			// redispatching an active event object, so clone it:
 			eventObj = eventObj.clone();
 		}
+		
+		// TODO: it would be nice to eliminate this. Maybe in favour of evtObj instanceof Event? Or !!evtObj.createEvent
 		try { eventObj.target = this; } catch (e) {} // try/catch allows redispatching of native events
 
 		if (!eventObj.bubbles || !this.parent) {
@@ -631,7 +697,7 @@ this.createjs = this.createjs||{};
 				list[i]._dispatchEvent(eventObj, 3);
 			}
 		}
-		return eventObj.defaultPrevented;
+		return !eventObj.defaultPrevented;
 	};
 
 	/**
@@ -719,27 +785,22 @@ this.createjs = this.createjs||{};
 
 // constructor:
 	/**
-	 * The Ticker provides  a centralized tick or heartbeat broadcast at a set interval. Listeners can subscribe to the tick
+	 * The Ticker provides a centralized tick or heartbeat broadcast at a set interval. Listeners can subscribe to the tick
 	 * event to be notified when a set time interval has elapsed.
 	 *
 	 * Note that the interval that the tick event is called is a target interval, and may be broadcast at a slower interval
-	 * during times of high CPU load. The Ticker class uses a static interface (ex. <code>Ticker.getPaused()</code>) and
-	 * should not be instantiated.
+	 * when under high CPU load. The Ticker class uses a static interface (ex. `Ticker.framerate = 30;`) and
+	 * can not be instantiated.
 	 *
 	 * <h4>Example</h4>
 	 *
 	 *      createjs.Ticker.addEventListener("tick", handleTick);
 	 *      function handleTick(event) {
-	 *          // Actions carried out each frame
+	 *          // Actions carried out each tick (aka frame)
 	 *          if (!event.paused) {
 	 *              // Actions carried out when the Ticker is not paused.
 	 *          }
 	 *      }
-	 *
-	 * To update a stage every tick, the {{#crossLink "Stage"}}{{/crossLink}} instance can also be used as a listener, as
-	 * it will automatically update when it receives a tick event:
-	 *
-	 *      createjs.Ticker.addEventListener("tick", stage);
 	 *
 	 * @class Ticker
 	 * @uses EventDispatcher
@@ -756,13 +817,15 @@ this.createjs = this.createjs||{};
 	 * uses a simple heuristic that compares the time of the RAF return to the target time for the current frame and
 	 * dispatches the tick when the time is within a certain threshold.
 	 *
-	 * This mode has a higher variance for time between frames than TIMEOUT, but does not require that content be time
-	 * based as with RAF while gaining the benefits of that API (screen synch, background throttling).
+	 * This mode has a higher variance for time between frames than {{#crossLink "Ticker/TIMEOUT:property"}}{{/crossLink}},
+	 * but does not require that content be time based as with {{#crossLink "Ticker/RAF:property"}}{{/crossLink}} while
+	 * gaining the benefits of that API (screen synch, background throttling).
 	 *
 	 * Variance is usually lowest for framerates that are a divisor of the RAF frequency. This is usually 60, so
 	 * framerates of 10, 12, 15, 20, and 30 work well.
 	 *
-	 * Falls back on TIMEOUT if the requestAnimationFrame API is not supported.
+	 * Falls back to {{#crossLink "Ticker/TIMEOUT:property"}}{{/crossLink}} if the requestAnimationFrame API is not
+	 * supported.
 	 * @property RAF_SYNCHED
 	 * @static
 	 * @type {String}
@@ -774,10 +837,11 @@ this.createjs = this.createjs||{};
 	/**
 	 * In this mode, Ticker passes through the requestAnimationFrame heartbeat, ignoring the target framerate completely.
 	 * Because requestAnimationFrame frequency is not deterministic, any content using this mode should be time based.
-	 * You can leverage {{#crossLink "Ticker/getTime"}}{{/crossLink}} and the tick event object's "delta" properties
-	 * to make this easier.
+	 * You can leverage {{#crossLink "Ticker/getTime"}}{{/crossLink}} and the {{#crossLink "Ticker/tick:event"}}{{/crossLink}}
+	 * event object's "delta" properties to make this easier.
 	 *
-	 * Falls back on TIMEOUT if the requestAnimationFrame API is not supported.
+	 * Falls back on {{#crossLink "Ticker/TIMEOUT:property"}}{{/crossLink}} if the requestAnimationFrame API is not
+	 * supported.
 	 * @property RAF
 	 * @static
 	 * @type {String}
@@ -792,7 +856,7 @@ this.createjs = this.createjs||{};
 	 * @property TIMEOUT
 	 * @static
 	 * @type {String}
-	 * @default "timer"
+	 * @default "timeout"
 	 * @readonly
 	 **/
 	Ticker.TIMEOUT = "timeout";
@@ -817,7 +881,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} delta The time elapsed in ms since the last tick.
 	 * @param {Number} time The total time in ms since Ticker was initialized.
 	 * @param {Number} runTime The total time in ms that Ticker was not paused since it was initialized. For example,
-	 * 	you could determine the amount of time that the Ticker has been paused since initialization with time-runTime.
+	 * 	you could determine the amount of time that the Ticker has been paused since initialization with `time-runTime`.
 	 * @since 0.6.0
 	 */
 
@@ -861,6 +925,29 @@ this.createjs = this.createjs||{};
 	 * @default 0
 	 */
 	Ticker.maxDelta = 0;
+	
+	/**
+	 * When the ticker is paused, all listeners will still receive a tick event, but the <code>paused</code> property
+	 * of the event will be `true`. Also, while paused the `runTime` will not increase. See {{#crossLink "Ticker/tick:event"}}{{/crossLink}},
+	 * {{#crossLink "Ticker/getTime"}}{{/crossLink}}, and {{#crossLink "Ticker/getEventTime"}}{{/crossLink}} for more
+	 * info.
+	 *
+	 * <h4>Example</h4>
+	 *
+	 *      createjs.Ticker.addEventListener("tick", handleTick);
+	 *      createjs.Ticker.paused = true;
+	 *      function handleTick(event) {
+	 *          console.log(event.paused,
+	 *          	createjs.Ticker.getTime(false),
+	 *          	createjs.Ticker.getTime(true));
+	 *      }
+	 *
+	 * @property paused
+	 * @static
+	 * @type {Boolean}
+	 * @default false
+	 **/
+	Ticker.paused = false;
 
 
 // mix-ins:
@@ -879,15 +966,9 @@ this.createjs = this.createjs||{};
 
 
 // private static properties:
-	/** 
-	 * @property _paused
-	 * @type {Boolean}
-	 * @protected
-	 **/
-	Ticker._paused = false;
-
 	/**
 	 * @property _inited
+	 * @static
 	 * @type {Boolean}
 	 * @protected
 	 **/
@@ -895,6 +976,7 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * @property _startTime
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
@@ -902,6 +984,7 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * @property _pausedTime
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
@@ -910,6 +993,7 @@ this.createjs = this.createjs||{};
 	/**
 	 * The number of ticks that have passed
 	 * @property _ticks
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
@@ -918,6 +1002,7 @@ this.createjs = this.createjs||{};
 	/**
 	 * The number of ticks that have passed while Ticker has been paused
 	 * @property _pausedTicks
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
@@ -925,6 +1010,7 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * @property _interval
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
@@ -932,6 +1018,7 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * @property _lastTime
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
@@ -939,6 +1026,7 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * @property _times
+	 * @static
 	 * @type {Array}
 	 * @protected
 	 **/
@@ -946,6 +1034,7 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * @property _tickTimes
+	 * @static
 	 * @type {Array}
 	 * @protected
 	 **/
@@ -954,18 +1043,92 @@ this.createjs = this.createjs||{};
 	/**
 	 * Stores the timeout or requestAnimationFrame id.
 	 * @property _timerId
+	 * @static
 	 * @type {Number}
 	 * @protected
 	 **/
 	Ticker._timerId = null;
 	
 	/**
-	 * True if currently using requestAnimationFrame, false if using setTimeout.
+	 * True if currently using requestAnimationFrame, false if using setTimeout. This may be different than timingMode
+	 * if that property changed and a tick hasn't fired.
 	 * @property _raf
+	 * @static
 	 * @type {Boolean}
 	 * @protected
 	 **/
 	Ticker._raf = true;
+	
+
+// static getter / setters:
+	/**
+	 * Use the {{#crossLink "Ticker/interval:property"}}{{/crossLink}} property instead.
+	 * @method setInterval
+	 * @static
+	 * @param {Number} interval
+	 * @deprecated
+	 **/
+	Ticker.setInterval = function(interval) {
+		Ticker._interval = interval;
+		if (!Ticker._inited) { return; }
+		Ticker._setupTick();
+	};
+
+	/**
+	 * Use the {{#crossLink "Ticker/interval:property"}}{{/crossLink}} property instead.
+	 * @method getInterval
+	 * @static
+	 * @return {Number}
+	 * @deprecated
+	 **/
+	Ticker.getInterval = function() {
+		return Ticker._interval;
+	};
+
+	/**
+	 * Use the {{#crossLink "Ticker/framerate:property"}}{{/crossLink}} property instead.
+	 * @method setFPS
+	 * @static
+	 * @param {Number} value
+	 * @deprecated
+	 **/
+	Ticker.setFPS = function(value) {
+		Ticker.setInterval(1000/value);
+	};
+
+	/**
+	 * Use the {{#crossLink "Ticker/framerate:property"}}{{/crossLink}} property instead.
+	 * @method getFPS
+	 * @static
+	 * @return {Number}
+	 * @deprecated
+	 **/
+	Ticker.getFPS = function() {
+		return 1000/Ticker._interval;
+	};
+
+	/**
+	 * Indicates the target time (in milliseconds) between ticks. Default is 50 (20 FPS).
+	 * Note that actual time between ticks may be more than specified depending on CPU load.
+	 * This property is ignored if the ticker is using the `RAF` timing mode.
+	 * @property interval
+	 * @static
+	 * @type {Number}
+	 **/
+	 
+	/**
+	 * Indicates the target frame rate in frames per second (FPS). Effectively just a shortcut to `interval`, where
+	 * `framerate == 1000/interval`.
+	 * @property framerate
+	 * @static
+	 * @type {Number}
+	 **/
+	try {
+		Object.defineProperties(Ticker, {
+			interval: { get: Ticker.getInterval, set: Ticker.setInterval },
+			framerate: { get: Ticker.getFPS, set: Ticker.setFPS }
+		});
+	} catch (e) { console.log(e); }
 
 
 // public static methods:
@@ -981,7 +1144,7 @@ this.createjs = this.createjs||{};
 		Ticker._tickTimes = [];
 		Ticker._startTime = Ticker._getTime();
 		Ticker._times.push(Ticker._lastTime = 0);
-		Ticker.setInterval(Ticker._interval);
+		Ticker.interval = Ticker._interval;
 	};
 	
 	/**
@@ -997,54 +1160,9 @@ this.createjs = this.createjs||{};
 			clearTimeout(Ticker._timerId);
 		}
 		Ticker.removeAllEventListeners("tick");
-		Ticker._timerId = null;
+		Ticker._timerId = Ticker._times = Ticker._tickTimes = null;
+		Ticker._startTime = Ticker._lastTime = Ticker._ticks = 0;
 		Ticker._inited = false;
-	};
-	
-	/**
-	 * Sets the target time (in milliseconds) between ticks. Default is 50 (20 FPS).
-	 *
-	 * Note actual time between ticks may be more than requested depending on CPU load.
-	 * @method setInterval
-	 * @static
-	 * @param {Number} interval Time in milliseconds between ticks. Default value is 50.
-	 **/
-	Ticker.setInterval = function(interval) {
-		Ticker._interval = interval;
-		if (!Ticker._inited) { return; }
-		Ticker._setupTick();
-	};
-
-	/**
-	 * Returns the current target time between ticks, as set with {{#crossLink "Ticker/setInterval"}}{{/crossLink}}.
-	 * @method getInterval
-	 * @static
-	 * @return {Number} The current target interval in milliseconds between tick events.
-	 **/
-	Ticker.getInterval = function() {
-		return Ticker._interval;
-	};
-
-	/**
-	 * Sets the target frame rate in frames per second (FPS). For example, with an interval of 40, <code>getFPS()</code>
-	 * will return 25 (1000ms per second divided by 40 ms per tick = 25fps).
-	 * @method setFPS
-	 * @static
-	 * @param {Number} value Target number of ticks broadcast per second.
-	 **/
-	Ticker.setFPS = function(value) {
-		Ticker.setInterval(1000/value);
-	};
-
-	/**
-	 * Returns the target frame rate in frames per second (FPS). For example, with an interval of 40, <code>getFPS()</code>
-	 * will return 25 (1000ms per second divided by 40 ms per tick = 25fps).
-	 * @method getFPS
-	 * @static
-	 * @return {Number} The current target number of frames / ticks broadcast per second.
-	 **/
-	Ticker.getFPS = function() {
-		return 1000/Ticker._interval;
 	};
 
 	/**
@@ -1093,50 +1211,27 @@ this.createjs = this.createjs||{};
 	};
 
 	/**
-	 * Changes the "paused" state of the Ticker, which can be retrieved by the {{#crossLink "Ticker/getPaused"}}{{/crossLink}}
-	 * method, and is passed as the "paused" property of the <code>tick</code> event. When the ticker is paused, all
-	 * listeners will still receive a tick event, but the <code>paused</code> property will be false.
-	 *
-	 * Note that in EaselJS v0.5.0 and earlier, "pauseable" listeners would <strong>not</strong> receive the tick
-	 * callback when Ticker was paused. This is no longer the case.
-	 *
-	 * <h4>Example</h4>
-	 *
-	 *      createjs.Ticker.addEventListener("tick", handleTick);
-	 *      createjs.Ticker.setPaused(true);
-	 *      function handleTick(event) {
-	 *          console.log("Paused:", event.paused, createjs.Ticker.getPaused());
-	 *      }
-	 *
+	 * Use the {{#crossLink "Ticker/paused:property"}}{{/crossLink}} property instead.
 	 * @method setPaused
 	 * @static
-	 * @param {Boolean} value Indicates whether to pause (true) or unpause (false) Ticker.
+	 * @param {Boolean} value
+	 * @deprecated
 	 **/
 	Ticker.setPaused = function(value) {
-		Ticker._paused = value;
+		// TODO: deprecated.
+		Ticker.paused = value;
 	};
 
 	/**
-	 * Returns a boolean indicating whether Ticker is currently paused, as set with {{#crossLink "Ticker/setPaused"}}{{/crossLink}}.
-	 * When the ticker is paused, all listeners will still receive a tick event, but this value will be false.
-	 *
-	 * Note that in EaselJS v0.5.0 and earlier, "pauseable" listeners would <strong>not</strong> receive the tick
-	 * callback when Ticker was paused. This is no longer the case.
-	 *
-	 * <h4>Example</h4>
-	 *
-	 *      createjs.Ticker.addEventListener("tick", handleTick);
-	 *      createjs.Ticker.setPaused(true);
-	 *      function handleTick(event) {
-	 *          console.log("Paused:", createjs.Ticker.getPaused());
-	 *      }
-	 *
+	 * Use the {{#crossLink "Ticker/paused:property"}}{{/crossLink}} property instead.
 	 * @method getPaused
 	 * @static
-	 * @return {Boolean} Whether the Ticker is currently paused.
+	 * @return {Boolean}
+	 * @deprecated
 	 **/
 	Ticker.getPaused = function() {
-		return Ticker._paused;
+		// TODO: deprecated.
+		return Ticker.paused;
 	};
 
 	/**
@@ -1150,12 +1245,14 @@ this.createjs = this.createjs||{};
 	 * @return {Number} Number of milliseconds that have elapsed since Ticker was initialized or -1.
 	 **/
 	Ticker.getTime = function(runTime) {
-		return Ticker._startTime ? Ticker._getTime() - Ticker._startTime - (runTime ? Ticker._pausedTime : 0) : -1;
+		return Ticker._startTime ? Ticker._getTime() - (runTime ? Ticker._pausedTime : 0) : -1;
 	};
 
 	/**
-	 * Similar to getTime(), but returns the time included with the current (or most recent) tick event object.
+	 * Similar to the {{#crossLink "Ticker/getTime"}}{{/crossLink}} method, but returns the time on the most recent {{#crossLink "Ticker/tick:event"}}{{/crossLink}}
+	 * event object.
 	 * @method getEventTime
+	 * @static
 	 * @param runTime {Boolean} [runTime=false] If true, the runTime property will be returned instead of time.
 	 * @returns {number} The time or runTime property from the most recent tick event or -1.
 	 */
@@ -1174,7 +1271,7 @@ this.createjs = this.createjs||{};
 	 * @return {Number} of ticks that have been broadcast.
 	 **/
 	Ticker.getTicks = function(pauseable) {
-		return  Ticker._ticks - (pauseable ?Ticker._pausedTicks : 0);
+		return  Ticker._ticks - (pauseable ? Ticker._pausedTicks : 0);
 	};
 
 
@@ -1243,32 +1340,31 @@ this.createjs = this.createjs||{};
 	 * @protected
 	 **/
 	Ticker._tick = function() {
+		var paused = Ticker.paused;
 		var time = Ticker._getTime();
-		var adjTime = time-Ticker._startTime;
 		var elapsedTime = time-Ticker._lastTime;
-		var paused = Ticker._paused;
-		
+		Ticker._lastTime = time;
 		Ticker._ticks++;
+		
 		if (paused) {
 			Ticker._pausedTicks++;
 			Ticker._pausedTime += elapsedTime;
 		}
-		Ticker._lastTime = time;
 		
 		if (Ticker.hasEventListener("tick")) {
 			var event = new createjs.Event("tick");
 			var maxDelta = Ticker.maxDelta;
 			event.delta = (maxDelta && elapsedTime > maxDelta) ? maxDelta : elapsedTime;
 			event.paused = paused;
-			event.time = adjTime;
-			event.runTime = adjTime-Ticker._pausedTime;
+			event.time = time;
+			event.runTime = time-Ticker._pausedTime;
 			Ticker.dispatchEvent(event);
 		}
 		
 		Ticker._tickTimes.unshift(Ticker._getTime()-time);
 		while (Ticker._tickTimes.length > 100) { Ticker._tickTimes.pop(); }
 
-		Ticker._times.unshift(adjTime);
+		Ticker._times.unshift(time);
 		while (Ticker._times.length > 100) { Ticker._times.pop(); }
 	};
 
@@ -1279,7 +1375,7 @@ this.createjs = this.createjs||{};
 	 **/
 	var now = window.performance && (performance.now || performance.mozNow || performance.msNow || performance.oNow || performance.webkitNow);
 	Ticker._getTime = function() {
-		return (now&&now.call(performance))||(new Date().getTime());
+		return ((now&&now.call(performance))||(new Date().getTime())) - Ticker._startTime;
 	};
 
 
@@ -1357,10 +1453,11 @@ this.createjs = this.createjs||{};
 	 * @param {Boolean} primary Indicates whether this is the primary pointer in a multitouch environment.
 	 * @param {Number} rawX The raw x position relative to the stage.
 	 * @param {Number} rawY The raw y position relative to the stage.
+	 * @param {DisplayObject} relatedTarget The secondary target for the event.
 	 * @extends Event
 	 * @constructor
 	 **/
-	function MouseEvent(type, bubbles, cancelable, stageX, stageY, nativeEvent, pointerID, primary, rawX, rawY) {
+	function MouseEvent(type, bubbles, cancelable, stageX, stageY, nativeEvent, pointerID, primary, rawX, rawY, relatedTarget) {
 		this.Event_constructor(type, bubbles, cancelable);
 		
 		
@@ -1420,8 +1517,22 @@ this.createjs = this.createjs||{};
 		 * @type {Boolean}
 		 */
 		this.primary = !!primary;
+		
+		/**
+		 * The secondary target for the event, if applicable. This is used for mouseout/rollout
+		 * events to indicate the object that the mouse entered from, mouseover/rollover for the object the mouse exited,
+		 * and stagemousedown/stagemouseup events for the object that was the under the cursor, if any.
+		 * 
+		 * Only valid interaction targets will be returned (ie. objects with mouse listeners or a cursor set).
+		 * @property relatedTarget
+		 * @type {DisplayObject}
+		 */
+		this.relatedTarget = relatedTarget;
 	}
 	var p = createjs.extend(MouseEvent, createjs.Event);
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 	
 	
 // getter / setters:
@@ -1445,10 +1556,22 @@ this.createjs = this.createjs||{};
 		return this.currentTarget.globalToLocal(this.rawX, this.rawY).y;
 	};
 	
+	/**
+	 * Indicates whether the event was generated by a touch input (versus a mouse input).
+	 * @property isTouch
+	 * @type {Boolean}
+	 * @readonly
+	 */
+	p._get_isTouch = function() {
+		return this.pointerID !== -1;
+	};
+	
+	
 	try {
 		Object.defineProperties(p, {
 			localX: { get: p._get_localX },
-			localY: { get: p._get_localY }
+			localY: { get: p._get_localY },
+			isTouch: { get: p._get_isTouch }
 		});
 	} catch (e) {} // TODO: use Log
 
@@ -1488,7 +1611,16 @@ this.createjs = this.createjs||{};
 
 // constructor:
 	/**
-	 * Represents an affine transformation matrix, and provides tools for constructing and concatenating matrixes.
+	 * Represents an affine transformation matrix, and provides tools for constructing and concatenating matrices.
+	 *
+	 * This matrix can be visualized as:
+	 *
+	 * 	[ a  c  tx
+	 * 	  b  d  ty
+	 * 	  0  0  1  ]
+	 *
+	 * Note the locations of b and c.
+	 *
 	 * @class Matrix2D
 	 * @param {Number} [a=1] Specifies the a property for the new matrix.
 	 * @param {Number} [b=0] Specifies the b property for the new matrix.
@@ -1541,6 +1673,19 @@ this.createjs = this.createjs||{};
 	}
 	var p = Matrix2D.prototype;
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 
 // constants:
 	/**
@@ -1589,9 +1734,9 @@ this.createjs = this.createjs||{};
 	};
 
 	/**
-	 * Appends the specified matrix properties with this matrix. All parameters are required.
-	 * This is the equivalent of multiplying the specified matrix against this matrix.
-	 * @method prepend
+	 * Appends the specified matrix properties to this matrix. All parameters are required.
+	 * This is the equivalent of multiplying `(this matrix) * (specified matrix)`.
+	 * @method append
 	 * @param {Number} a
 	 * @param {Number} b
 	 * @param {Number} c
@@ -1601,25 +1746,26 @@ this.createjs = this.createjs||{};
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	 **/
 	p.append = function(a, b, c, d, tx, ty) {
-		var tx1 = this.tx;
+		var a1 = this.a;
+		var b1 = this.b;
+		var c1 = this.c;
+		var d1 = this.d;
 		if (a != 1 || b != 0 || c != 0 || d != 1) {
-			var a1 = this.a;
-			var c1 = this.c;
-			this.a  = a1*a+this.b*c;
-			this.b  = a1*b+this.b*d;
-			this.c  = c1*a+this.d*c;
-			this.d  = c1*b+this.d*d;
+			this.a  = a1*a+c1*b;
+			this.b  = b1*a+d1*b;
+			this.c  = a1*c+c1*d;
+			this.d  = b1*c+d1*d;
 		}
-		this.tx = tx1*a+this.ty*c+tx;
-		this.ty = tx1*b+this.ty*d+ty;
+		this.tx = a1*tx+c1*ty+this.tx;
+		this.ty = b1*tx+d1*ty+this.ty;
 		return this;
 	};
 
 	/**
-	 * Appends the specified matrix properties with this matrix.
-	 * This is the equivalent of multiplying this matrix against the specified matrix.
+	 * Prepends the specified matrix properties to this matrix.
+	 * This is the equivalent of multiplying `(specified matrix) * (this matrix)`.
 	 * All parameters are required.
-	 * @method append
+	 * @method prepend
 	 * @param {Number} a
 	 * @param {Number} b
 	 * @param {Number} c
@@ -1630,30 +1776,22 @@ this.createjs = this.createjs||{};
 	 **/
 	p.prepend = function(a, b, c, d, tx, ty) {
 		var a1 = this.a;
-		var b1 = this.b;
 		var c1 = this.c;
-		var d1 = this.d;
+		var tx1 = this.tx;
 
-		this.a  = a*a1+b*c1;
-		this.b  = a*b1+b*d1;
-		this.c  = c*a1+d*c1;
-		this.d  = c*b1+d*d1;
-		this.tx = tx*a1+ty*c1+this.tx;
-		this.ty = tx*b1+ty*d1+this.ty;
+		this.a  = a*a1+c*this.b;
+		this.b  = b*a1+d*this.b;
+		this.c  = a*c1+c*this.d;
+		this.d  = b*c1+d*this.d;
+		this.tx = a*tx1+c*this.ty+tx;
+		this.ty = b*tx1+d*this.ty+ty;
 		return this;
 	};
 
 	/**
-	 * Appends the specified matrix with this matrix.
-	 * This is the equivalent of multiplying the specified matrix against this matrix.
-	 * For example, you could calculate the combined transformation for a child object using:
-	 * 	var o = myDisplayObject;
-	 * 	var mtx = o.getMatrix();
-	 * 	while (o = o.parent) {
-	 * 		// append each parent's transformation in turn:
-	 * 		o.appendMatrix(o.getMatrix());
-	 * 	}
-	 * @method prependMatrix
+	 * Appends the specified matrix to this matrix.
+	 * This is the equivalent of multiplying `(this matrix) * (specified matrix)`.
+	 * @method appendMatrix
 	 * @param {Matrix2D} matrix
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	 **/
@@ -1662,9 +1800,17 @@ this.createjs = this.createjs||{};
 	};
 
 	/**
-	 * Prepends the specified matrix with this matrix.
-	 * This is the equivalent of multiplying this matrix against the specified matrix.
-	 * @method appendMatrix
+	 * Prepends the specified matrix to this matrix.
+	 * This is the equivalent of multiplying `(specified matrix) * (this matrix)`.
+	 * For example, you could calculate the combined transformation for a child object using:
+	 * 
+	 * 	var o = myDisplayObject;
+	 * 	var mtx = o.getMatrix();
+	 * 	while (o = o.parent) {
+	 * 		// prepend each parent's transformation in turn:
+	 * 		o.prependMatrix(o.getMatrix());
+	 * 	}
+	 * @method prependMatrix
 	 * @param {Matrix2D} matrix
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	 **/
@@ -1673,10 +1819,12 @@ this.createjs = this.createjs||{};
 	};
 
 	/**
-	 * Generates matrix properties from the specified display object transform properties, and appends them with this matrix.
-	 * For example, you can use this to generate a matrix from a display object: var mtx = new Matrix2D();
-	 * mtx.appendTransform(o.x, o.y, o.scaleX, o.scaleY, o.rotation);
-	 * @method prependTransform
+	 * Generates matrix properties from the specified display object transform properties, and appends them to this matrix.
+	 * For example, you can use this to generate a matrix representing the transformations of a display object:
+	 * 
+	 * 	var mtx = new Matrix2D();
+	 * 	mtx.appendTransform(o.x, o.y, o.scaleX, o.scaleY, o.rotation);
+	 * @method appendTransform
 	 * @param {Number} x
 	 * @param {Number} y
 	 * @param {Number} scaleX
@@ -1698,27 +1846,38 @@ this.createjs = this.createjs||{};
 			sin = 0;
 		}
 
-		if (regX || regY) {
-			// append the registration offset:
-			this.tx -= regX; this.ty -= regY;
-		}
 		if (skewX || skewY) {
-			// TODO: can this be combined into a single prepend operation?
+			// TODO: can this be combined into a single append operation?
 			skewX *= Matrix2D.DEG_TO_RAD;
 			skewY *= Matrix2D.DEG_TO_RAD;
-			this.append(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, 0, 0);
 			this.append(Math.cos(skewY), Math.sin(skewY), -Math.sin(skewX), Math.cos(skewX), x, y);
+			this.append(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, 0, 0);
 		} else {
 			this.append(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, x, y);
+		}
+		
+		if (regX || regY) {
+			// append the registration offset:
+			this.tx -= regX*this.a+regY*this.c; 
+			this.ty -= regX*this.b+regY*this.d;
 		}
 		return this;
 	};
 
 	/**
-	 * Generates matrix properties from the specified display object transform properties, and prepends them with this matrix.
-	 * For example, you can use this to generate a matrix from a display object: var mtx = new Matrix2D();
-	 * mtx.prependTransform(o.x, o.y, o.scaleX, o.scaleY, o.rotation);
-	 * @method appendTransform
+	 * Generates matrix properties from the specified display object transform properties, and prepends them to this matrix.
+	 * For example, you could calculate the combined transformation for a child object using:
+	 * 
+	 * 	var o = myDisplayObject;
+	 * 	var mtx = new createjs.Matrix2D();
+	 * 	do  {
+	 * 		// prepend each parent's transformation in turn:
+	 * 		mtx.prependTransform(o.x, o.y, o.scaleX, o.scaleY, o.rotation, o.skewX, o.skewY, o.regX, o.regY);
+	 * 	} while (o = o.parent);
+	 * 	
+	 * 	Note that the above example would not account for {{#crossLink "DisplayObject/transformMatrix:property"}}{{/crossLink}}
+	 * 	values. See {{#crossLink "Matrix2D/prependMatrix"}}{{/crossLink}} for an example that does.
+	 * @method prependTransform
 	 * @param {Number} x
 	 * @param {Number} y
 	 * @param {Number} scaleX
@@ -1740,75 +1899,71 @@ this.createjs = this.createjs||{};
 			sin = 0;
 		}
 
-		if (skewX || skewY) {
-			// TODO: can this be combined into a single append?
-			skewX *= Matrix2D.DEG_TO_RAD;
-			skewY *= Matrix2D.DEG_TO_RAD;
-			this.prepend(Math.cos(skewY), Math.sin(skewY), -Math.sin(skewX), Math.cos(skewX), x, y);
-			this.prepend(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, 0, 0);
-		} else {
-			this.prepend(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, x, y);
-		}
-
 		if (regX || regY) {
 			// prepend the registration offset:
-			this.tx -= regX*this.a+regY*this.c; 
-			this.ty -= regX*this.b+regY*this.d;
+			this.tx -= regX; this.ty -= regY;
+		}
+		if (skewX || skewY) {
+			// TODO: can this be combined into a single prepend operation?
+			skewX *= Matrix2D.DEG_TO_RAD;
+			skewY *= Matrix2D.DEG_TO_RAD;
+			this.prepend(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, 0, 0);
+			this.prepend(Math.cos(skewY), Math.sin(skewY), -Math.sin(skewX), Math.cos(skewX), x, y);
+		} else {
+			this.prepend(cos*scaleX, sin*scaleX, -sin*scaleY, cos*scaleY, x, y);
 		}
 		return this;
 	};
 
 	/**
-	 * Applies a rotation transformation to the matrix.
+	 * Applies a clockwise rotation transformation to the matrix.
 	 * @method rotate
-	 * @param {Number} angle The angle in radians. To use degrees, multiply by <code>Math.PI/180</code>.
+	 * @param {Number} angle The angle to rotate by, in degrees. To use a value in radians, multiply it by `180/Math.PI`.
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	 **/
 	p.rotate = function(angle) {
+		angle = angle*Matrix2D.DEG_TO_RAD;
 		var cos = Math.cos(angle);
 		var sin = Math.sin(angle);
 
 		var a1 = this.a;
-		var c1 = this.c;
-		var tx1 = this.tx;
+		var b1 = this.b;
 
-		this.a = a1*cos-this.b*sin;
-		this.b = a1*sin+this.b*cos;
-		this.c = c1*cos-this.d*sin;
-		this.d = c1*sin+this.d*cos;
-		this.tx = tx1*cos-this.ty*sin;
-		this.ty = tx1*sin+this.ty*cos;
+		this.a = a1*cos+this.c*sin;
+		this.b = b1*cos+this.d*sin;
+		this.c = -a1*sin+this.c*cos;
+		this.d = -b1*sin+this.d*cos;
 		return this;
 	};
 
 	/**
 	 * Applies a skew transformation to the matrix.
 	 * @method skew
-	 * @param {Number} skewX The amount to skew horizontally in degrees.
+	 * @param {Number} skewX The amount to skew horizontally in degrees. To use a value in radians, multiply it by `180/Math.PI`.
 	 * @param {Number} skewY The amount to skew vertically in degrees.
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	*/
 	p.skew = function(skewX, skewY) {
 		skewX = skewX*Matrix2D.DEG_TO_RAD;
 		skewY = skewY*Matrix2D.DEG_TO_RAD;
-		this.prepend(Math.cos(skewY), Math.sin(skewY), -Math.sin(skewX), Math.cos(skewX), 0, 0);
+		this.append(Math.cos(skewY), Math.sin(skewY), -Math.sin(skewX), Math.cos(skewX), 0, 0);
 		return this;
 	};
 
 	/**
 	 * Applies a scale transformation to the matrix.
 	 * @method scale
-	 * @param {Number} x The amount to scale horizontally
-	 * @param {Number} y The amount to scale vertically
+	 * @param {Number} x The amount to scale horizontally. E.G. a value of 2 will double the size in the X direction, and 0.5 will halve it.
+	 * @param {Number} y The amount to scale vertically.
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	 **/
 	p.scale = function(x, y) {
 		this.a *= x;
+		this.b *= x;
+		this.c *= y;
 		this.d *= y;
-		this.c *= x;
-		this.b *= y;
-		this.tx *= x;
-		this.ty *= y;
+		//this.tx *= x;
+		//this.ty *= y;
 		return this;
 	};
 
@@ -1820,8 +1975,8 @@ this.createjs = this.createjs||{};
 	 * @return {Matrix2D} This matrix. Useful for chaining method calls.
 	 **/
 	p.translate = function(x, y) {
-		this.tx += x;
-		this.ty += y;
+		this.tx += this.a*x + this.c*y;
+		this.ty += this.b*x + this.d*y;
 		return this;
 	};
 
@@ -2028,6 +2183,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} [compositeOperation=null] A compositeOperation value or null.
 	 * @param {Number} [matrix] A transformation matrix. Defaults to an identity matrix.
 	 * @return {DisplayProps} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
 	p.setValues = function (visible, alpha, shadow, compositeOperation, matrix) {
 		this.visible = visible == null ? true : !!visible;
@@ -2040,15 +2196,7 @@ this.createjs = this.createjs||{};
 
 // public methods:
 	/**
-	 * Appends the specified display properties. This is generally used to apply a parent's properties to a child's.
-	 * For example, to get the combined display properties that would be applied to a child, you could use:
-	 * 	var o = myDisplayObject;
-	 * 	var props = new createjs.DisplayProps();
-	 * 	do {
-	 * 		// append each parent's props in turn:
-	 * 		props.append(o.visible, o.alpha, o.shadow, o.compositeOperation, o.getMatrix());
-	 * 		o = o.parent;
-	 * 	} while (o);
+	 * Appends the specified display properties. This is generally used to apply a child's properties its parent's.
 	 * @method append
 	 * @param {Boolean} visible desired visible value
 	 * @param {Number} alpha desired alpha value
@@ -2056,18 +2204,28 @@ this.createjs = this.createjs||{};
 	 * @param {String} compositeOperation desired composite operation value
 	 * @param {Matrix2D} [matrix] a Matrix2D instance
 	 * @return {DisplayProps} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
-	p.prepend = function(visible, alpha, shadow, compositeOperation, matrix) {
+	p.append = function(visible, alpha, shadow, compositeOperation, matrix) {
 		this.alpha *= alpha;
 		this.shadow = shadow || this.shadow;
 		this.compositeOperation = compositeOperation || this.compositeOperation;
 		this.visible = this.visible && visible;
-		matrix&&this.matrix.prependMatrix(matrix);
+		matrix&&this.matrix.appendMatrix(matrix);
 		return this;
 	};
 	
 	/**
-	 * Prepends the specified display properties. This is generally used to apply a child's properties its parent's.
+	 * Prepends the specified display properties. This is generally used to apply a parent's properties to a child's.
+	 * For example, to get the combined display properties that would be applied to a child, you could use:
+	 * 
+	 * 	var o = myDisplayObject;
+	 * 	var props = new createjs.DisplayProps();
+	 * 	do {
+	 * 		// prepend each parent's props in turn:
+	 * 		props.prepend(o.visible, o.alpha, o.shadow, o.compositeOperation, o.getMatrix());
+	 * 	} while (o = o.parent);
+	 * 	
 	 * @method prepend
 	 * @param {Boolean} visible desired visible value
 	 * @param {Number} alpha desired alpha value
@@ -2075,13 +2233,14 @@ this.createjs = this.createjs||{};
 	 * @param {String} compositeOperation desired composite operation value
 	 * @param {Matrix2D} [matrix] a Matrix2D instance
 	 * @return {DisplayProps} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
-	p.append = function(visible, alpha, shadow, compositeOperation, matrix) {
+	p.prepend = function(visible, alpha, shadow, compositeOperation, matrix) {
 		this.alpha *= alpha;
 		this.shadow = this.shadow || shadow;
 		this.compositeOperation = this.compositeOperation || compositeOperation;
 		this.visible = this.visible && visible;
-		matrix&&this.matrix.appendMatrix(matrix);
+		matrix&&this.matrix.prependMatrix(matrix);
 		return this;
 	};
 	
@@ -2089,6 +2248,7 @@ this.createjs = this.createjs||{};
 	 * Resets this instance and its matrix to default values.
 	 * @method identity
 	 * @return {DisplayProps} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
 	p.identity = function() {
 		this.visible = true;
@@ -2154,7 +2314,20 @@ this.createjs = this.createjs||{};
 		 **/
 	}
 	var p = Point.prototype;
-	
+
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 	
 // public methods:
 	/** 
@@ -2163,6 +2336,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} [x=0] X position.
 	 * @param {Number} [y=0] Y position.
 	 * @return {Point} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
 	p.setValues = function(x, y) {
 		this.x = x||0;
@@ -2175,6 +2349,7 @@ this.createjs = this.createjs||{};
 	 * @method copy
 	 * @param {Point} point The point to copy properties from.
 	 * @return {Point} This point. Useful for chaining method calls.
+	 * @chainable
 	*/
 	p.copy = function(point) {
 		this.x = point.x;
@@ -2261,6 +2436,19 @@ this.createjs = this.createjs||{};
 	}
 	var p = Rectangle.prototype;
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 
 // public methods:
 	/** 
@@ -2271,6 +2459,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} [width=0] The width of the Rectangle.
 	 * @param {Number} [height=0] The height of the Rectangle.
 	 * @return {Rectangle} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
 	p.setValues = function(x, y, width, height) {
 		// don't forget to update docs in the constructor if these change:
@@ -2289,6 +2478,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} [width=0] The width of the rectangle.
 	 * @param {Number} [height=0] The height of the rectangle.
 	 * @return {Rectangle} This instance. Useful for chaining method calls.
+	 * @chainable
 	*/
 	p.extend = function(x, y, width, height) {
 		width = width||0;
@@ -2298,6 +2488,35 @@ this.createjs = this.createjs||{};
 		if (x < this.x) { this.width += this.x-x; this.x = x; }
 		if (y < this.y) { this.height += this.y-y; this.y = y; }
 		return this;
+	};
+	
+	/** 
+	 * Adds the specified padding to the rectangle's bounds.
+	 * @method extend
+	 * @param {Number} [top=0]
+	 * @param {Number} [left=0]
+	 * @param {Number} [right=0]
+	 * @param {Number} [bottom=0]
+	 * @return {Rectangle} This instance. Useful for chaining method calls.
+	 * @chainable
+	*/
+	p.pad = function(top, left, bottom, right) {
+		this.x -= left;
+		this.y -= top;
+		this.width += left+right;
+		this.height += top+bottom;
+		return this;
+	};
+	
+	/**
+	 * Copies all properties from the specified rectangle to this rectangle.
+	 * @method copy
+	 * @param {Rectangle} rectangle The rectangle to copy properties from.
+	 * @return {Rectangle} This rectangle. Useful for chaining method calls.
+	 * @chainable
+	*/
+	p.copy = function(rectangle) {
+		return this.setValues(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 	};
 	
 	/** 
@@ -2358,16 +2577,6 @@ this.createjs = this.createjs||{};
 	*/
 	p.isEmpty = function() {
 		return this.width <= 0 || this.height <= 0;
-	};
-	
-	/**
-	 * Copies all properties from the specified rectangle to this rectangle.
-	 * @method copy
-	 * @param {Rectangle} rectangle The rectangle to copy properties from.
-	 * @return {Rectangle} This rectangle. Useful for chaining method calls.
-	*/
-	p.copy = function(rectangle) {
-		return this.setValues(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 	};
 	
 	/**
@@ -2500,7 +2709,6 @@ this.createjs = this.createjs||{};
 		 * @protected
 		 **/
 		this._enabled = false;
-	
 		
 	// setup:
 		target.mouseChildren = false; // prevents issues when children are removed from the display list when state changes.
@@ -2516,18 +2724,26 @@ this.createjs = this.createjs||{};
 	}
 	var p = ButtonHelper.prototype;
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 	
 // getter / setters:
 	/**
-	 * Enables or disables the button functionality on the target.
-	 * @property enabled
-	 * @type {Boolean}
-	 **/
-	/**
-	 * Enables or disables the button functionality on the target.
-	 * @deprecated in favour of the enabled property.
+	 * Use the {{#crossLink "ButtonHelper/enabled:property"}}{{/crossLink}} property instead.
 	 * @method setEnabled
 	 * @param {Boolean} value
+	 * @deprecated
 	 **/
 	p.setEnabled = function(value) { // TODO: deprecated.
 		if (value == this._enabled) { return; }
@@ -2539,24 +2755,31 @@ this.createjs = this.createjs||{};
 			o.addEventListener("rollout", this);
 			o.addEventListener("mousedown", this);
 			o.addEventListener("pressup", this);
+			if (o._reset) { o.__reset = o._reset; o._reset = this._reset;}
 		} else {
 			o.cursor = null;
 			o.removeEventListener("rollover", this);
 			o.removeEventListener("rollout", this);
 			o.removeEventListener("mousedown", this);
 			o.removeEventListener("pressup", this);
+			if (o.__reset) { o._reset = o.__reset; delete(o.__reset); }
 		}
 	};
 	/**
-	 * Returns enabled state of this instance.
-	 * @deprecated in favour of the enabled property.
+	 * Use the {{#crossLink "ButtonHelper/enabled:property"}}{{/crossLink}} property instead.
 	 * @method getEnabled
-	 * @return {Boolean} The last value passed to setEnabled().
+	 * @return {Boolean}
+	 * @deprecated
 	 **/
 	p.getEnabled = function() {
 		return this._enabled;
 	};
 
+	/**
+	 * Enables or disables the button functionality on the target.
+	 * @property enabled
+	 * @type {Boolean}
+	 **/
 	try {
 		Object.defineProperties(p, {
 			enabled: { get: p.getEnabled, set: p.setEnabled }
@@ -2602,6 +2825,18 @@ this.createjs = this.createjs||{};
 			t.gotoAndStop&&t.gotoAndStop(label);
 		}
 	};
+	
+	/**
+	 * Injected into target. Preserves the paused state through a reset.
+	 * @method _reset
+	 * @protected
+	 **/
+	p._reset = function() {
+		// TODO: explore better ways to handle this issue. This is hacky & disrupts object signatures.
+		var p = this.paused;
+		this.__reset();
+		this.paused = p;
+	};
 
 
 	createjs.ButtonHelper = ButtonHelper;
@@ -2628,7 +2863,7 @@ this.createjs = this.createjs||{};
 	 *
 	 * @class Shadow
 	 * @constructor
-	 * @param {String} color The color of the shadow.
+	 * @param {String} color The color of the shadow. This can be any valid CSS color value.
 	 * @param {Number} offsetX The x offset of the shadow in pixels.
 	 * @param {Number} offsetY The y offset of the shadow in pixels.
 	 * @param {Number} blur The size of the blurring effect.
@@ -2637,35 +2872,49 @@ this.createjs = this.createjs||{};
 		
 		
 	// public properties:
-		/** The color of the shadow.
-		 * property color
+		/** 
+		 * The color of the shadow. This can be any valid CSS color value.
+		 * @property color
 		 * @type String
 		 * @default null
 		 */
 		this.color = color||"black";
 	
 		/** The x offset of the shadow.
-		 * property offsetX
+		 * @property offsetX
 		 * @type Number
 		 * @default 0
 		 */
 		this.offsetX = offsetX||0;
 	
 		/** The y offset of the shadow.
-		 * property offsetY
+		 * @property offsetY
 		 * @type Number
 		 * @default 0
 		 */
 		this.offsetY = offsetY||0;
 	
 		/** The blur of the shadow.
-		 * property blur
+		 * @property blur
 		 * @type Number
 		 * @default 0
 		 */
 		this.blur = blur||0;
 	}
 	var p = Shadow.prototype;
+
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
 
 
 // static public properties:
@@ -2711,8 +2960,8 @@ this.createjs = this.createjs||{};
 
 (function() {
 	"use strict";
-	
-	
+
+
 // constructor:
 	/**
 	 * Encapsulates the properties and methods associated with a sprite sheet. A sprite sheet is a series of images (usually
@@ -2727,66 +2976,68 @@ this.createjs = this.createjs||{};
 	 * </OL>
 	 *
 	 * <h3>SpriteSheet Format</h3>
-	 * 
+	 *
 	 * SpriteSheets are an object with two required properties (`images` and `frames`), and two optional properties
 	 * (`framerate` and `animations`). This makes them easy to define in javascript code, or in JSON.
-	 * 
+	 *
 	 * <h4>images</h4>
 	 * An array of source images. Images can be either an HTMLImage
 	 * instance, or a uri to an image. The former is recommended to control preloading.
-	 * 
+	 *
 	 * 	images: [image1, "path/to/image2.png"],
-	 * 
+	 *
 	 * <h4>frames</h4>
 	 * Defines the individual frames. There are two supported formats for frame data:<OL>
 	 * <LI> when all of the frames are the same size (in a grid), use an object with `width`, `height`, `regX`, `regY`, and `count` properties.
 	 * `width` & `height` are required and specify the dimensions of the frames.
 	 * `regX` & `regY` indicate the registration point or "origin" of the frames.
+	 * `spacing` indicate the spacing between frames.
+	 * `margin` specify the margin around the image(s).
 	 * `count` allows you to specify the total number of frames in the spritesheet; if omitted, this will be calculated
 	 * based on the dimensions of the source images and the frames. Frames will be assigned indexes based on their position
 	 * in the source images (left to right, top to bottom).
-	 * 	
-	 * 	frames: {width:64, height:64, count:20, regX: 32, regY:64}
-	 * 	
+	 *
+	 * 	frames: {width:64, height:64, count:20, regX: 32, regY:64, spacing:0, margin:0}
+	 *
 	 * <LI> if the frames are of different sizes, use an array of frame definitions. Each definition is itself an array
 	 * with 4 required and 3 optional entries, in the order: `x`, `y`, `width`, `height`, `imageIndex`, `regX`, `regY`. The first
 	 * four entries are required and define the frame rectangle. The fifth specifies the index of the source image (defaults to 0). The
 	 * last two specify the registration point of the frame.
-	 * 	
+	 *
 	 * 	frames: [
 	 * 		// x, y, width, height, imageIndex*, regX*, regY*
 	 * 		[64, 0, 96, 64],
 	 * 		[0, 0, 64, 64, 1, 32, 32]
 	 * 		// etc.
 	 * 	]
-	 * 	
+	 *
 	 * </OL>
-	 * 
+	 *
 	 * <h4>animations</h4>
 	 * Optional. An object defining sequences of frames to play as named animations. Each property corresponds to an
-	 * animation of the same name. Each animation must specify the frames to play, and may 
+	 * animation of the same name. Each animation must specify the frames to play, and may
 	 * also include a relative playback `speed` (ex. 2 would playback at double speed, 0.5 at half), and
 	 * the name of the `next` animation to sequence to after it completes.
-	 * 
+	 *
 	 * There are three formats supported for defining the frames in an animation, which can be mixed and matched as appropriate:<OL>
 	 * <LI> for a single frame animation, you can simply specify the frame index
-	 * 
+	 *
 	 * 	animations: {
 	 * 		sit: 7
 	 * 	}
-	 * 
+	 *
 	 * <LI> for an animation of consecutive frames, you can use an array with two required, and two optional entries
 	 * in the order: `start`, `end`, `next`, and `speed`. This will play the frames from start to end inclusive.
-	 * 
+	 *
 	 * 	animations: {
 	 * 		// start, end, next*, speed*
 	 * 		run: [0, 8],
 	 * 		jump: [9, 12, "run", 2]
 	 * 	}
-	 * 
+	 *
 	 * <LI> for non-consecutive frames, you can use an object with a `frames` property defining an array of frame indexes to
 	 * play in order. The object can also specify `next` and `speed` properties.
-	 * 
+	 *
 	 * 	animations: {
 	 * 		walk: {
 	 * 			frames: [1,2,3,3,2,1]
@@ -2797,16 +3048,16 @@ this.createjs = this.createjs||{};
 	 * 			speed: 0.5
 	 * 		}
 	 * 	}
-	 * 
+	 *
 	 * </OL>
 	 * <strong>Note:</strong> the `speed` property was added in EaselJS 0.7.0. Earlier versions had a `frequency`
 	 * property instead, which was the inverse of `speed`. For example, a value of "4" would be 1/4 normal speed in earlier
 	 * versions, but is 4x normal speed in 0.7.0+.
-	 * 
+	 *
 	 * <h4>framerate</h4>
 	 * Optional. Indicates the default framerate to play this spritesheet at in frames per second.
 	 * See {{#crossLink "SpriteSheet/framerate:property"}}{{/crossLink}} for more information.
-	 * 
+	 *
 	 * 	framerate: 20
 	 *
 	 * <h4>Example</h4>
@@ -2837,9 +3088,9 @@ this.createjs = this.createjs||{};
 	 **/
 	function SpriteSheet(data) {
 		this.EventDispatcher_constructor();
-	
-	
-	// public properties:
+
+
+		// public properties:
 		/**
 		 * Indicates whether all images are finished loading.
 		 * @property complete
@@ -2847,7 +3098,7 @@ this.createjs = this.createjs||{};
 		 * @readonly
 		 **/
 		this.complete = true;
-	
+
 		/**
 		 * Specifies the framerate to use by default for Sprite instances using the SpriteSheet. See
 		 * Sprite.framerate for more information.
@@ -2855,75 +3106,101 @@ this.createjs = this.createjs||{};
 		 * @type Number
 		 **/
 		this.framerate = 0;
-	
-	
-	// private properties:
+
+
+		// private properties:
 		/**
 		 * @property _animations
 		 * @protected
+		 * @type Array
 		 **/
 		this._animations = null;
-	
+
 		/**
 		 * @property _frames
 		 * @protected
+		 * @type Array
 		 **/
 		this._frames = null;
-	
+
 		/**
 		 * @property _images
 		 * @protected
+		 * @type Array
 		 **/
 		this._images = null;
-	
+
 		/**
 		 * @property _data
 		 * @protected
+		 * @type Object
 		 **/
 		this._data = null;
-	
+
 		/**
 		 * @property _loadCount
 		 * @protected
+		 * @type Number
 		 **/
 		this._loadCount = 0;
-	
+
 		// only used for simple frame defs:
 		/**
 		 * @property _frameHeight
 		 * @protected
+		 * @type Number
 		 **/
 		this._frameHeight = 0;
-	
+
 		/**
 		 * @property _frameWidth
 		 * @protected
+		 * @type Number
 		 **/
 		this._frameWidth = 0;
-	
+
 		/**
 		 * @property _numFrames
 		 * @protected
+		 * @type Number
 		 **/
 		this._numFrames = 0;
-	
+
 		/**
 		 * @property _regX
 		 * @protected
+		 * @type Number
 		 **/
 		this._regX = 0;
-	
+
 		/**
 		 * @property _regY
 		 * @protected
+		 * @type Number
 		 **/
 		this._regY = 0;
-		
-		
-	// setup:
+
+		/**
+		 * @property _spacing
+		 * @protected
+		 * @type Number
+		 **/
+		this._spacing = 0;
+
+		/**
+		 * @property _margin
+		 * @protected
+		 * @type Number
+		 **/
+		this._margin = 0;
+
+		// setup:
 		this._parseData(data);
 	}
 	var p = createjs.extend(SpriteSheet, createjs.EventDispatcher);
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 
 
 // events:
@@ -2931,19 +3208,51 @@ this.createjs = this.createjs||{};
 	 * Dispatched when all images are loaded.  Note that this only fires if the images
 	 * were not fully loaded when the sprite sheet was initialized. You should check the complete property
 	 * to prior to adding a listener. Ex.
-	 * 
+	 *
 	 * 	var sheet = new SpriteSheet(data);
 	 * 	if (!sheet.complete) {
 	 * 		// not preloaded, listen for the complete event:
 	 * 		sheet.addEventListener("complete", handler);
 	 * 	}
-	 * 	
+	 *
 	 * @event complete
 	 * @param {Object} target The object that dispatched the event.
 	 * @param {String} type The event type.
 	 * @since 0.6.0
 	 */
-	 
+
+	/**
+	 * Dispatched when getFrame is called with a valid frame index. This is primarily intended for use by {{#crossLink "SpriteSheetBuilder"}}{{/crossLink}}
+	 * when doing on-demand rendering.
+	 * @event getframe
+	 * @param {Number} index The frame index.
+	 * @param {Object} frame The frame object that getFrame will return.
+	 */
+
+
+// getter / setters:
+	/**
+	 * Use the {{#crossLink "SpriteSheet/animations:property"}}{{/crossLink}} property instead.
+	 * @method getAnimations
+	 * @return {Array}
+	 * @deprecated
+	 **/
+	p.getAnimations = function() {
+		return this._animations.slice();
+	};
+
+	/**
+	 * Returns an array of all available animation names available on this sprite sheet as strings.
+	 * @property animations
+	 * @type {Array}
+	 * @readonly
+	 **/
+	try {
+		Object.defineProperties(p, {
+			animations: { get: p.getAnimations }
+		});
+	} catch (e) {}
+
 
 // public methods:
 	/**
@@ -2953,7 +3262,7 @@ this.createjs = this.createjs||{};
 	 * @method getNumFrames
 	 * @param {String} animation The name of the animation to get a frame count for.
 	 * @return {Number} The number of frames in the animation, or in the entire sprite sheet if the animation param is omitted.
-	*/
+	 */
 	p.getNumFrames = function(animation) {
 		if (animation == null) {
 			return this._frames ? this._frames.length : this._numFrames || 0;
@@ -2962,15 +3271,6 @@ this.createjs = this.createjs||{};
 			if (data == null) { return 0; }
 			else { return data.frames.length; }
 		}
-	};
-
-	/**
-	 * Returns an array of all available animation names as strings.
-	 * @method getAnimations
-	 * @return {Array} an array of animation names available on this sprite sheet.
-	 **/
-	p.getAnimations = function() {
-		return this._animations.slice(0);
 	};
 
 	/**
@@ -3062,7 +3362,7 @@ this.createjs = this.createjs||{};
 					img.src = src;
 				}
 				a.push(img);
-				if (!img.getContext && !img.complete) {
+				if (!img.getContext && !img.naturalWidth) {
 					this._loadCount++;
 					this.complete = false;
 					(function(o) { img.onload = function() { o._handleImageLoad(); } })(this);
@@ -3085,10 +3385,12 @@ this.createjs = this.createjs||{};
 			this._frameHeight = o.height;
 			this._regX = o.regX||0;
 			this._regY = o.regY||0;
+			this._spacing = o.spacing||0;
+			this._margin = o.margin||0;
 			this._numFrames = o.count;
 			if (this._loadCount == 0) { this._calculateFrames(); }
 		}
-		
+
 		// parse animations:
 		this._animations = [];
 		if ((o=data.animations) != null) {
@@ -3142,21 +3444,35 @@ this.createjs = this.createjs||{};
 	 **/
 	p._calculateFrames = function() {
 		if (this._frames || this._frameWidth == 0) { return; }
+
 		this._frames = [];
-		var ttlFrames = 0;
-		var fw = this._frameWidth;
-		var fh = this._frameHeight;
-		for (var i=0,imgs = this._images; i<imgs.length; i++) {
-			var img = imgs[i];
-			var cols = img.width/fw|0;
-			var rows = img.height/fh|0;
-			var ttl = this._numFrames>0 ? Math.min(this._numFrames-ttlFrames,cols*rows) : cols*rows;
-			for (var j=0;j<ttl;j++) {
-				this._frames.push({image:img, rect:new createjs.Rectangle(j%cols*fw,(j/cols|0)*fh,fw,fh), regX:this._regX, regY:this._regY });
+
+		var maxFrames = this._numFrames || 100000; // if we go over this, something is wrong.
+		var frameCount = 0, frameWidth = this._frameWidth, frameHeight = this._frameHeight;
+		var spacing = this._spacing, margin = this._margin;
+		
+		imgLoop:
+		for (var i=0, imgs=this._images; i<imgs.length; i++) {
+			var img = imgs[i], imgW = img.width, imgH = img.height;
+
+			var y = margin;
+			while (y <= imgH-margin-frameHeight) {
+				var x = margin;
+				while (x <= imgW-margin-frameWidth) {
+					if (frameCount >= maxFrames) { break imgLoop; }
+					frameCount++;
+					this._frames.push({
+							image: img,
+							rect: new createjs.Rectangle(x, y, frameWidth, frameHeight),
+							regX: this._regX,
+							regY: this._regY
+						});
+					x += frameWidth+spacing;
+				}
+				y += frameHeight+spacing;
 			}
-			ttlFrames += ttl;
 		}
-		this._numFrames = ttlFrames;
+		this._numFrames = frameCount;
 	};
 
 
@@ -3176,14 +3492,14 @@ this.createjs = this.createjs||{};
 // constructor:
 	/**
 	 * The Graphics class exposes an easy to use API for generating vector drawing instructions and drawing them to a
-	 * specified context. Note that you can use Graphics without any dependency on the Easel framework by calling {{#crossLink "Graphics/draw"}}{{/crossLink}}
+	 * specified context. Note that you can use Graphics without any dependency on the EaselJS framework by calling {{#crossLink "Graphics/draw"}}{{/crossLink}}
 	 * directly, or it can be used with the {{#crossLink "Shape"}}{{/crossLink}} object to draw vector graphics within the
 	 * context of an EaselJS display list.
 	 *
 	 * There are two approaches to working with Graphics object: calling methods on a Graphics instance (the "Graphics API"), or
 	 * instantiating Graphics command objects and adding them to the graphics queue via {{#crossLink "Graphics/append"}}{{/crossLink}}.
 	 * The former abstracts the latter, simplifying beginning and ending paths, fills, and strokes.
-	 * 
+	 *
 	 *      var g = new createjs.Graphics();
 	 *      g.setStrokeStyle(1);
 	 *      g.beginStroke("#000000");
@@ -3194,36 +3510,36 @@ this.createjs = this.createjs||{};
 	 * the following line of code would generate the instructions to draw a rectangle with a red stroke and blue fill:
 	 *
 	 *      myGraphics.beginStroke("red").beginFill("blue").drawRect(20, 20, 100, 50);
-	 *      
+	 *
 	 * Each graphics API call generates a command object (see below). The last command to be created can be accessed via
 	 * {{#crossLink "Graphics/command:property"}}{{/crossLink}}:
-	 * 
+	 *
 	 *      var fillCommand = myGraphics.beginFill("red").command;
 	 *      // ... later, update the fill style/color:
 	 *      fillCommand.style = "blue";
 	 *      // or change it to a bitmap fill:
 	 *      fillCommand.bitmap(myImage);
-	 *      
+	 *
 	 * For more direct control of rendering, you can instantiate and append command objects to the graphics queue directly. In this case, you
 	 * need to manage path creation manually, and ensure that fill/stroke is applied to a defined path:
-	 * 
-	 *      // start a new path. Graphics.beginPath is a reusable BeginPath instance:
-	 *      myGraphics.append(Graphics.beginPath);
+	 *
+	 *      // start a new path. Graphics.beginCmd is a reusable BeginPath instance:
+	 *      myGraphics.append(createjs.Graphics.beginCmd);
 	 *      // we need to define the path before applying the fill:
-	 *      var circle = new Graphics.Circle(0,0,30);
+	 *      var circle = new createjs.Graphics.Circle(0,0,30);
 	 *      myGraphics.append(circle);
 	 *      // fill the path we just defined:
-	 *      var fill = new Graphics.Fill("red");
+	 *      var fill = new createjs.Graphics.Fill("red");
 	 *      myGraphics.append(fill);
-	 *      
+	 *
 	 * These approaches can be used together, for example to insert a custom command:
-	 * 
+	 *
 	 *      myGraphics.beginFill("red");
 	 *      var customCommand = new CustomSpiralCommand(etc);
 	 *      myGraphics.append(customCommand);
 	 *      myGraphics.beginFill("blue");
 	 *      myGraphics.drawCircle(0, 0, 30);
-	 *      
+	 *
 	 * See {{#crossLink "Graphics/append"}}{{/crossLink}} for more info on creating custom commands.
 	 *
 	 * <h4>Tiny API</h4>
@@ -3247,7 +3563,7 @@ this.createjs = this.createjs||{};
 	 *     <tr><td>rf</td><td>{{#crossLink "Graphics/beginRadialGradientFill"}}{{/crossLink}} </td>
 	 *     <td>bf</td><td>{{#crossLink "Graphics/beginBitmapFill"}}{{/crossLink}} </td></tr>
 	 *     <tr><td>ef</td><td>{{#crossLink "Graphics/endFill"}}{{/crossLink}} </td>
-	 *     <td>ss</td><td>{{#crossLink "Graphics/setStrokeStyle"}}{{/crossLink}} </td></tr>
+	 *     <td>ss / sd</td><td>{{#crossLink "Graphics/setStrokeStyle"}}{{/crossLink}} / {{#crossLink "Graphics/setStrokeDash"}}{{/crossLink}} </td></tr>
 	 *     <tr><td>s</td><td>{{#crossLink "Graphics/beginStroke"}}{{/crossLink}} </td>
 	 *     <td>ls</td><td>{{#crossLink "Graphics/beginLinearGradientStroke"}}{{/crossLink}} </td></tr>
 	 *     <tr><td>rs</td><td>{{#crossLink "Graphics/beginRadialGradientStroke"}}{{/crossLink}} </td>
@@ -3270,8 +3586,8 @@ this.createjs = this.createjs||{};
 	 * @constructor
 	 **/
 	function Graphics() {
-		
-		
+
+
 	// public properties
 		/**
 		 * Holds a reference to the last command that was created or appended. For example, you could retain a reference
@@ -3283,44 +3599,65 @@ this.createjs = this.createjs||{};
 		 * @type Object
 		 **/
 		this.command = null;
-	
-	
+
+
 	// private properties
 		/**
 		 * @property _stroke
 		 * @protected
-		 * @type {Array}
+		 * @type {Stroke}
 		 **/
 		this._stroke = null;
-	
+
 		/**
 		 * @property _strokeStyle
 		 * @protected
-		 * @type {Array}
+		 * @type {StrokeStyle}
 		 **/
 		this._strokeStyle = null;
-	
+		
+		/**
+		 * @property _oldStrokeStyle
+		 * @protected
+		 * @type {StrokeStyle}
+		 **/
+		this._oldStrokeStyle = null;
+		
+		/**
+		 * @property _strokeDash
+		 * @protected
+		 * @type {StrokeDash}
+		 **/
+		this._strokeDash = null;
+		
+		/**
+		 * @property _oldStrokeDash
+		 * @protected
+		 * @type {StrokeDash}
+		 **/
+		this._oldStrokeDash = null;
+
 		/**
 		 * @property _strokeIgnoreScale
 		 * @protected
 		 * @type Boolean
 		 **/
 		this._strokeIgnoreScale = false;
-	
+
 		/**
 		 * @property _fill
 		 * @protected
-		 * @type {Array}
+		 * @type {Fill}
 		 **/
 		this._fill = null;
-	
+
 		/**
 		 * @property _instructions
 		 * @protected
 		 * @type {Array}
 		 **/
 		this._instructions = [];
-		
+
 		/**
 		 * Indicates the last instruction index that was committed.
 		 * @property _commitIndex
@@ -3328,7 +3665,7 @@ this.createjs = this.createjs||{};
 		 * @type {Number}
 		 **/
 		this._commitIndex = 0;
-	
+
 		/**
 		 * Uncommitted instructions.
 		 * @property _activeInstructions
@@ -3336,7 +3673,7 @@ this.createjs = this.createjs||{};
 		 * @type {Array}
 		 **/
 		this._activeInstructions = [];
-	
+
 		/**
 		 * This indicates that there have been changes to the activeInstruction list since the last updateInstructions call.
 		 * @property _dirty
@@ -3345,7 +3682,7 @@ this.createjs = this.createjs||{};
 		 * @default false
 		 **/
 		this._dirty = false;
-		
+
 		/**
 		 * Index to draw from if a store operation has happened.
 		 * @property _storeIndex
@@ -3354,12 +3691,25 @@ this.createjs = this.createjs||{};
 		 * @default 0
 		 **/
 		this._storeIndex = 0;
-		
+
 	// setup:
 		this.clear();
 	}
 	var p = Graphics.prototype;
 	var G = Graphics; // shortcut
+
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
 
 
 // static public methods:
@@ -3444,7 +3794,6 @@ this.createjs = this.createjs||{};
 	 **/
 	Graphics.BASE_64 = {"A":0,"B":1,"C":2,"D":3,"E":4,"F":5,"G":6,"H":7,"I":8,"J":9,"K":10,"L":11,"M":12,"N":13,"O":14,"P":15,"Q":16,"R":17,"S":18,"T":19,"U":20,"V":21,"W":22,"X":23,"Y":24,"Z":25,"a":26,"b":27,"c":28,"d":29,"e":30,"f":31,"g":32,"h":33,"i":34,"j":35,"k":36,"l":37,"m":38,"n":39,"o":40,"p":41,"q":42,"r":43,"s":44,"t":45,"u":46,"v":47,"w":48,"x":49,"y":50,"z":51,"0":52,"1":53,"2":54,"3":55,"4":56,"5":57,"6":58,"7":59,"8":60,"9":61,"+":62,"/":63};
 
-
 	/**
 	 * Maps numeric values for the caps parameter of {{#crossLink "Graphics/setStrokeStyle"}}{{/crossLink}} to
 	 * corresponding string values. This is primarily for use with the tiny API. The mappings are as follows: 0 to
@@ -3488,8 +3837,36 @@ this.createjs = this.createjs||{};
 		Graphics._ctx = canvas.getContext("2d");
 		canvas.width = canvas.height = 1;
 	}
-	
-	
+
+
+// getter / setters:
+	/**
+	 * Use the {{#crossLink "Graphics/instructions:property"}}{{/crossLink}} property instead.
+	 * @method getInstructions
+	 * @return {Array}
+	 * @deprecated
+	 **/
+	p.getInstructions = function() {
+		this._updateInstructions();
+		return this._instructions;
+	};
+
+	/**
+	 * Returns the graphics instructions array. Each entry is a graphics command object (ex. Graphics.Fill, Graphics.Rect)
+	 * Modifying the returned array directly is not recommended, and is likely to result in unexpected behaviour.
+	 *
+	 * This property is mainly intended for introspection of the instructions (ex. for graphics export).
+	 * @property instructions
+	 * @type {Array}
+	 * @readonly
+	 **/
+	try {
+		Object.defineProperties(p, {
+			instructions: { get: p.getInstructions }
+		});
+	} catch (e) {}
+
+
 // public methods:
 	/**
 	 * Returns true if this Graphics instance has no drawing commands.
@@ -3520,13 +3897,15 @@ this.createjs = this.createjs||{};
 	/**
 	 * Draws only the path described for this Graphics instance, skipping any non-path instructions, including fill and
 	 * stroke descriptions. Used for <code>DisplayObject.mask</code> to draw the clipping path, for example.
+	 *
+	 * NOTE: This method is mainly for internal use, though it may be useful for advanced uses.
 	 * @method drawAsPath
 	 * @param {CanvasRenderingContext2D} ctx The canvas 2D context object to draw into.
 	 **/
 	p.drawAsPath = function(ctx) {
 		this._updateInstructions();
 		var instr, instrs = this._instructions;
-		for (var i=0, l=instrs.length; i<l; i++) {
+		for (var i=this._storeIndex, l=instrs.length; i<l; i++) {
 			// the first command is always a beginPath command.
 			if ((instr = instrs[i]).path !== false) { instr.exec(ctx); }
 		}
@@ -3540,6 +3919,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x The x coordinate the drawing point should move to.
 	 * @param {Number} y The y coordinate the drawing point should move to.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls).
+	 * @chainable
 	 **/
 	p.moveTo = function(x, y) {
 		return this.append(new G.MoveTo(x,y), true);
@@ -3556,6 +3936,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x The x coordinate the drawing point should draw to.
 	 * @param {Number} y The y coordinate the drawing point should draw to.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.lineTo = function(x, y) {
 		return this.append(new G.LineTo(x,y));
@@ -3572,6 +3953,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} y2
 	 * @param {Number} radius
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.arcTo = function(x1, y1, x2, y2, radius) {
 		return this.append(new G.ArcTo(x1, y1, x2, y2, radius));
@@ -3594,6 +3976,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} endAngle Measured in radians.
 	 * @param {Boolean} anticlockwise
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.arc = function(x, y, radius, startAngle, endAngle, anticlockwise) {
 		return this.append(new G.Arc(x, y, radius, startAngle, endAngle, anticlockwise));
@@ -3609,6 +3992,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x
 	 * @param {Number} y
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.quadraticCurveTo = function(cpx, cpy, x, y) {
 		return this.append(new G.QuadraticCurveTo(cpx, cpy, x, y));
@@ -3627,6 +4011,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x
 	 * @param {Number} y
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.bezierCurveTo = function(cp1x, cp1y, cp2x, cp2y, x, y) {
 		return this.append(new G.BezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y));
@@ -3643,6 +4028,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} w Width of the rectangle
 	 * @param {Number} h Height of the rectangle
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.rect = function(x, y, w, h) {
 		return this.append(new G.Rect(x, y, w, h));
@@ -3653,6 +4039,7 @@ this.createjs = this.createjs||{};
 	 * since the fill or stroke was last set. A tiny API method "cp" also exists.
 	 * @method closePath
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.closePath = function() {
 		return this._activeInstructions.length ? this.append(new G.ClosePath()) : this;
@@ -3665,10 +4052,11 @@ this.createjs = this.createjs||{};
 	 * to be redefined to draw shapes following a clear call. A tiny API method "c" also exists.
 	 * @method clear
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.clear = function() {
 		this._instructions.length = this._activeInstructions.length = this._commitIndex = 0;
-		this._strokeStyle = this._stroke = this._fill = null;
+		this._strokeStyle = this._oldStrokeStyle = this._stroke = this._fill = this._strokeDash = this._oldStrokeDash = null;
 		this._dirty = this._strokeIgnoreScale = false;
 		return this;
 	};
@@ -3679,6 +4067,7 @@ this.createjs = this.createjs||{};
 	 * @param {String} color A CSS compatible color value (ex. "red", "#FF0000", or "rgba(255,0,0,0.5)"). Setting to
 	 * null will result in no fill.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginFill = function(color) {
 		return this._setFill(color ? new G.Fill(color) : null);
@@ -3702,6 +4091,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x1 The position of the second point defining the line that defines the gradient direction and size.
 	 * @param {Number} y1 The position of the second point defining the line that defines the gradient direction and size.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginLinearGradientFill = function(colors, ratios, x0, y0, x1, y1) {
 		return this._setFill(new G.Fill().linearGradient(colors, ratios, x0, y0, x1, y1));
@@ -3726,6 +4116,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} y1 Center position of the outer circle that defines the gradient.
 	 * @param {Number} r1 Radius of the outer circle that defines the gradient.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginRadialGradientFill = function(colors, ratios, x0, y0, r0, x1, y1, r1) {
 		return this._setFill(new G.Fill().radialGradient(colors, ratios, x0, y0, r0, x1, y1, r1));
@@ -3736,13 +4127,14 @@ this.createjs = this.createjs||{};
 	 * exists.
 	 * @method beginBitmapFill
 	 * @param {HTMLImageElement | HTMLCanvasElement | HTMLVideoElement} image The Image, Canvas, or Video object to use
-	 * as the pattern.
+	 * as the pattern. Must be loaded prior to creating a bitmap fill, or the fill will be empty.
 	 * @param {String} repetition Optional. Indicates whether to repeat the image in the fill area. One of "repeat",
 	 * "repeat-x", "repeat-y", or "no-repeat". Defaults to "repeat". Note that Firefox does not support "repeat-x" or
 	 * "repeat-y" (latest tests were in FF 20.0), and will default to "repeat".
 	 * @param {Matrix2D} matrix Optional. Specifies a transformation matrix for the bitmap fill. This transformation
 	 * will be applied relative to the parent transform.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginBitmapFill = function(image, repetition, matrix) {
 		return this._setFill(new G.Fill(null,matrix).bitmap(image, repetition));
@@ -3753,16 +4145,17 @@ this.createjs = this.createjs||{};
 	 * A tiny API method "ef" also exists.
 	 * @method endFill
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.endFill = function() {
 		return this.beginFill();
 	};
 
 	/**
-	 * Sets the stroke style for the current sub-path. Like all drawing methods, this can be chained, so you can define
+	 * Sets the stroke style. Like all drawing methods, this can be chained, so you can define
 	 * the stroke style and color in a single line of code like so:
 	 *
-	 *      myGraphics.setStrokeStyle(8,"round").beginStroke("#F00");
+	 * 	myGraphics.setStrokeStyle(8,"round").beginStroke("#F00");
 	 *
 	 * A tiny API method "ss" also exists.
 	 * @method setStrokeStyle
@@ -3778,14 +4171,35 @@ this.createjs = this.createjs||{};
 	 * @param {Boolean} [ignoreScale=false] If true, the stroke will be drawn at the specified thickness regardless
 	 * of active transformations.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.setStrokeStyle = function(thickness, caps, joints, miterLimit, ignoreScale) {
 		this._updateInstructions(true);
 		this._strokeStyle = this.command = new G.StrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
-		
+
 		// ignoreScale lives on Stroke, not StrokeStyle, so we do a little trickery:
 		if (this._stroke) { this._stroke.ignoreScale = ignoreScale; }
 		this._strokeIgnoreScale = ignoreScale;
+		return this;
+	};
+	
+	/**
+	 * Sets or clears the stroke dash pattern.
+	 *
+	 * 	myGraphics.setStrokeDash([20, 10], 0);
+	 *
+	 * A tiny API method `sd` also exists.
+	 * @method setStrokeDash
+	 * @param {Array} [segments] An array specifying the dash pattern, alternating between line and gap.
+	 * For example, `[20,10]` would create a pattern of 20 pixel lines with 10 pixel gaps between them.
+	 * Passing null or an empty array will clear the existing stroke dash.
+	 * @param {Number} [offset=0] The offset of the dash pattern. For example, you could increment this value to create a "marching ants" effect.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
+	 **/
+	p.setStrokeDash = function(segments, offset) {
+		this._updateInstructions(true);
+		this._strokeDash = this.command = new G.StrokeDash(segments, offset);
 		return this;
 	};
 
@@ -3795,6 +4209,7 @@ this.createjs = this.createjs||{};
 	 * @param {String} color A CSS compatible color value (ex. "#FF0000", "red", or "rgba(255,0,0,0.5)"). Setting to
 	 * null will result in no stroke.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginStroke = function(color) {
 		return this._setStroke(color ? new G.Stroke(color) : null);
@@ -3819,6 +4234,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x1 The position of the second point defining the line that defines the gradient direction and size.
 	 * @param {Number} y1 The position of the second point defining the line that defines the gradient direction and size.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginLinearGradientStroke = function(colors, ratios, x0, y0, x1, y1) {
 		return this._setStroke(new G.Stroke().linearGradient(colors, ratios, x0, y0, x1, y1));
@@ -3846,6 +4262,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} y1 Center position of the outer circle that defines the gradient.
 	 * @param {Number} r1 Radius of the outer circle that defines the gradient.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginRadialGradientStroke = function(colors, ratios, x0, y0, r0, x1, y1, r1) {
 		return this._setStroke(new G.Stroke().radialGradient(colors, ratios, x0, y0, r0, x1, y1, r1));
@@ -3857,10 +4274,11 @@ this.createjs = this.createjs||{};
 	 * also exists.
 	 * @method beginBitmapStroke
 	 * @param {HTMLImageElement | HTMLCanvasElement | HTMLVideoElement} image The Image, Canvas, or Video object to use
-	 * as the pattern.
+	 * as the pattern. Must be loaded prior to creating a bitmap fill, or the fill will be empty.
 	 * @param {String} [repetition=repeat] Optional. Indicates whether to repeat the image in the fill area. One of
 	 * "repeat", "repeat-x", "repeat-y", or "no-repeat". Defaults to "repeat".
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.beginBitmapStroke = function(image, repetition) {
 		// NOTE: matrix is not supported for stroke because transforms on strokes also affect the drawn stroke width.
@@ -3872,6 +4290,7 @@ this.createjs = this.createjs||{};
 	 * A tiny API method "es" also exists.
 	 * @method endStroke
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.endStroke = function() {
 		return this.beginStroke();
@@ -3880,16 +4299,27 @@ this.createjs = this.createjs||{};
 	/**
 	 * Maps the familiar ActionScript <code>curveTo()</code> method to the functionally similar {{#crossLink "Graphics/quadraticCurveTo"}}{{/crossLink}}
 	 * method.
-	 * @method curveTo
-	 * @type {Function}
+	 * @method quadraticCurveTo
+	 * @param {Number} cpx
+	 * @param {Number} cpy
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.curveTo = p.quadraticCurveTo;
 
 	/**
+	 *
 	 * Maps the familiar ActionScript <code>drawRect()</code> method to the functionally similar {{#crossLink "Graphics/rect"}}{{/crossLink}}
 	 * method.
 	 * @method drawRect
-	 * @type {Function}
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} w Width of the rectangle
+	 * @param {Number} h Height of the rectangle
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.drawRect = p.rect;
 
@@ -3902,6 +4332,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} h
 	 * @param {Number} radius Corner radius.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.drawRoundRect = function(x, y, w, h, radius) {
 		return this.drawRoundRectComplex(x, y, w, h, radius, radius, radius, radius);
@@ -3920,6 +4351,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} radiusBR Bottom right corner radius.
 	 * @param {Number} radiusBL Bottom left corner radius.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.drawRoundRectComplex = function(x, y, w, h, radiusTL, radiusTR, radiusBR, radiusBL) {
 		return this.append(new G.RoundRect(x, y, w, h, radiusTL, radiusTR, radiusBR, radiusBL));
@@ -3947,6 +4379,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} y y coordinate center point of circle.
 	 * @param {Number} radius Radius of circle.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.drawCircle = function(x, y, radius) {
 		return this.append(new G.Circle(x, y, radius));
@@ -3964,6 +4397,7 @@ this.createjs = this.createjs||{};
 	 * number.
 	 * @param {Number} h The width (vertical diameter) of the ellipse. The vertical radius will be half of this number.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.drawEllipse = function(x, y, w, h) {
 		return this.append(new G.Ellipse(x, y, w, h));
@@ -3989,42 +4423,45 @@ this.createjs = this.createjs||{};
 	 * @param {Number} angle The angle of the first point / corner. For example a value of 0 will draw the first point
 	 * directly to the right of the center.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.drawPolyStar = function(x, y, radius, sides, pointSize, angle) {
 		return this.append(new G.PolyStar(x, y, radius, sides, pointSize, angle));
 	};
 
+	// TODO: deprecated.
 	/**
 	 * Removed in favour of using custom command objects with {{#crossLink "Graphics/append"}}{{/crossLink}}.
 	 * @method inject
 	 * @deprecated
 	 **/
-	
+
 	/**
 	 * Appends a graphics command object to the graphics queue. Command objects expose an "exec" method
 	 * that accepts two parameters: the Context2D to operate on, and an arbitrary data object passed into
 	 * {{#crossLink "Graphics/draw"}}{{/crossLink}}. The latter will usually be the Shape instance that called draw.
-	 * 
+	 *
 	 * This method is used internally by Graphics methods, such as drawCircle, but can also be used directly to insert
 	 * built-in or custom graphics commands. For example:
-	 * 
+	 *
 	 * 		// attach data to our shape, so we can access it during the draw:
 	 * 		myShape.color = "red";
-	 * 		
+	 *
 	 * 		// append a Circle command object:
 	 * 		myShape.graphics.append(new Graphics.Circle(50, 50, 30));
-	 * 		
+	 *
 	 * 		// append a custom command object with an exec method that sets the fill style
 	 * 		// based on the shape's data, and then fills the circle.
 	 * 		myShape.graphics.append({exec:function(ctx, shape) {
 	 * 			ctx.fillStyle = shape.color;
 	 * 			ctx.fill();
 	 * 		}});
-	 * 
+	 *
 	 * @method append
 	 * @param {Object} command A graphics command object exposing an "exec" method.
 	 * @param {boolean} clean The clean param is primarily for internal use. A value of true indicates that a command does not generate a path that should be stroked or filled.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.append = function(command, clean) {
 		this._activeInstructions.push(command);
@@ -4067,6 +4504,7 @@ this.createjs = this.createjs||{};
 	 * @method decodePath
 	 * @param {String} str The path string to decode.
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.decodePath = function(str) {
 		var instructions = [this.moveTo, this.lineTo, this.quadraticCurveTo, this.bezierCurveTo, this.closePath];
@@ -4103,32 +4541,32 @@ this.createjs = this.createjs||{};
 		}
 		return this;
 	};
-	
+
 	/**
 	 * Stores all graphics commands so they won't be executed in future draws. Calling store() a second time adds to
-	 * the existing store.
-	 * 
-	 * This is useful in cases where you are creating vector graphics in an iterative manner, so that only new
-	 * graphics need to be drawn (which can provide huge performance benefits), but you wish to retain all of
-	 * the vector instructions for later use (ex. scaling, modifying, or exporting).
-	 * 
+	 * the existing store. This also affects `drawAsPath()`.
+	 *
+	 * This is useful in cases where you are creating vector graphics in an iterative manner (ex. generative art), so
+	 * that only new graphics need to be drawn (which can provide huge performance benefits), but you wish to retain all
+	 * of the vector instructions for later use (ex. scaling, modifying, or exporting).
+	 *
 	 * Note that calling store() will force the active path (if any) to be ended in a manner similar to changing
 	 * the fill or stroke.
-	 * 
+	 *
 	 * For example, consider a application where the user draws lines with the mouse. As each line segment (or collection of
-	 * segments) are added to a Shape, it can be rasterized using {{#crossLink "DisplayObject/updateCache"}}{{/crossLink}}, 
+	 * segments) are added to a Shape, it can be rasterized using {{#crossLink "DisplayObject/updateCache"}}{{/crossLink}},
 	 * and then stored, so that it can be redrawn at a different scale when the application is resized, or exported to SVG.
-	 * 
+	 *
 	 * 	// set up cache:
 	 * 	myShape.cache(0,0,500,500,scale);
-	 * 	
+	 *
 	 * 	// when the user drags, draw a new line:
 	 * 	myShape.graphics.moveTo(oldX,oldY).lineTo(newX,newY);
 	 * 	// then draw it into the existing cache:
 	 * 	myShape.updateCache("source-over");
 	 * 	// store the new line, so it isn't redrawn next time:
 	 * 	myShape.store();
-	 * 	
+	 *
 	 * 	// then, when the window resizes, we can re-render at a different scale:
 	 * 	// first, unstore all our lines:
 	 * 	myShape.unstore();
@@ -4136,39 +4574,28 @@ this.createjs = this.createjs||{};
 	 * 	myShape.cache(0,0,500,500,newScale);
 	 * 	// finally, store the existing commands again:
 	 * 	myShape.store();
-	 * 
+	 *
 	 * @method store
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.store = function() {
 		this._updateInstructions(true);
 		this._storeIndex = this._instructions.length;
 		return this;
 	};
-	
+
 	/**
 	 * Unstores any graphics commands that were previously stored using {{#crossLink "Graphics/store"}}{{/crossLink}}
 	 * so that they will be executed in subsequent draw calls.
-	 * 
+	 *
 	 * @method unstore
 	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.unstore = function() {
 		this._storeIndex = 0;
 		return this;
-	};
-	
-	/**
-	 * Returns the graphics instructions array. Each entry is a graphics command object (ex. Graphics.Fill, Graphics.Rect)
-	 * Modifying the array directly is very likely to result in unexpected behaviour.
-	 * 
-	 * This method is mainly intended for introspection of the instructions (ex. for graphics export).
-	 * @method getInstructions
-	 * @return {Array} The graphics instructions array.
-	 **/
-	p.getInstructions = function() {
-		this._updateInstructions();
-		return this._instructions;
 	};
 
 	/**
@@ -4181,6 +4608,7 @@ this.createjs = this.createjs||{};
 		o.command = this.command;
 		o._stroke = this._stroke;
 		o._strokeStyle = this._strokeStyle;
+		o._strokeDash = this._strokeDash;
 		o._strokeIgnoreScale = this._strokeIgnoreScale;
 		o._fill = this._fill;
 		o._instructions = this._instructions.slice();
@@ -4202,192 +4630,386 @@ this.createjs = this.createjs||{};
 
 
 // tiny API:
-	/** Shortcut to moveTo.
+	/**
+	 * Shortcut to moveTo.
 	 * @method mt
+	 * @param {Number} x The x coordinate the drawing point should move to.
+	 * @param {Number} y The y coordinate the drawing point should move to.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls).
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.mt = p.moveTo;
 
-	/** Shortcut to lineTo.
+	/**
+	 * Shortcut to lineTo.
 	 * @method lt
+	 * @param {Number} x The x coordinate the drawing point should draw to.
+	 * @param {Number} y The y coordinate the drawing point should draw to.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.lt = p.lineTo;
 
-	/** Shortcut to arcTo.
+	/**
+	 * Shortcut to arcTo.
 	 * @method at
+	 * @param {Number} x1
+	 * @param {Number} y1
+	 * @param {Number} x2
+	 * @param {Number} y2
+	 * @param {Number} radius
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.at = p.arcTo;
 
-	/** Shortcut to bezierCurveTo.
+	/**
+	 * Shortcut to bezierCurveTo.
 	 * @method bt
+	 * @param {Number} cp1x
+	 * @param {Number} cp1y
+	 * @param {Number} cp2x
+	 * @param {Number} cp2y
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.bt = p.bezierCurveTo;
 
-	/** Shortcut to quadraticCurveTo / curveTo.
+	/**
+	 * Shortcut to quadraticCurveTo / curveTo.
 	 * @method qt
+	 * @param {Number} cpx
+	 * @param {Number} cpy
+	 * @param {Number} x
+	 * @param {Number} y
 	 * @protected
-	 * @type {Function}
+	 * @chainable
 	 **/
 	p.qt = p.quadraticCurveTo;
 
-	/** Shortcut to arc.
+	/**
+	 * Shortcut to arc.
 	 * @method a
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} radius
+	 * @param {Number} startAngle Measured in radians.
+	 * @param {Number} endAngle Measured in radians.
+	 * @param {Boolean} anticlockwise
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
 	 * @protected
-	 * @type {Function}
+	 * @chainable
 	 **/
 	p.a = p.arc;
 
-	/** Shortcut to rect.
+	/**
+	 * Shortcut to rect.
 	 * @method r
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} w Width of the rectangle
+	 * @param {Number} h Height of the rectangle
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.r = p.rect;
 
-	/** Shortcut to closePath.
+	/**
+	 * Shortcut to closePath.
 	 * @method cp
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.cp = p.closePath;
 
-	/** Shortcut to clear.
+	/**
+	 * Shortcut to clear.
 	 * @method c
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.c = p.clear;
 
-	/** Shortcut to beginFill.
+	/**
+	 * Shortcut to beginFill.
 	 * @method f
+	 * @param {String} color A CSS compatible color value (ex. "red", "#FF0000", or "rgba(255,0,0,0.5)"). Setting to
+	 * null will result in no fill.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.f = p.beginFill;
 
-	/** Shortcut to beginLinearGradientFill.
+	/**
+	 * Shortcut to beginLinearGradientFill.
 	 * @method lf
+	 * @param {Array} colors An array of CSS compatible color values. For example, ["#F00","#00F"] would define a gradient
+	 * drawing from red to blue.
+	 * @param {Array} ratios An array of gradient positions which correspond to the colors. For example, [0.1, 0.9] would draw
+	 * the first color to 10% then interpolating to the second color at 90%.
+	 * @param {Number} x0 The position of the first point defining the line that defines the gradient direction and size.
+	 * @param {Number} y0 The position of the first point defining the line that defines the gradient direction and size.
+	 * @param {Number} x1 The position of the second point defining the line that defines the gradient direction and size.
+	 * @param {Number} y1 The position of the second point defining the line that defines the gradient direction and size.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.lf = p.beginLinearGradientFill;
 
-	/** Shortcut to beginRadialGradientFill.
+	/**
+	 * Shortcut to beginRadialGradientFill.
 	 * @method rf
+	 * @param {Array} colors An array of CSS compatible color values. For example, ["#F00","#00F"] would define
+	 * a gradient drawing from red to blue.
+	 * @param {Array} ratios An array of gradient positions which correspond to the colors. For example, [0.1,
+	 * 0.9] would draw the first color to 10% then interpolating to the second color at 90%.
+	 * @param {Number} x0 Center position of the inner circle that defines the gradient.
+	 * @param {Number} y0 Center position of the inner circle that defines the gradient.
+	 * @param {Number} r0 Radius of the inner circle that defines the gradient.
+	 * @param {Number} x1 Center position of the outer circle that defines the gradient.
+	 * @param {Number} y1 Center position of the outer circle that defines the gradient.
+	 * @param {Number} r1 Radius of the outer circle that defines the gradient.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.rf = p.beginRadialGradientFill;
 
-	/** Shortcut to beginBitmapFill.
+	/**
+	 * Shortcut to beginBitmapFill.
 	 * @method bf
+	 * @param {HTMLImageElement | HTMLCanvasElement | HTMLVideoElement} image The Image, Canvas, or Video object to use
+	 * as the pattern.
+	 * @param {String} repetition Optional. Indicates whether to repeat the image in the fill area. One of "repeat",
+	 * "repeat-x", "repeat-y", or "no-repeat". Defaults to "repeat". Note that Firefox does not support "repeat-x" or
+	 * "repeat-y" (latest tests were in FF 20.0), and will default to "repeat".
+	 * @param {Matrix2D} matrix Optional. Specifies a transformation matrix for the bitmap fill. This transformation
+	 * will be applied relative to the parent transform.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.bf = p.beginBitmapFill;
 
-	/** Shortcut to endFill.
+	/**
+	 * Shortcut to endFill.
 	 * @method ef
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.ef = p.endFill;
 
-	/** Shortcut to setStrokeStyle.
+	/**
+	 * Shortcut to setStrokeStyle.
 	 * @method ss
+	 * @param {Number} thickness The width of the stroke.
+	 * @param {String | Number} [caps=0] Indicates the type of caps to use at the end of lines. One of butt,
+	 * round, or square. Defaults to "butt". Also accepts the values 0 (butt), 1 (round), and 2 (square) for use with
+	 * the tiny API.
+	 * @param {String | Number} [joints=0] Specifies the type of joints that should be used where two lines meet.
+	 * One of bevel, round, or miter. Defaults to "miter". Also accepts the values 0 (miter), 1 (round), and 2 (bevel)
+	 * for use with the tiny API.
+	 * @param {Number} [miterLimit=10] If joints is set to "miter", then you can specify a miter limit ratio which
+	 * controls at what point a mitered joint will be clipped.
+	 * @param {Boolean} [ignoreScale=false] If true, the stroke will be drawn at the specified thickness regardless
+	 * of active transformations.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.ss = p.setStrokeStyle;
-
-	/** Shortcut to beginStroke.
-	 * @method s
+	
+	/**
+	 * Shortcut to setStrokeDash.
+	 * @method sd
+	 * @param {Array} [segments] An array specifying the dash pattern, alternating between line and gap.
+	 * For example, [20,10] would create a pattern of 20 pixel lines with 10 pixel gaps between them.
+	 * Passing null or an empty array will clear any existing dash.
+	 * @param {Number} [offset=0] The offset of the dash pattern. For example, you could increment this value to create a "marching ants" effect.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
+	 **/
+	p.sd = p.setStrokeDash;
+
+	/**
+	 * Shortcut to beginStroke.
+	 * @method s
+	 * @param {String} color A CSS compatible color value (ex. "#FF0000", "red", or "rgba(255,0,0,0.5)"). Setting to
+	 * null will result in no stroke.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
+	 * @protected
 	 **/
 	p.s = p.beginStroke;
 
-	/** Shortcut to beginLinearGradientStroke.
+	/**
+	 * Shortcut to beginLinearGradientStroke.
 	 * @method ls
+	 * @param {Array} colors An array of CSS compatible color values. For example, ["#F00","#00F"] would define
+	 * a gradient drawing from red to blue.
+	 * @param {Array} ratios An array of gradient positions which correspond to the colors. For example, [0.1,
+	 * 0.9] would draw the first color to 10% then interpolating to the second color at 90%.
+	 * @param {Number} x0 The position of the first point defining the line that defines the gradient direction and size.
+	 * @param {Number} y0 The position of the first point defining the line that defines the gradient direction and size.
+	 * @param {Number} x1 The position of the second point defining the line that defines the gradient direction and size.
+	 * @param {Number} y1 The position of the second point defining the line that defines the gradient direction and size.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.ls = p.beginLinearGradientStroke;
 
-	/** Shortcut to beginRadialGradientStroke.
+	/**
+	 * Shortcut to beginRadialGradientStroke.
 	 * @method rs
+	 * @param {Array} colors An array of CSS compatible color values. For example, ["#F00","#00F"] would define
+	 * a gradient drawing from red to blue.
+	 * @param {Array} ratios An array of gradient positions which correspond to the colors. For example, [0.1,
+	 * 0.9] would draw the first color to 10% then interpolating to the second color at 90%, then draw the second color
+	 * to 100%.
+	 * @param {Number} x0 Center position of the inner circle that defines the gradient.
+	 * @param {Number} y0 Center position of the inner circle that defines the gradient.
+	 * @param {Number} r0 Radius of the inner circle that defines the gradient.
+	 * @param {Number} x1 Center position of the outer circle that defines the gradient.
+	 * @param {Number} y1 Center position of the outer circle that defines the gradient.
+	 * @param {Number} r1 Radius of the outer circle that defines the gradient.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.rs = p.beginRadialGradientStroke;
 
-	/** Shortcut to beginBitmapStroke.
+	/**
+	 * Shortcut to beginBitmapStroke.
 	 * @method bs
+	 * @param {HTMLImageElement | HTMLCanvasElement | HTMLVideoElement} image The Image, Canvas, or Video object to use
+	 * as the pattern.
+	 * @param {String} [repetition=repeat] Optional. Indicates whether to repeat the image in the fill area. One of
+	 * "repeat", "repeat-x", "repeat-y", or "no-repeat". Defaults to "repeat".
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.bs = p.beginBitmapStroke;
 
-	/** Shortcut to endStroke.
+	/**
+	 * Shortcut to endStroke.
 	 * @method es
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.es = p.endStroke;
 
-	/** Shortcut to drawRect.
+	/**
+	 * Shortcut to drawRect.
 	 * @method dr
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} w Width of the rectangle
+	 * @param {Number} h Height of the rectangle
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.dr = p.drawRect;
 
-	/** Shortcut to drawRoundRect.
+	/**
+	 * Shortcut to drawRoundRect.
 	 * @method rr
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} w
+	 * @param {Number} h
+	 * @param {Number} radius Corner radius.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.rr = p.drawRoundRect;
 
-	/** Shortcut to drawRoundRectComplex.
+	/**
+	 * Shortcut to drawRoundRectComplex.
 	 * @method rc
+	 * @param {Number} x The horizontal coordinate to draw the round rect.
+	 * @param {Number} y The vertical coordinate to draw the round rect.
+	 * @param {Number} w The width of the round rect.
+	 * @param {Number} h The height of the round rect.
+	 * @param {Number} radiusTL Top left corner radius.
+	 * @param {Number} radiusTR Top right corner radius.
+	 * @param {Number} radiusBR Bottom right corner radius.
+	 * @param {Number} radiusBL Bottom left corner radius.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.rc = p.drawRoundRectComplex;
 
-	/** Shortcut to drawCircle.
+	/**
+	 * Shortcut to drawCircle.
 	 * @method dc
+	 * @param {Number} x x coordinate center point of circle.
+	 * @param {Number} y y coordinate center point of circle.
+	 * @param {Number} radius Radius of circle.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.dc = p.drawCircle;
 
-	/** Shortcut to drawEllipse.
+	/**
+	 * Shortcut to drawEllipse.
 	 * @method de
+	 * @param {Number} x The left coordinate point of the ellipse. Note that this is different from {{#crossLink "Graphics/drawCircle"}}{{/crossLink}}
+	 * which draws from center.
+	 * @param {Number} y The top coordinate point of the ellipse. Note that this is different from {{#crossLink "Graphics/drawCircle"}}{{/crossLink}}
+	 * which draws from the center.
+	 * @param {Number} w The height (horizontal diameter) of the ellipse. The horizontal radius will be half of this
+	 * number.
+	 * @param {Number} h The width (vertical diameter) of the ellipse. The vertical radius will be half of this number.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.de = p.drawEllipse;
 
-	/** Shortcut to drawPolyStar.
+	/**
+	 * Shortcut to drawPolyStar.
 	 * @method dp
+	 * @param {Number} x Position of the center of the shape.
+	 * @param {Number} y Position of the center of the shape.
+	 * @param {Number} radius The outer radius of the shape.
+	 * @param {Number} sides The number of points on the star or sides on the polygon.
+	 * @param {Number} pointSize The depth or "pointy-ness" of the star points. A pointSize of 0 will draw a regular
+	 * polygon (no points), a pointSize of 1 will draw nothing because the points are infinitely pointy.
+	 * @param {Number} angle The angle of the first point / corner. For example a value of 0 will draw the first point
+	 * directly to the right of the center.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type {Function}
 	 **/
 	p.dp = p.drawPolyStar;
 
-	/** Shortcut to decodePath.
+	/**
+	 * Shortcut to decodePath.
 	 * @method p
+	 * @param {String} str The path string to decode.
+	 * @return {Graphics} The Graphics instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 * @protected
-	 * @type Function
 	 **/
 	p.p = p.decodePath;
 
@@ -4395,77 +5017,73 @@ this.createjs = this.createjs||{};
 // private methods:
 	/**
 	 * @method _updateInstructions
+	 * @param commit
 	 * @protected
 	 **/
 	p._updateInstructions = function(commit) {
 		var instr = this._instructions, active = this._activeInstructions, commitIndex = this._commitIndex;
-		
+
 		if (this._dirty && active.length) {
 			instr.length = commitIndex; // remove old, uncommitted commands
 			instr.push(Graphics.beginCmd);
-			instr.push.apply(instr, active);
-			
+
+			var l = active.length, ll = instr.length;
+			instr.length = ll+l;
+			for (var i=0; i<l; i++) { instr[i+ll] = active[i]; }
+
 			if (this._fill) { instr.push(this._fill); }
-			if (this._stroke && this._strokeStyle) { instr.push(this._strokeStyle); }
-			if (this._stroke) { instr.push(this._stroke); }
-			
+			if (this._stroke) {
+				// doesn't need to be re-applied if it hasn't changed.
+				if (this._strokeDash !== this._oldStrokeDash) {
+					this._oldStrokeDash = this._strokeDash;
+					instr.push(this._strokeDash);
+				}
+				if (this._strokeStyle !== this._oldStrokeStyle) {
+					this._oldStrokeStyle = this._strokeStyle;
+					instr.push(this._strokeStyle);
+				}
+				instr.push(this._stroke);
+			}
+
 			this._dirty = false;
 		}
-		
+
 		if (commit) {
 			active.length = 0;
 			this._commitIndex = instr.length;
 		}
 	};
-	
+
 	/**
 	 * @method _setFill
+	 * @param fill
 	 * @protected
 	 **/
 	p._setFill = function(fill) {
 		this._updateInstructions(true);
-		if (this._fill = fill) { this.command = fill; }
+		this.command = this._fill = fill;
 		return this;
 	};
-	
+
 	/**
 	 * @method _setStroke
+	 * @param stroke
 	 * @protected
 	 **/
 	p._setStroke = function(stroke) {
 		this._updateInstructions(true);
-		if (this._stroke = stroke) {
-			this.command = stroke;
+		if (this.command = this._stroke = stroke) {
 			stroke.ignoreScale = this._strokeIgnoreScale;
 		}
 		return this;
 	};
-	
+
 // Command Objects:
 	/**
 	 * @namespace Graphics
 	 */
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
-	 * @class MoveTo
-	 * @constructor
-	 * @param {Number} x
-	 * @param {Number} y
-	 **/
-	/**
-	 * @property x
-	 * @type Number
-	 */
-	/**
-	 * @property y
-	 * @type Number
-	 */
-	(G.LineTo = function(x, y) {
-		this.x = x; this.y = y;
-	}).prototype.exec = function(ctx) { ctx.lineTo(this.x,this.y); };
-	
-	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/lineTo"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class LineTo
 	 * @constructor
 	 * @param {Number} x
@@ -4479,13 +5097,40 @@ this.createjs = this.createjs||{};
 	 * @property y
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
+	(G.LineTo = function(x, y) {
+		this.x = x; this.y = y;
+	}).prototype.exec = function(ctx) { ctx.lineTo(this.x,this.y); };
+
+	/**
+	 * Graphics command object. See {{#crossLink "Graphics/moveTo"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * @class MoveTo
+	 * @constructor
+	 * @param {Number} x
+	 * @param {Number} y
+	 **/
+	/**
+	 * @property x
+	 * @type Number
+	 */
+	/**
+	 * @property y
+	 * @type Number
+	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.MoveTo = function(x, y) {
 		this.x = x; this.y = y;
 	}).prototype.exec = function(ctx) { ctx.moveTo(this.x, this.y); };
 
 
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/arcTo"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class ArcTo
 	 * @constructor
 	 * @param {Number} x1
@@ -4514,14 +5159,18 @@ this.createjs = this.createjs||{};
 	 * @property radius
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.ArcTo = function(x1, y1, x2, y2, radius) {
 		this.x1 = x1; this.y1 = y1;
 		this.x2 = x2; this.y2 = y2;
 		this.radius = radius;
 	}).prototype.exec = function(ctx) { ctx.arcTo(this.x1, this.y1, this.x2, this.y2, this.radius); };
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/arc"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class Arc
 	 * @constructor
 	 * @param {Number} x
@@ -4555,15 +5204,19 @@ this.createjs = this.createjs||{};
 	 * @property anticlockwise
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.Arc = function(x, y, radius, startAngle, endAngle, anticlockwise) {
 		this.x = x; this.y = y;
 		this.radius = radius;
-		this.startAngle = startAngle; this.endAngle = endAngle; 
-		this.anticlockwise = !!anticlockwise; 
+		this.startAngle = startAngle; this.endAngle = endAngle;
+		this.anticlockwise = !!anticlockwise;
 	}).prototype.exec = function(ctx) { ctx.arc(this.x, this.y, this.radius, this.startAngle, this.endAngle, this.anticlockwise); };
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/quadraticCurveTo"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class QuadraticCurveTo
 	 * @constructor
 	 * @param {Number} cpx
@@ -4587,13 +5240,17 @@ this.createjs = this.createjs||{};
 	 * @property y
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.QuadraticCurveTo = function(cpx, cpy, x, y) {
 		this.cpx = cpx; this.cpy = cpy;
 		this.x = x; this.y = y;
 	}).prototype.exec = function(ctx) { ctx.quadraticCurveTo(this.cpx, this.cpy, this.x, this.y); };
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/bezierCurveTo"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class BezierCurveTo
 	 * @constructor
 	 * @param {Number} cp1x
@@ -4627,14 +5284,18 @@ this.createjs = this.createjs||{};
 	 * @property y
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.BezierCurveTo = function(cp1x, cp1y, cp2x, cp2y, x, y) {
 		this.cp1x = cp1x; this.cp1y = cp1y;
 		this.cp2x = cp2x; this.cp2y = cp2y;
 		this.x = x; this.y = y;
 	}).prototype.exec = function(ctx) { ctx.bezierCurveTo(this.cp1x, this.cp1y, this.cp2x, this.cp2y, this.x, this.y); };
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/rect"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class Rect
 	 * @constructor
 	 * @param {Number} x
@@ -4658,29 +5319,41 @@ this.createjs = this.createjs||{};
 	 * @property h
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.Rect = function(x, y, w, h) {
 		this.x = x; this.y = y;
 		this.w = w; this.h = h;
 	}).prototype.exec = function(ctx) { ctx.rect(this.x, this.y, this.w, this.h); };
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/closePath"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class ClosePath
 	 * @constructor
 	 **/
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.ClosePath = function() {
 	}).prototype.exec = function(ctx) { ctx.closePath(); };
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object to begin a new path. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class BeginPath
 	 * @constructor
 	 **/
-	(G.BeginPath = function() {
-	}).prototype.exec = function(ctx) { ctx.beginPath(); };	
-	
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
+	(G.BeginPath = function() {
+	}).prototype.exec = function(ctx) { ctx.beginPath(); };
+
+	/**
+	 * Graphics command object. See {{#crossLink "Graphics/beginFill"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class Fill
 	 * @constructor
 	 * @param {Object} style A valid Context2D fillStyle.
@@ -4694,6 +5367,10 @@ this.createjs = this.createjs||{};
 	/**
 	 * @property matrix
 	 * @type Matrix2D
+	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
 	 */
 	p = (G.Fill = function(style, matrix) {
 		this.style = style;
@@ -4709,6 +5386,7 @@ this.createjs = this.createjs||{};
 	};
 	/**
 	 * Creates a linear gradient style and assigns it to {{#crossLink "Fill/style:property"}}{{/crossLink}}.
+	 * See {{#crossLink "Graphics/beginLinearGradientFill"}}{{/crossLink}} for more information.
 	 * @method linearGradient
 	 * @param {Array} colors
 	 * @param {Array} ratios
@@ -4726,6 +5404,7 @@ this.createjs = this.createjs||{};
 	};
 	/**
 	 * Creates a radial gradient style and assigns it to {{#crossLink "Fill/style:property"}}{{/crossLink}}.
+	 * See {{#crossLink "Graphics/beginRadialGradientFill"}}{{/crossLink}} for more information.
 	 * @method radialGradient
 	 * @param {Array} colors
 	 * @param {Array} ratios
@@ -4744,21 +5423,24 @@ this.createjs = this.createjs||{};
 		return this;
 	};
 	/**
-	 * Creates a bitmap fill style and assigns it to {{#crossLink "Fill/style:property"}}{{/crossLink}}.
+	 * Creates a bitmap fill style and assigns it to the {{#crossLink "Fill/style:property"}}{{/crossLink}}.
+	 * See {{#crossLink "Graphics/beginBitmapFill"}}{{/crossLink}} for more information.
 	 * @method bitmap
-	 * @param {Image} image
+	 * @param {HTMLImageElement | HTMLCanvasElement | HTMLVideoElement} image  Must be loaded prior to creating a bitmap fill, or the fill will be empty.
 	 * @param {String} [repetition] One of: repeat, repeat-x, repeat-y, or no-repeat.
 	 * @return {Fill} Returns this Fill object for chaining or assignment.
 	 */
 	p.bitmap = function(image, repetition) {
-		var o = this.style = Graphics._ctx.createPattern(image, repetition||"");
-		o.props = {image:image, repetition:repetition, type:"bitmap"};
+		if (image.naturalWidth || image.getContext || image.readyState >= 2) {
+			var o = this.style = Graphics._ctx.createPattern(image, repetition || "");
+			o.props = {image: image, repetition: repetition, type: "bitmap"};
+		}
 		return this;
 	};
 	p.path = false;
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/beginStroke"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class Stroke
 	 * @constructor
 	 * @param {Object} style A valid Context2D fillStyle.
@@ -4773,6 +5455,10 @@ this.createjs = this.createjs||{};
 	 * @property ignoreScale
 	 * @type Boolean
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	p = (G.Stroke = function(style, ignoreScale) {
 		this.style = style;
 		this.ignoreScale = ignoreScale;
@@ -4786,6 +5472,7 @@ this.createjs = this.createjs||{};
 	};
 	/**
 	 * Creates a linear gradient style and assigns it to {{#crossLink "Stroke/style:property"}}{{/crossLink}}.
+	 * See {{#crossLink "Graphics/beginLinearGradientStroke"}}{{/crossLink}} for more information.
 	 * @method linearGradient
 	 * @param {Array} colors
 	 * @param {Array} ratios
@@ -4798,6 +5485,7 @@ this.createjs = this.createjs||{};
 	p.linearGradient = G.Fill.prototype.linearGradient;
 	/**
 	 * Creates a radial gradient style and assigns it to {{#crossLink "Stroke/style:property"}}{{/crossLink}}.
+	 * See {{#crossLink "Graphics/beginRadialGradientStroke"}}{{/crossLink}} for more information.
 	 * @method radialGradient
 	 * @param {Array} colors
 	 * @param {Array} ratios
@@ -4812,22 +5500,23 @@ this.createjs = this.createjs||{};
 	p.radialGradient = G.Fill.prototype.radialGradient;
 	/**
 	 * Creates a bitmap fill style and assigns it to {{#crossLink "Stroke/style:property"}}{{/crossLink}}.
+	 * See {{#crossLink "Graphics/beginBitmapStroke"}}{{/crossLink}} for more information.
 	 * @method bitmap
-	 * @param {Image} image
+	 * @param {HTMLImageElement} image
 	 * @param {String} [repetition] One of: repeat, repeat-x, repeat-y, or no-repeat.
 	 * @return {Fill} Returns this Stroke object for chaining or assignment.
 	 */
 	p.bitmap = G.Fill.prototype.bitmap;
 	p.path = false;
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/setStrokeStyle"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class StrokeStyle
 	 * @constructor
 	 * @param {Number} width
-	 * @param {String} caps
-	 * @param {String} joints
-	 * @param {Number} miterLimit
+	 * @param {String} [caps]
+	 * @param {String} [joints]
+	 * @param {Number} [miterLimit]
 	 **/
 	/**
 	 * @property width
@@ -4847,6 +5536,10 @@ this.createjs = this.createjs||{};
 	 * @property miterLimit
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	p = (G.StrokeStyle = function(width, caps, joints, miterLimit) {
 		this.width = width;
 		this.caps = caps;
@@ -4855,14 +5548,53 @@ this.createjs = this.createjs||{};
 	}).prototype;
 	p.exec = function(ctx) {
 		ctx.lineWidth = (this.width == null ? "1" : this.width);
-		ctx.lineCap = (this.caps == null ? "butt" : this.caps);
-		ctx.lineJoin = (this.joints == null ? "miter" : this.joints);
+		ctx.lineCap = (this.caps == null ? "butt" : (isNaN(this.caps) ? this.caps : Graphics.STROKE_CAPS_MAP[this.caps]));
+		ctx.lineJoin = (this.joints == null ? "miter" : (isNaN(this.joints) ? this.joints : Graphics.STROKE_JOINTS_MAP[this.joints]));
 		ctx.miterLimit = (this.miterLimit == null ? "10" : this.miterLimit);
 	};
 	p.path = false;
 	
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/setStrokeDash"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * @class StrokeDash
+	 * @constructor
+	 * @param {Array} [segments]
+	 * @param {Number} [offset=0]
+	 **/
+	/**
+	 * @property segments
+	 * @type Array
+	 */
+	/**
+	 * @property offset
+	 * @type Number
+	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
+	(G.StrokeDash = function(segments, offset) {
+		this.segments = segments;
+		this.offset = offset||0;
+	}).prototype.exec = function(ctx) {
+		if (ctx.setLineDash) { // feature detection.
+			ctx.setLineDash(this.segments|| G.StrokeDash.EMPTY_SEGMENTS); // instead of [] to reduce churn.
+			ctx.lineDashOffset = this.offset||0;
+		}
+	};
+	/**
+	 * The default value for segments (ie. no dash).
+	 * @property EMPTY_SEGMENTS
+	 * @static
+	 * @final
+	 * @readonly
+	 * @protected
+	 * @type {Array}
+	 **/
+	G.StrokeDash.EMPTY_SEGMENTS = [];
+
+	/**
+	 * Graphics command object. See {{#crossLink "Graphics/drawRoundRectComplex"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class RoundRect
 	 * @constructor
 	 * @param {Number} x
@@ -4906,6 +5638,10 @@ this.createjs = this.createjs||{};
 	 * @property radiusBL
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.RoundRect = function(x, y, w, h, radiusTL, radiusTR, radiusBR, radiusBL) {
 		this.x = x; this.y = y;
 		this.w = w; this.h = h;
@@ -4916,7 +5652,7 @@ this.createjs = this.createjs||{};
 		var mTL=0, mTR=0, mBR=0, mBL=0;
 		var x = this.x, y = this.y, w = this.w, h = this.h;
 		var rTL = this.radiusTL, rTR = this.radiusTR, rBR = this.radiusBR, rBL = this.radiusBL;
-		
+
 		if (rTL < 0) { rTL *= (mTL=-1); }
 		if (rTL > max) { rTL = max; }
 		if (rTR < 0) { rTR *= (mTR=-1); }
@@ -4936,9 +5672,9 @@ this.createjs = this.createjs||{};
 		ctx.arcTo(x-rTL*mTL, y-rTL*mTL, x+rTL, y, rTL);
 		ctx.closePath();
 	};
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/drawCircle"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class Circle
 	 * @constructor
 	 * @param {Number} x
@@ -4957,18 +5693,51 @@ this.createjs = this.createjs||{};
 	 * @property radius
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.Circle = function(x, y, radius) {
 		this.x = x; this.y = y;
 		this.radius = radius;
 	}).prototype.exec = function(ctx) { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); };
-	
+
+	/**
+	 * Graphics command object. See {{#crossLink "Graphics/drawEllipse"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * @class Ellipse
+	 * @constructor
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} w
+	 * @param {Number} h
+	 **/
+	/**
+	 * @property x
+	 * @type Number
+	 */
+	/**
+	 * @property y
+	 * @type Number
+	 */
+	/**
+	 * @property w
+	 * @type Number
+	 */
+	/**
+	 * @property h
+	 * @type Number
+	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.Ellipse = function(x, y, w, h) {
 		this.x = x; this.y = y;
 		this.w = w; this.h = h;
 	}).prototype.exec = function(ctx) {
 		var x = this.x, y = this.y;
 		var w = this.w, h = this.h;
-		
+
 		var k = 0.5522848;
 		var ox = (w / 2) * k;
 		var oy = (h / 2) * k;
@@ -4983,9 +5752,9 @@ this.createjs = this.createjs||{};
 		ctx.bezierCurveTo(xe, ym+oy, xm+ox, ye, xm, ye);
 		ctx.bezierCurveTo(xm-ox, ye, x, ym+oy, x, ym);
 	};
-	
+
 	/**
-	 * Graphics command object. See {{#crossLink "Graphics"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
+	 * Graphics command object. See {{#crossLink "Graphics/drawPolyStar"}}{{/crossLink}} and {{#crossLink "Graphics/append"}}{{/crossLink}} for more information.
 	 * @class PolyStar
 	 * @constructor
 	 * @param {Number} x
@@ -5019,6 +5788,10 @@ this.createjs = this.createjs||{};
 	 * @property angle
 	 * @type Number
 	 */
+	/**
+	 * @method exec
+	 * @param {CanvasRenderingContext2D} ctx
+	 */
 	(G.PolyStar = function(x, y, radius, sides, pointSize, angle) {
 		this.x = x; this.y = y;
 		this.radius = radius;
@@ -5032,7 +5805,7 @@ this.createjs = this.createjs||{};
 		var sides = this.sides;
 		var ps = 1-(this.pointSize||0);
 		var a = Math.PI/sides;
-		
+
 		ctx.moveTo(x+Math.cos(angle)*radius, y+Math.sin(angle)*radius);
 		for (var i=0; i<sides; i++) {
 			angle += a;
@@ -5044,11 +5817,11 @@ this.createjs = this.createjs||{};
 		}
 		ctx.closePath();
 	};
-	
+
 	// docced above.
 	Graphics.beginCmd = new G.BeginPath(); // so we don't have to instantiate multiple instances.
-	
-	
+
+
 	createjs.Graphics = Graphics;
 }());
 
@@ -5347,6 +6120,22 @@ this.createjs = this.createjs||{};
 		this._cacheOffsetY = 0;
 		
 		/**
+		 * @property _filterOffsetX
+		 * @protected
+		 * @type {Number}
+		 * @default 0
+		 **/
+		this._filterOffsetX = 0;
+		
+		/**
+		 * @property _filterOffsetY
+		 * @protected
+		 * @type {Number}
+		 * @default 0
+		 **/
+		this._filterOffsetY = 0;
+		
+		/**
 		 * @property _cacheScale
 		 * @protected
 		 * @type {Number}
@@ -5395,7 +6184,9 @@ this.createjs = this.createjs||{};
 		this._bounds = null;
 	}
 	var p = createjs.extend(DisplayObject, createjs.EventDispatcher);
-	
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 	
 // static properties:
 	/**
@@ -5572,6 +6363,34 @@ this.createjs = this.createjs||{};
 	 * @since 0.6.0
 	 */
 	
+	
+// getter / setters:
+	/**
+	 * Use the {{#crossLink "DisplayObject/stage:property"}}{{/crossLink}} property instead.
+	 * @method getStage
+	 * @return {Stage}
+	 * @deprecated
+	 **/
+	p.getStage = function() {
+		// uses dynamic access to avoid circular dependencies;
+		var o = this, _Stage = createjs["Stage"];
+		while (o.parent) { o = o.parent; }
+		if (o instanceof _Stage) { return o; }
+		return null;
+	};
+
+	/**
+	 * Returns the Stage instance that this display object will be rendered on, or null if it has not been added to one.
+	 * @property stage
+	 * @type {Stage}
+	 * @readonly
+	 **/
+	try {
+		Object.defineProperties(p, {
+			stage: { get: p.getStage }
+		});
+	} catch (e) {}
+
 
 // public methods:
 	/**
@@ -5600,12 +6419,8 @@ this.createjs = this.createjs||{};
 	p.draw = function(ctx, ignoreCache) {
 		var cacheCanvas = this.cacheCanvas;
 		if (ignoreCache || !cacheCanvas) { return false; }
-		var scale = this._cacheScale, offX = this._cacheOffsetX, offY = this._cacheOffsetY, fBounds;
-		if (fBounds = this._applyFilterBounds(offX, offY, 0, 0)) {
-			offX = fBounds.x;
-			offY = fBounds.y;
-		}
-		ctx.drawImage(cacheCanvas, offX, offY, cacheCanvas.width/scale, cacheCanvas.height/scale);
+		var scale = this._cacheScale;
+		ctx.drawImage(cacheCanvas, this._cacheOffsetX+this._filterOffsetX, this._cacheOffsetY+this._filterOffsetY, cacheCanvas.width/scale, cacheCanvas.height/scale);
 		return true;
 	};
 	
@@ -5704,21 +6519,17 @@ this.createjs = this.createjs||{};
 	 * whatwg spec on compositing</a>.
 	 **/
 	p.updateCache = function(compositeOperation) {
-		var cacheCanvas = this.cacheCanvas, scale = this._cacheScale, offX = this._cacheOffsetX*scale, offY = this._cacheOffsetY*scale;
-		var w = this._cacheWidth, h = this._cacheHeight, fBounds;
+		var cacheCanvas = this.cacheCanvas;
 		if (!cacheCanvas) { throw "cache() must be called before updateCache()"; }
-		var ctx = cacheCanvas.getContext("2d");
+		var scale = this._cacheScale, offX = this._cacheOffsetX*scale, offY = this._cacheOffsetY*scale;
+		var w = this._cacheWidth, h = this._cacheHeight, ctx = cacheCanvas.getContext("2d");
 		
-		// update bounds based on filters:
-		if (fBounds = this._applyFilterBounds(offX, offY, w, h)) {
-			offX = fBounds.x;
-			offY = fBounds.y;
-			w = fBounds.width;
-			h = fBounds.height;
-		}
+		var fBounds = this._getFilterBounds();
+		offX += (this._filterOffsetX = fBounds.x);
+		offY += (this._filterOffsetY = fBounds.y);
 		
-		w = Math.ceil(w*scale);
-		h = Math.ceil(h*scale);
+		w = Math.ceil(w*scale) + fBounds.width;
+		h = Math.ceil(h*scale) + fBounds.height;
 		if (w != cacheCanvas.width || h != cacheCanvas.height) {
 			// TODO: it would be nice to preserve the content if there is a compositeOperation.
 			cacheCanvas.width = w;
@@ -5743,7 +6554,7 @@ this.createjs = this.createjs||{};
 	 **/
 	p.uncache = function() {
 		this._cacheDataURL = this.cacheCanvas = null;
-		this.cacheID = this._cacheOffsetX = this._cacheOffsetY = 0;
+		this.cacheID = this._cacheOffsetX = this._cacheOffsetY = this._filterOffsetX = this._filterOffsetY = 0;
 		this._cacheScale = 1;
 	};
 	
@@ -5757,22 +6568,6 @@ this.createjs = this.createjs||{};
 		if (!this.cacheCanvas) { return null; }
 		if (this.cacheID != this._cacheDataURLID) { this._cacheDataURL = this.cacheCanvas.toDataURL(); }
 		return this._cacheDataURL;
-	};
-
-	/**
-	 * Returns the stage that this display object will be rendered on, or null if it has not been added to one.
-	 * @method getStage
-	 * @return {Stage} The Stage instance that the display object is a descendent of. null if the DisplayObject has not
-	 * been added to a Stage.
-	 **/
-	p.getStage = function() {
-		var o = this;
-		while (o.parent) {
-			o = o.parent;
-		}
-		// using dynamic access to avoid circular dependencies;
-		if (o instanceof createjs["Stage"]) { return o; }
-		return null;
 	};
 
 	/**
@@ -5792,12 +6587,12 @@ this.createjs = this.createjs||{};
 	 * @method localToGlobal
 	 * @param {Number} x The x position in the source display object to transform.
 	 * @param {Number} y The y position in the source display object to transform.
+	 * @param {Point | Object} [pt] An object to copy the result into. If omitted a new Point object with x/y properties will be returned. 
 	 * @return {Point} A Point instance with x and y properties correlating to the transformed coordinates
 	 * on the stage.
 	 **/
-	p.localToGlobal = function(x, y) {
-		var mtx = this.getConcatenatedMatrix(this._props.matrix).prepend(1, 0, 0, 1, x, y);
-		return new createjs.Point(mtx.tx, mtx.ty);
+	p.localToGlobal = function(x, y, pt) {
+		return this.getConcatenatedMatrix(this._props.matrix).transformPoint(x,y, pt||new createjs.Point());
 	};
 
 	/**
@@ -5817,12 +6612,12 @@ this.createjs = this.createjs||{};
 	 * @method globalToLocal
 	 * @param {Number} x The x position on the stage to transform.
 	 * @param {Number} y The y position on the stage to transform.
+	 * @param {Point | Object} [pt] An object to copy the result into. If omitted a new Point object with x/y properties will be returned. 
 	 * @return {Point} A Point instance with x and y properties correlating to the transformed position in the
 	 * display object's coordinate space.
 	 **/
-	p.globalToLocal = function(x, y) {
-		var mtx = this.getConcatenatedMatrix(this._props.matrix).invert().prepend(1, 0, 0, 1, x, y);
-		return new createjs.Point(mtx.tx, mtx.ty);
+	p.globalToLocal = function(x, y, pt) {
+		return this.getConcatenatedMatrix(this._props.matrix).invert().transformPoint(x,y, pt||new createjs.Point());
 	};
 
 	/**
@@ -5838,12 +6633,13 @@ this.createjs = this.createjs||{};
 	 * @param {Number} x The x position in the source display object to transform.
 	 * @param {Number} y The y position on the source display object to transform.
 	 * @param {DisplayObject} target The target display object to which the coordinates will be transformed.
+	 * @param {Point | Object} [pt] An object to copy the result into. If omitted a new Point object with x/y properties will be returned. 
 	 * @return {Point} Returns a Point instance with x and y properties correlating to the transformed position
 	 * in the target's coordinate space.
 	 **/
-	p.localToLocal = function(x, y, target) {
-		var pt = this.localToGlobal(x, y);
-		return target.globalToLocal(pt.x, pt.y);
+	p.localToLocal = function(x, y, target, pt) {
+		pt = this.localToGlobal(x, y, pt);
+		return target.globalToLocal(pt.x, pt.y, pt);
 	};
 
 	/**
@@ -5865,6 +6661,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} [regX=0] The horizontal registration point in pixels
 	 * @param {Number} [regY=0] The vertical registration point in pixels
 	 * @return {DisplayObject} Returns this instance. Useful for chaining commands.
+	 * @chainable
 	*/
 	p.setTransform = function(x, y, scaleX, scaleY, rotation, skewX, skewY, regX, regY) {
 		this.x = x || 0;
@@ -5888,7 +6685,7 @@ this.createjs = this.createjs||{};
 	 **/
 	p.getMatrix = function(matrix) {
 		var o = this, mtx = matrix&&matrix.identity() || new createjs.Matrix2D();
-		return o.transformMatrix ?  mtx.copy(o.transformMatrix) : mtx.prependTransform(o.x, o.y, o.scaleX, o.scaleY, o.rotation, o.skewX, o.skewY, o.regX, o.regY);
+		return o.transformMatrix ?  mtx.copy(o.transformMatrix) : mtx.appendTransform(o.x, o.y, o.scaleX, o.scaleY, o.rotation, o.skewX, o.skewY, o.regX, o.regY);
 	};
 	
 	/**
@@ -5904,7 +6701,7 @@ this.createjs = this.createjs||{};
 	p.getConcatenatedMatrix = function(matrix) {
 		var o = this, mtx = this.getMatrix(matrix);
 		while (o = o.parent) {
-			mtx.appendMatrix(o.getMatrix(o._props.matrix));
+			mtx.prependMatrix(o.getMatrix(o._props.matrix));
 		}
 		return mtx;
 	};
@@ -5921,11 +6718,11 @@ this.createjs = this.createjs||{};
 		props = props ? props.identity() : new createjs.DisplayProps();
 		var o = this, mtx = o.getMatrix(props.matrix); 
 		do {
-			props.append(o.visible, o.alpha, o.shadow, o.compositeOperation);
+			props.prepend(o.visible, o.alpha, o.shadow, o.compositeOperation);
 			
 			// we do this to avoid problems with the matrix being used for both operations when o._props.matrix is passed in as the props param.
-			// this could be simplified (ie. just done as part of the append above) if we switched to using a pool.
-			if (o != this) { mtx.appendMatrix(o.getMatrix(o._props.matrix)); }
+			// this could be simplified (ie. just done as part of the prepend above) if we switched to using a pool.
+			if (o != this) { mtx.prependMatrix(o.getMatrix(o._props.matrix)); }
 		} while (o = o.parent);
 		return props;
 	};
@@ -5945,7 +6742,7 @@ this.createjs = this.createjs||{};
 	 * @method hitTest
 	 * @param {Number} x The x position to check in the display object's local coordinates.
 	 * @param {Number} y The y position to check in the display object's local coordinates.
-	 * @return {Boolean} A Boolean indicting whether a visible portion of the DisplayObject intersect the specified
+	 * @return {Boolean} A Boolean indicating whether a visible portion of the DisplayObject intersect the specified
 	 * local Point.
 	*/
 	p.hitTest = function(x, y) {
@@ -5965,12 +6762,12 @@ this.createjs = this.createjs||{};
 	 * <h4>Example</h4>
 	 *
 	 *      var myGraphics = new createjs.Graphics().beginFill("#ff0000").drawCircle(0, 0, 25);
-	 *      var shape = stage.addChild(new Shape())
-	 *          .set({graphics:myGraphics, x:100, y:100, alpha:0.5});
+	 *      var shape = stage.addChild(new Shape()).set({graphics:myGraphics, x:100, y:100, alpha:0.5});
 	 *
 	 * @method set
 	 * @param {Object} props A generic object containing properties to copy to the DisplayObject instance.
 	 * @return {DisplayObject} Returns the instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	*/
 	p.set = function(props) {
 		for (var n in props) { this[n] = props[n]; }
@@ -6200,27 +6997,17 @@ this.createjs = this.createjs||{};
 	};
 	
 	/**
-	 * @method _applyFilterBounds
-	 * @param {Number} x
-	 * @param {Number} y
-	 * @param {Number} width
-	 * @param {Number} height
+	 * @method _getFilterBounds
 	 * @return {Rectangle}
 	 * @protected
 	 **/
-	p._applyFilterBounds = function(x, y, width, height) {
-		var bounds, l, filters = this.filters;
-		if (!filters || !(l=filters.length)) { return null; }
+	p._getFilterBounds = function(rect) {
+		var l, filters = this.filters, bounds = this._rectangle.setValues(0,0,0,0);
+		if (!filters || !(l=filters.length)) { return bounds; }
 		
 		for (var i=0; i<l; i++) {
 			var f = this.filters[i];
-			var fBounds = f.getBounds&&f.getBounds();
-			if (!fBounds) { continue; }
-			if (!bounds) { bounds = this._rectangle.setValues(x,y,width,height); }
-			bounds.x += fBounds.x;
-			bounds.y += fBounds.y;
-			bounds.width += fBounds.width;
-			bounds.height += fBounds.height;
+			f.getBounds&&f.getBounds(bounds);
 		}
 		return bounds;
 	};
@@ -6249,8 +7036,8 @@ this.createjs = this.createjs||{};
 		var x = bounds.x, y = bounds.y, width = bounds.width, height = bounds.height, mtx = this._props.matrix;
 		mtx = ignoreTransform ? mtx.identity() : this.getMatrix(mtx);
 		
-		if (x || y) { mtx.prependTransform(0,0,1,1,0,0,0,-x,-y); } // TODO: simplify this.
-		if (matrix) { mtx.appendMatrix(matrix); }
+		if (x || y) { mtx.appendTransform(0,0,1,1,0,0,0,-x,-y); } // TODO: simplify this.
+		if (matrix) { mtx.prependMatrix(matrix); }
 		
 		var x_a = width*mtx.a, x_b = width*mtx.b;
 		var y_c = height*mtx.c, y_d = height*mtx.d;
@@ -6321,7 +7108,6 @@ this.createjs = this.createjs||{};
 	function Container() {
 		this.DisplayObject_constructor();
 		
-		
 	// public properties:
 		/**
 		 * The array of children in the display list. You should usually use the child management methods such as
@@ -6355,6 +7141,30 @@ this.createjs = this.createjs||{};
 		this.tickChildren = true;
 	}
 	var p = createjs.extend(Container, createjs.DisplayObject);
+	
+	
+// getter / setters:
+	/**
+	 * Use the {{#crossLink "Container/numChildren:property"}}{{/crossLink}} property instead.
+	 * @method getNumChildren
+	 * @return {Number}
+	 * @deprecated
+	 **/
+	p.getNumChildren = function() {
+		return this.children.length;
+	};
+
+	/**
+	 * Returns the number of children in the container.
+	 * @property numChildren
+	 * @type {Number}
+	 * @readonly
+	 **/
+	try {
+		Object.defineProperties(p, {
+			numChildren: { get: p.getNumChildren }
+		});
+	} catch (e) {}
 	
 
 // public methods:
@@ -6394,7 +7204,7 @@ this.createjs = this.createjs||{};
 		if (this.DisplayObject_draw(ctx, ignoreCache)) { return true; }
 		
 		// this ensures we don't have issues with display list changes that occur during a draw:
-		var list = this.children.slice(0);
+		var list = this.children.slice();
 		for (var i=0,l=list.length; i<l; i++) {
 			var child = list[i];
 			if (!child.isVisible()) { continue; }
@@ -6413,11 +7223,11 @@ this.createjs = this.createjs||{};
 	 *
 	 * <h4>Example</h4>
 	 *
-	 *      container.addChild(bitmapInstance);
+	 * 		container.addChild(bitmapInstance);
 	 *
-	 *  You can also add multiple children at once:
+	 * You can also add multiple children at once:
 	 *
-	 *      container.addChild(bitmapInstance, shapeInstance, textInstance);
+	 * 		container.addChild(bitmapInstance, shapeInstance, textInstance);
 	 *
 	 * @method addChild
 	 * @param {DisplayObject} child The display object to add.
@@ -6542,7 +7352,7 @@ this.createjs = this.createjs||{};
 	 *
 	 * <h4>Example</h4>
 	 *
-	 *      container.removeAlLChildren();
+	 * 	container.removeAllChildren();
 	 *
 	 * @method removeAllChildren
 	 **/
@@ -6613,15 +7423,6 @@ this.createjs = this.createjs||{};
 	 **/
 	p.getChildIndex = function(child) {
 		return createjs.indexOf(this.children, child);
-	};
-
-	/**
-	 * Returns the number of children in the display list.
-	 * @method getNumChildren
-	 * @return {Number} The number of children in the display list.
-	 **/
-	p.getNumChildren = function() {
-		return this.children.length;
 	};
 	
 	/**
@@ -6708,23 +7509,27 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * Returns an array of all display objects under the specified coordinates that are in this container's display
-	 * list. This routine ignores any display objects with mouseEnabled set to false. The array will be sorted in order
-	 * of visual depth, with the top-most display object at index 0. This uses shape based hit detection, and can be an
-	 * expensive operation to run, so it is best to use it carefully. For example, if testing for objects under the
-	 * mouse, test on tick (instead of on mousemove), and only if the mouse's position has changed.
+	 * list. This routine ignores any display objects with {{#crossLink "DisplayObject/mouseEnabled:property"}}{{/crossLink}}
+	 * set to `false`. The array will be sorted in order of visual depth, with the top-most display object at index 0.
+	 * This uses shape based hit detection, and can be an expensive operation to run, so it is best to use it carefully.
+	 * For example, if testing for objects under the mouse, test on tick (instead of on {{#crossLink "DisplayObject/mousemove:event"}}{{/crossLink}}),
+	 * and only if the mouse's position has changed.
 	 * 
-	 * By default this method evaluates all display objects. By setting the `mode` parameter to `1`, the `mouseEnabled`
-	 * and `mouseChildren` properties will be respected.
-	 * Setting it to `2` additionally excludes display objects that do not have active mouse event listeners
-	 * or a `cursor` property. That is, only objects that would normally intercept mouse interaction will be included.
-	 * This can significantly improve performance in some cases by reducing the number of
-	 * display objects that need to be tested.
+	 * <ul>
+	 *     <li>By default (mode=0) this method evaluates all display objects.</li>
+	 *     <li>By setting the `mode` parameter to `1`, the {{#crossLink "DisplayObject/mouseEnabled:property"}}{{/crossLink}}
+	 * 		and {{#crossLink "mouseChildren:property"}}{{/crossLink}} properties will be respected.</li>
+	 * 	   <li>Setting the `mode` to `2` additionally excludes display objects that do not have active mouse event
+	 * 	   	listeners or a {{#crossLink "DisplayObject:cursor:property"}}{{/crossLink}} property. That is, only objects
+	 * 	   	that would normally intercept mouse interaction will be included. This can significantly improve performance
+	 * 	   	in some cases by reducing the number of display objects that need to be tested.</li>
+	 * </li>
 	 * 
-	 * Accounts for both {{#crossLink "DisplayObject/hitArea:property"}}{{/crossLink}} and {{#crossLink "DisplayObject/mask:property"}}{{/crossLink}}.
+	 * This method accounts for both {{#crossLink "DisplayObject/hitArea:property"}}{{/crossLink}} and {{#crossLink "DisplayObject/mask:property"}}{{/crossLink}}.
 	 * @method getObjectsUnderPoint
 	 * @param {Number} x The x position in the container to test.
 	 * @param {Number} y The y position in the container to test.
-	 * @param {Number} mode The mode to use to determine which display objects to include. 0-all, 1-respect mouseEnabled/mouseChildren, 2-only mouse opaque objects.
+	 * @param {Number} [mode=0] The mode to use to determine which display objects to include. 0-all, 1-respect mouseEnabled/mouseChildren, 2-only mouse opaque objects.
 	 * @return {Array} An Array of DisplayObjects under the specified coordinates.
 	 **/
 	p.getObjectsUnderPoint = function(x, y, mode) {
@@ -6735,7 +7540,7 @@ this.createjs = this.createjs||{};
 	};
 
 	/**
-	 * Similar to {{#crossLink "Container/getObjectsUnderPoint()"}}{{/crossLink}}, but returns only the top-most display
+	 * Similar to {{#crossLink "Container/getObjectsUnderPoint"}}{{/crossLink}}, but returns only the top-most display
 	 * object. This runs significantly faster than <code>getObjectsUnderPoint()</code>, but is still potentially an expensive
 	 * operation. See {{#crossLink "Container/getObjectsUnderPoint"}}{{/crossLink}} for more information.
 	 * @method getObjectUnderPoint
@@ -6768,7 +7573,7 @@ this.createjs = this.createjs||{};
 	 * Returns a clone of this Container. Some properties that are specific to this instance's current context are
 	 * reverted to their defaults (for example .parent).
 	 * @method clone
-	 * @param {Boolean} recursive If true, all of the descendants of this container will be cloned recursively. If false, the
+	 * @param {Boolean} [recursive=false] If true, all of the descendants of this container will be cloned recursively. If false, the
 	 * properties of the container will be cloned, but the new instance will not have any children.
 	 * @return {Container} A clone of the current Container instance.
 	 **/
@@ -6857,7 +7662,7 @@ this.createjs = this.createjs||{};
 				mtx = props.matrix;
 				
 				if (hitArea) {
-					mtx.prependMatrix(hitArea.getMatrix(hitArea._props.matrix));
+					mtx.appendMatrix(hitArea.getMatrix(hitArea._props.matrix));
 					props.alpha = hitArea.alpha;
 				}
 				
@@ -6888,7 +7693,7 @@ this.createjs = this.createjs||{};
 		
 		var mtx = this._props.matrix, parent = target.parent;
 		mtx = parent ? parent.getConcatenatedMatrix(mtx) : mtx.identity();
-		mtx = mask.getMatrix(mask._props.matrix).appendMatrix(mtx);
+		mtx = mask.getMatrix(mask._props.matrix).prependMatrix(mtx);
 		
 		var ctx = createjs.DisplayObject._hitTestContext;
 		ctx.setTransform(mtx.a,  mtx.b, mtx.c, mtx.d, mtx.tx-x, mtx.ty-y);
@@ -6918,7 +7723,7 @@ this.createjs = this.createjs||{};
 		
 		var mtx = this._props.matrix;
 		mtx = ignoreTransform ? mtx.identity() : this.getMatrix(mtx);
-		if (matrix) { mtx.appendMatrix(matrix); }
+		if (matrix) { mtx.prependMatrix(matrix); }
 		
 		var l = this.children.length, rect=null;
 		for (var i=0; i<l; i++) {
@@ -7066,6 +7871,16 @@ this.createjs = this.createjs||{};
 		 * @default false
 		 **/
 		this.mouseMoveOutside = false;
+		
+		
+		/**
+		 * Prevents selection of other elements in the html page if the user clicks and drags, or double clicks on the canvas.
+		 * This works by calling `preventDefault()` on any mousedown events (or touch equivalent) originating on the canvas.
+		 * @property preventSelection
+		 * @type Boolean
+		 * @default true
+		 **/
+		this.preventSelection = true;
 	
 		/**
 		 * The hitArea property is not supported for Stage.
@@ -7128,6 +7943,20 @@ this.createjs = this.createjs||{};
 	}
 	var p = createjs.extend(Stage, createjs.Container);
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
+
 // events:
 	/**
 	 * Dispatched when the user moves the mouse over the canvas.
@@ -7144,7 +7973,7 @@ this.createjs = this.createjs||{};
 	 */
 
 	/**
-	 * Dispatched when the user the user releases the mouse button anywhere that the page can detect it (this varies slightly between browsers).
+	 * Dispatched when the user the user presses somewhere on the stage, then releases the mouse button anywhere that the page can detect it (this varies slightly between browsers).
 	 * You can use {{#crossLink "Stage/mouseInBounds:property"}}{{/crossLink}} to check whether the mouse is currently within the stage bounds.
 	 * See the {{#crossLink "MouseEvent"}}{{/crossLink}} class for a listing of event properties.
 	 * @event stagemouseup
@@ -7254,7 +8083,7 @@ this.createjs = this.createjs||{};
 	p.update = function(props) {
 		if (!this.canvas) { return; }
 		if (this.tickOnUpdate) { this.tick(props); }
-		if (this.dispatchEvent("drawstart")) { return; }
+		if (this.dispatchEvent("drawstart", false, true) === false) { return; }
 		createjs.DisplayObject._snapToPixelEnabled = this.snapToPixelEnabled;
 		var r = this.drawRect, ctx = this.canvas.getContext("2d");
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -7305,7 +8134,7 @@ this.createjs = this.createjs||{};
 	 * @param {Object} [props] An object with properties that should be copied to the event object. Should usually be a Ticker event object, or similar object with a delta property.
 	 **/
 	p.tick = function(props) {
-		if (!this.tickEnabled || this.dispatchEvent("tickstart")) { return; }
+		if (!this.tickEnabled || this.dispatchEvent("tickstart", false, true) === false) { return; }
 		var evtObj = new createjs.Event("tick");
 		if (props) {
 			for (var n in props) {
@@ -7500,13 +8329,7 @@ this.createjs = this.createjs||{};
 	 **/
 	p._getPointerData = function(id) {
 		var data = this._pointerData[id];
-		if (!data) {
-			data = this._pointerData[id] = {x:0,y:0};
-			// if it's the first new touch, then make it the primary pointer id:
-			if (this._primaryPointerID == null) { this._primaryPointerID = id; }
-			// if it's the mouse (id == -1) or the first new touch, then make it the primary pointer id:
-		    if (this._primaryPointerID == null || this._primaryPointerID == -1) { this._primaryPointerID = id; }
-		}
+		if (!data) { data = this._pointerData[id] = {x:0,y:0}; }
 		return data;
 	};
 
@@ -7537,7 +8360,7 @@ this.createjs = this.createjs||{};
 		var inBounds = o.inBounds;
 		this._updatePointerPosition(id, e, pageX, pageY);
 		if (inBounds || o.inBounds || this.mouseMoveOutside) {
-			if (id == -1 && o.inBounds == !inBounds) {
+			if (id === -1 && o.inBounds == !inBounds) {
 				this._dispatchMouseEvent(this, (inBounds ? "mouseleave" : "mouseenter"), false, id, o, e);
 			}
 			
@@ -7578,7 +8401,7 @@ this.createjs = this.createjs||{};
 		o.rawX = pageX;
 		o.rawY = pageY;
 
-		if (id == this._primaryPointerID) {
+		if (id === this._primaryPointerID || id === -1) {
 			this.mouseX = o.x;
 			this.mouseY = o.y;
 			this.mouseInBounds = o.inBounds;
@@ -7606,10 +8429,11 @@ this.createjs = this.createjs||{};
 		var nextStage = this._nextStage, o = this._getPointerData(id);
 		if (this._prevStage && owner === undefined) { return; } // redundant listener.
 		
-		this._dispatchMouseEvent(this, "stagemouseup", false, id, o, e);
-		
 		var target=null, oTarget = o.target;
 		if (!owner && (oTarget || nextStage)) { target = this._getObjectsUnderPoint(o.x, o.y, null, true); }
+		
+		if (o.down) { this._dispatchMouseEvent(this, "stagemouseup", false, id, o, e, target); o.down = false; }
+		
 		if (target == oTarget) { this._dispatchMouseEvent(oTarget, "click", true, id, o, e); }
 		this._dispatchMouseEvent(oTarget, "pressup", true, id, o, e);
 		
@@ -7640,17 +8464,16 @@ this.createjs = this.createjs||{};
 	 * @param {Stage} owner Indicates that the event has already been captured & handled by the indicated stage.
 	 **/
 	p._handlePointerDown = function(id, e, pageX, pageY, owner) {
+		if (this.preventSelection) { e.preventDefault(); }
+		if (this._primaryPointerID == null || id === -1) { this._primaryPointerID = id; } // mouse always takes over.
+		
 		if (pageY != null) { this._updatePointerPosition(id, e, pageX, pageY); }
 		var target = null, nextStage = this._nextStage, o = this._getPointerData(id);
+		if (!owner) { target = o.target = this._getObjectsUnderPoint(o.x, o.y, null, true); }
 
-		if (o.inBounds) { this._dispatchMouseEvent(this, "stagemousedown", false, id, o, e); }
+		if (o.inBounds) { this._dispatchMouseEvent(this, "stagemousedown", false, id, o, e, target); o.down = true; }
+		this._dispatchMouseEvent(target, "mousedown", true, id, o, e);
 		
-		
-		if (!owner) {
-			target = o.target = this._getObjectsUnderPoint(o.x, o.y, null, true);
-			this._dispatchMouseEvent(o.target, "mousedown", true, id, o, e);
-		}
-
 		nextStage&&nextStage._handlePointerDown(id, e, pageX, pageY, owner || target && this);
 	};
 
@@ -7670,11 +8493,11 @@ this.createjs = this.createjs||{};
 			nextStage&&nextStage._testMouseOver(clear, owner, eventTarget);
 			return;
 		}
-		
+		var o = this._getPointerData(-1);
 		// only update if the mouse position has changed. This provides a lot of optimization, but has some trade-offs.
-		if (this._primaryPointerID != -1 || (!clear && this.mouseX == this._mouseOverX && this.mouseY == this._mouseOverY && this.mouseInBounds)) { return; }
+		if (!o || (!clear && this.mouseX == this._mouseOverX && this.mouseY == this._mouseOverY && this.mouseInBounds)) { return; }
 		
-		var o = this._getPointerData(-1), e = o.posEvtObj;
+		var e = o.posEvtObj;
 		var isEventTarget = eventTarget || e&&(e.target == this.canvas);
 		var target=null, common = -1, cursor="", t, i, l;
 		
@@ -7692,7 +8515,7 @@ this.createjs = this.createjs||{};
 		t = target;
 		while (t) {
 			list.unshift(t);
-			if (t.cursor != null) { cursor = t.cursor; }
+			if (!cursor) { cursor = t.cursor; }
 			t = t.parent;
 		}
 		this.canvas.style.cursor = cursor;
@@ -7705,19 +8528,19 @@ this.createjs = this.createjs||{};
 		}
 
 		if (oldTarget != target) {
-			this._dispatchMouseEvent(oldTarget, "mouseout", true, -1, o, e);
+			this._dispatchMouseEvent(oldTarget, "mouseout", true, -1, o, e, target);
 		}
 
 		for (i=oldList.length-1; i>common; i--) {
-			this._dispatchMouseEvent(oldList[i], "rollout", false, -1, o, e);
+			this._dispatchMouseEvent(oldList[i], "rollout", false, -1, o, e, target);
 		}
 
 		for (i=list.length-1; i>common; i--) {
-			this._dispatchMouseEvent(list[i], "rollover", false, -1, o, e);
+			this._dispatchMouseEvent(list[i], "rollover", false, -1, o, e, oldTarget);
 		}
 
 		if (oldTarget != target) {
-			this._dispatchMouseEvent(target, "mouseover", true, -1, o, e);
+			this._dispatchMouseEvent(target, "mouseover", true, -1, o, e, oldTarget);
 		}
 		
 		nextStage&&nextStage._testMouseOver(clear, owner || target && this, eventTarget || isEventTarget && this);
@@ -7747,17 +8570,18 @@ this.createjs = this.createjs||{};
 	 * @param {Number} pointerId
 	 * @param {Object} o
 	 * @param {MouseEvent} [nativeEvent]
+	 * @param {DisplayObject} [relatedTarget]
 	 **/
-	p._dispatchMouseEvent = function(target, type, bubbles, pointerId, o, nativeEvent) {
+	p._dispatchMouseEvent = function(target, type, bubbles, pointerId, o, nativeEvent, relatedTarget) {
 		// TODO: might be worth either reusing MouseEvent instances, or adding a willTrigger method to avoid GC.
 		if (!target || (!bubbles && !target.hasEventListener(type))) { return; }
 		/*
-		// TODO: account for stage transformations:
+		// TODO: account for stage transformations?
 		this._mtx = this.getConcatenatedMatrix(this._mtx).invert();
 		var pt = this._mtx.transformPoint(o.x, o.y);
-		var evt = new createjs.MouseEvent(type, bubbles, false, pt.x, pt.y, nativeEvent, pointerId, pointerId==this._primaryPointerID, o.rawX, o.rawY);
+		var evt = new createjs.MouseEvent(type, bubbles, false, pt.x, pt.y, nativeEvent, pointerId, pointerId==this._primaryPointerID || pointerId==-1, o.rawX, o.rawY);
 		*/
-		var evt = new createjs.MouseEvent(type, bubbles, false, o.x, o.y, nativeEvent, pointerId, pointerId==this._primaryPointerID, o.rawX, o.rawY);
+		var evt = new createjs.MouseEvent(type, bubbles, false, o.x, o.y, nativeEvent, pointerId, pointerId === this._primaryPointerID || pointerId === -1, o.rawX, o.rawY, relatedTarget);
 		target.dispatchEvent(evt);
 	};
 
@@ -7797,7 +8621,7 @@ this.createjs = this.createjs||{};
 	 * @class Bitmap
 	 * @extends DisplayObject
 	 * @constructor
-	 * @param {Image | HTMLCanvasElement | HTMLVideoElement | String} imageOrUri The source object or URI to an image to
+	 * @param {HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | String} imageOrUri The source object or URI to an image to
 	 * display. This can be either an Image, Canvas, or Video object, or a string URI to an image file to load and use.
 	 * If it is a URI, a new Image object will be constructed and assigned to the .image property.
 	 **/
@@ -7807,9 +8631,10 @@ this.createjs = this.createjs||{};
 		
 	// public properties:
 		/**
-		 * The image to render. This can be an Image, a Canvas, or a Video.
+		 * The image to render. This can be an Image, a Canvas, or a Video. Not all browsers (especially
+		 * mobile browsers) support drawing video to a canvas.
 		 * @property image
-		 * @type Image | HTMLCanvasElement | HTMLVideoElement
+		 * @type HTMLImageElement | HTMLCanvasElement | HTMLVideoElement
 		 **/
 		if (typeof imageOrUri == "string") {
 			this.image = document.createElement("img");
@@ -7820,6 +8645,7 @@ this.createjs = this.createjs||{};
 	
 		/**
 		 * Specifies an area of the source image to draw. If omitted, the whole image will be drawn.
+		 * Note that video sources must have a width / height set to work correctly with `sourceRect`.
 		 * @property sourceRect
 		 * @type Rectangle
 		 * @default null
@@ -7831,6 +8657,14 @@ this.createjs = this.createjs||{};
 	
 // public methods:
 	/**
+	 * Constructor alias for backwards compatibility. This method will be removed in future versions.
+	 * Subclasses should be updated to use {{#crossLink "Utility Methods/extends"}}{{/crossLink}}.
+	 * @method initialize
+	 * @deprecated in favour of `createjs.promote()`
+	 **/
+	p.initialize = Bitmap; // TODO: deprecated.
+
+	/**
 	 * Returns true or false indicating whether the display object would be visible if drawn to a canvas.
 	 * This does not account for whether it would be visible within the boundaries of the stage.
 	 *
@@ -7839,7 +8673,8 @@ this.createjs = this.createjs||{};
 	 * @return {Boolean} Boolean indicating whether the display object would be visible if drawn to a canvas
 	 **/
 	p.isVisible = function() {
-		var hasContent = this.cacheCanvas || (this.image && (this.image.complete || this.image.getContext || this.image.readyState >= 2));
+		var image = this.image;
+		var hasContent = this.cacheCanvas || (image && (image.naturalWidth || image.getContext || image.readyState >= 2));
 		return !!(this.visible && this.alpha > 0 && this.scaleX != 0 && this.scaleY != 0 && hasContent);
 	};
 
@@ -7856,7 +8691,7 @@ this.createjs = this.createjs||{};
 	 * @return {Boolean}
 	 **/
 	p.draw = function(ctx, ignoreCache) {
-		if (this.DisplayObject_draw(ctx, ignoreCache) || !this.image.complete) { return true; }
+		if (this.DisplayObject_draw(ctx, ignoreCache) || !this.image) { return true; }
 		var img = this.image, rect = this.sourceRect;
 		if (rect) {
 			// some browsers choke on out of bound values, so we'll fix them:
@@ -7911,8 +8746,8 @@ this.createjs = this.createjs||{};
 	p.getBounds = function() {
 		var rect = this.DisplayObject_getBounds();
 		if (rect) { return rect; }
-		var o = this.sourceRect || this.image;
-		var hasContent = (this.image && (this.image.complete || this.image.getContext || this.image.readyState >= 2));
+		var image = this.image, o = this.sourceRect || image;
+		var hasContent = (image && (image.naturalWidth || image.getContext || image.readyState >= 2));
 		return hasContent ? this._rectangle.setValues(0, 0, o.width, o.height) : null;
 	};
 	
@@ -8077,9 +8912,17 @@ this.createjs = this.createjs||{};
 		this._skipAdvance = false;
 		
 		
-		if (frameOrAnimation) { this.gotoAndPlay(frameOrAnimation); }
+		if (frameOrAnimation != null) { this.gotoAndPlay(frameOrAnimation); }
 	}
 	var p = createjs.extend(Sprite, createjs.DisplayObject);
+
+	/**
+	 * Constructor alias for backwards compatibility. This method will be removed in future versions.
+	 * Subclasses should be updated to use {{#crossLink "Utility Methods/extends"}}{{/crossLink}}.
+	 * @method initialize
+	 * @deprecated in favour of `createjs.promote()`
+	 **/
+	p.initialize = Sprite; // TODO: Deprecated. This is for backwards support of FlashCC spritesheet export.
 
 
 // events:
@@ -8430,6 +9273,9 @@ this.createjs = this.createjs||{};
 	}
 	var p = createjs.extend(Shape, createjs.DisplayObject);
 
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
+
 
 // public methods:
 	/**
@@ -8607,6 +9453,9 @@ this.createjs = this.createjs||{};
 	}
 	var p = createjs.extend(Text, createjs.DisplayObject);
 
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
+
 	
 // static properties:
 	/**
@@ -8709,7 +9558,7 @@ this.createjs = this.createjs||{};
 	p.getBounds = function() {
 		var rect = this.DisplayObject_getBounds();
 		if (rect) { return rect; }
-		if (this.text == null || this.text == "") { return null; }
+		if (this.text == null || this.text === "") { return null; }
 		var o = this._drawText(null, {});
 		var w = (this.maxWidth && this.maxWidth < o.width) ? this.maxWidth : o.width;
 		var x = w * Text.H_OFFSETS[this.textAlign||"left"];
@@ -8890,7 +9739,7 @@ this.createjs = this.createjs || {};
 	/**
 	 * Displays text using bitmap glyphs defined in a sprite sheet. Multi-line text is supported
 	 * using new line characters, but automatic wrapping is not supported. See the 
-	 * {{#crossLink "BitmapText/spriteSheet:attribute"}}{{/crossLink}}
+	 * {{#crossLink "BitmapText/spriteSheet:property"}}{{/crossLink}}
 	 * property for more information on defining glyphs.
 	 * 
 	 * <strong>Important:</strong> BitmapText extends Container, but is not designed to be used as one.
@@ -8931,7 +9780,7 @@ this.createjs = this.createjs || {};
 		 *
 		 * See SpriteSheet for more information on defining sprite sheet data.
 		 * @property spriteSheet
-		 * @type String
+		 * @type SpriteSheet
 		 * @default null
 		 **/
 		this.spriteSheet = spriteSheet;
@@ -8978,6 +9827,18 @@ this.createjs = this.createjs || {};
 	}
 	var p = createjs.extend(BitmapText, createjs.Container);
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
 
 // static properties:
 	/**
@@ -9027,7 +9888,7 @@ this.createjs = this.createjs || {};
 	 **/
 	p.isVisible = function() {
 		var hasContent = this.cacheCanvas || (this.spriteSheet && this.spriteSheet.complete && this.text);
-		return !!(this.visible && this.alpha > 0 && this.scaleX != 0 && this.scaleY != 0 && hasContent);
+		return !!(this.visible && this.alpha > 0 && this.scaleX !== 0 && this.scaleY !== 0 && hasContent);
 	};
 	
 	p.clone = function() {
@@ -9065,7 +9926,7 @@ this.createjs = this.createjs || {};
 	 * @protected
 	 **/
 	p._cloneProps = function(o) {
-		this.DisplayObject__cloneProps(o);
+		this.Container__cloneProps(o);
 		o.lineHeight = this.lineHeight;
 		o.letterSpacing = this.letterSpacing;
 		o.spaceWidth = this.spaceWidth;
@@ -9138,8 +9999,8 @@ this.createjs = this.createjs || {};
 		if (!change) { return; }
 		
 		var hasSpace = !!this._getFrame(" ", ss);
-		if (!hasSpace && spaceW==0) { spaceW = this._getSpaceWidth(ss); }
-		if (lineH==0) { lineH = this._getLineHeight(ss); }
+		if (!hasSpace && !spaceW) { spaceW = this._getSpaceWidth(ss); }
+		if (!lineH) { lineH = this._getLineHeight(ss); }
 		
 		for(var i=0, l=this.text.length; i<l; i++) {
 			var character = this.text.charAt(i);
@@ -9171,7 +10032,12 @@ this.createjs = this.createjs || {};
 			
 			x += sprite.getBounds().width + this.letterSpacing;
 		}
-		while (numKids > childIndex) { pool.push(sprite = kids.pop()); sprite.parent = null; numKids--; } // faster than removeChild.
+		while (numKids > childIndex) {
+			 // faster than removeChild.
+			pool.push(sprite = kids.pop());
+			sprite.parent = null;
+			numKids--;
+		}
 		if (pool.length > BitmapText.maxPoolSize) { pool.length = BitmapText.maxPoolSize; }
 	};
 
@@ -9267,10 +10133,10 @@ this.createjs = this.createjs||{};
 	 * The extractFrame method may cause cross-domain warnings since it accesses pixels directly on the canvas.
 	 * @method extractFrame
 	 * @static
-	 * @param {Image} spriteSheet The SpriteSheet instance to extract a frame from.
+	 * @param {SpriteSheet} spriteSheet The SpriteSheet instance to extract a frame from.
 	 * @param {Number|String} frameOrAnimation The frame number or animation name to extract. If an animation
 	 * name is specified, only the first frame of the animation will be extracted.
-	 * @return {Image} a single frame of the specified sprite sheet as a new PNG image.
+	 * @return {HTMLImageElement} a single frame of the specified sprite sheet as a new PNG image.
 	*/
 	SpriteSheetUtils.extractFrame = function(spriteSheet, frameOrAnimation) {
 		if (isNaN(frameOrAnimation)) {
@@ -9295,10 +10161,10 @@ this.createjs = this.createjs||{};
 	 * versus a single RGBA PNG32. This method is very fast (generally on the order of 1-2 ms to run).
 	 * @method mergeAlpha
 	 * @static
-	 * @param {Image} rbgImage The image (or canvas) containing the RGB channels to use.
-	 * @param {Image} alphaImage The image (or canvas) containing the alpha channel to use.
-	 * @param {Canvas} canvas Optional. If specified, this canvas will be used and returned. If not, a new canvas will be created.
-	 * @return {Canvas} A canvas with the combined image data. This can be used as a source for Bitmap or SpriteSheet.
+	 * @param {HTMLImageElement} rbgImage The image (or canvas) containing the RGB channels to use.
+	 * @param {HTMLImageElement} alphaImage The image (or canvas) containing the alpha channel to use.
+	 * @param {HTMLCanvasElement} canvas Optional. If specified, this canvas will be used and returned. If not, a new canvas will be created.
+	 * @return {HTMLCanvasElement} A canvas with the combined image data. This can be used as a source for Bitmap or SpriteSheet.
 	 * @deprecated Tools such as ImageAlpha generally provide better results. This will be moved to sandbox in the future.
 	*/
 	SpriteSheetUtils.mergeAlpha = function(rgbImage, alphaImage, canvas) {
@@ -9526,6 +10392,20 @@ this.createjs = this.createjs||{};
 		this._scale = 1;
 	}
 	var p = createjs.extend(SpriteSheetBuilder, createjs.EventDispatcher);
+
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 
 // constants:
 	SpriteSheetBuilder.ERR_DIMENSIONS = "frame dimensions exceed max spritesheet dimensions";
@@ -9772,7 +10652,7 @@ this.createjs = this.createjs||{};
 	 * @method _fillRow
 	 * @param {Array} frames
 	 * @param {Number} y
-	 * @param {Image} img
+	 * @param {HTMLImageElement} img
 	 * @param {Object} dataFrames
 	 * @param {Number} pad
 	 * @protected
@@ -9942,7 +10822,10 @@ this.createjs = this.createjs||{};
 		this._oldProps = null;
 	}
 	var p = createjs.extend(DOMElement, createjs.DisplayObject);
-	
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
+
 
 // public methods:
 	/**
@@ -10155,18 +11038,30 @@ this.createjs = this.createjs||{};
 	 **/
 	function Filter() {}
 	var p = Filter.prototype;
-	
+
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 
 // public methods:
 	/**
-	 * Returns a rectangle with values indicating the margins required to draw the filter or null.
-	 * For example, a filter that will extend the drawing area 4 pixels to the left, and 7 pixels to the right
-	 * (but no pixels up or down) would return a rectangle with (x=-4, y=0, width=11, height=0).
+	 * Provides padding values for this filter. That is, how much the filter will extend the visual bounds of an object it is applied to.
 	 * @method getBounds
-	 * @return {Rectangle} a rectangle object indicating the margins required to draw the filter or null if the filter does not effect bounds.
+	 * @param {Rectangle} [rect] If specified, the provided Rectangle instance will be expanded by the padding amounts and returned.
+	 * @return {Rectangle} If a `rect` param was provided, it is returned. If not, either a new rectangle with the padding values, or null if no padding is required for this filter.
 	 **/
-	p.getBounds = function() {
-		return null;
+	p.getBounds = function(rect) {
+		return rect;
 	};
 
 	/**
@@ -10269,9 +11164,9 @@ this.createjs = this.createjs||{};
 		if ( isNaN(blurX) || blurX < 0 ) blurX = 0;
 		if ( isNaN(blurY) || blurY < 0 ) blurY = 0;
 		if ( isNaN(quality) || quality < 1  ) quality = 1;
-		
-		
-	// public properties:
+
+
+		// public properties:
 		/**
 		 * Horizontal blur radius in pixels
 		 * @property blurX
@@ -10279,7 +11174,7 @@ this.createjs = this.createjs||{};
 		 * @type Number
 		 **/
 		this.blurX = blurX | 0;
-	
+
 		/**
 		 * Vertical blur radius in pixels
 		 * @property blurY
@@ -10287,7 +11182,7 @@ this.createjs = this.createjs||{};
 		 * @type Number
 		 **/
 		this.blurY = blurY | 0;
-	
+
 		/**
 		 * Number of blur iterations. For example, a value of 1 will produce a rough blur. A value of 2 will produce a
 		 * smoother blur, but take twice as long to run.
@@ -10299,6 +11194,8 @@ this.createjs = this.createjs||{};
 	}
 	var p = createjs.extend(BlurFilter, createjs.Filter);
 
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 
 
 // constants:
@@ -10309,8 +11206,8 @@ this.createjs = this.createjs||{};
 	 * @protected
 	 * @static
 	 **/
-	BlurFilter.MUL_TABLE = [1,171,205,293,57,373,79,137,241,27,391,357,41,19,283,265,497,469,443,421,25,191,365,349,335,161,155,149,9,278,269,261,505,245,475,231,449,437,213,415,405,395,193,377,369,361,353,345,169,331,325,319,313,307,301,37,145,285,281,69,271,267,263,259,509,501,493,243,479,118,465,459,113,446,55,435,429,423,209,413,51,403,199,393,97,3,379,375,371,367,363,359,355,351,347,43,85,337,333,165,327,323,5,317,157,311,77,305,303,75,297,294,73,289,287,71,141,279,277,275,68,135,67,133,33,262,260,129,511,507,503,499,495,491,61,121,481,477,237,235,467,232,115,457,227,451,7,445,221,439,218,433,215,427,425,211,419,417,207,411,409,203,202,401,399,396,197,49,389,387,385,383,95,189,47,187,93,185,23,183,91,181,45,179,89,177,11,175,87,173,345,343,341,339,337,21,167,83,331,329,327,163,81,323,321,319,159,79,315,313,39,155,309,307,153,305,303,151,75,299,149,37,295,147,73,291,145,289,287,143,285,71,141,281,35,279,139,69,275,137,273,17,271,135,269,267,133,265,33,263,131,261,130,259,129,257,1];
-	
+	BlurFilter.MUL_TABLE = [1, 171, 205, 293, 57, 373, 79, 137, 241, 27, 391, 357, 41, 19, 283, 265, 497, 469, 443, 421, 25, 191, 365, 349, 335, 161, 155, 149, 9, 278, 269, 261, 505, 245, 475, 231, 449, 437, 213, 415, 405, 395, 193, 377, 369, 361, 353, 345, 169, 331, 325, 319, 313, 307, 301, 37, 145, 285, 281, 69, 271, 267, 263, 259, 509, 501, 493, 243, 479, 118, 465, 459, 113, 446, 55, 435, 429, 423, 209, 413, 51, 403, 199, 393, 97, 3, 379, 375, 371, 367, 363, 359, 355, 351, 347, 43, 85, 337, 333, 165, 327, 323, 5, 317, 157, 311, 77, 305, 303, 75, 297, 294, 73, 289, 287, 71, 141, 279, 277, 275, 68, 135, 67, 133, 33, 262, 260, 129, 511, 507, 503, 499, 495, 491, 61, 121, 481, 477, 237, 235, 467, 232, 115, 457, 227, 451, 7, 445, 221, 439, 218, 433, 215, 427, 425, 211, 419, 417, 207, 411, 409, 203, 202, 401, 399, 396, 197, 49, 389, 387, 385, 383, 95, 189, 47, 187, 93, 185, 23, 183, 91, 181, 45, 179, 89, 177, 11, 175, 87, 173, 345, 343, 341, 339, 337, 21, 167, 83, 331, 329, 327, 163, 81, 323, 321, 319, 159, 79, 315, 313, 39, 155, 309, 307, 153, 305, 303, 151, 75, 299, 149, 37, 295, 147, 73, 291, 145, 289, 287, 143, 285, 71, 141, 281, 35, 279, 139, 69, 275, 137, 273, 17, 271, 135, 269, 267, 133, 265, 33, 263, 131, 261, 130, 259, 129, 257, 1];
+
 	/**
 	 * Array of shift values for blur calculations.
 	 * @property SHG_TABLE
@@ -10318,13 +11215,15 @@ this.createjs = this.createjs||{};
 	 * @protected
 	 * @static
 	 **/
-	BlurFilter.SHG_TABLE = [0,9,10,11,9,12,10,11,12,9,13,13,10,9,13,13,14,14,14,14,10,13,14,14,14,13,13,13,9,14,14,14,15,14,15,14,15,15,14,15,15,15,14,15,15,15,15,15,14,15,15,15,15,15,15,12,14,15,15,13,15,15,15,15,16,16,16,15,16,14,16,16,14,16,13,16,16,16,15,16,13,16,15,16,14,9,16,16,16,16,16,16,16,16,16,13,14,16,16,15,16,16,10,16,15,16,14,16,16,14,16,16,14,16,16,14,15,16,16,16,14,15,14,15,13,16,16,15,17,17,17,17,17,17,14,15,17,17,16,16,17,16,15,17,16,17,11,17,16,17,16,17,16,17,17,16,17,17,16,17,17,16,16,17,17,17,16,14,17,17,17,17,15,16,14,16,15,16,13,16,15,16,14,16,15,16,12,16,15,16,17,17,17,17,17,13,16,15,17,17,17,16,15,17,17,17,16,15,17,17,14,16,17,17,16,17,17,16,15,17,16,14,17,16,15,17,16,17,17,16,17,15,16,17,14,17,16,15,17,16,17,13,17,16,17,17,16,17,14,17,16,17,16,17,16,17,9];
+	BlurFilter.SHG_TABLE = [0, 9, 10, 11, 9, 12, 10, 11, 12, 9, 13, 13, 10, 9, 13, 13, 14, 14, 14, 14, 10, 13, 14, 14, 14, 13, 13, 13, 9, 14, 14, 14, 15, 14, 15, 14, 15, 15, 14, 15, 15, 15, 14, 15, 15, 15, 15, 15, 14, 15, 15, 15, 15, 15, 15, 12, 14, 15, 15, 13, 15, 15, 15, 15, 16, 16, 16, 15, 16, 14, 16, 16, 14, 16, 13, 16, 16, 16, 15, 16, 13, 16, 15, 16, 14, 9, 16, 16, 16, 16, 16, 16, 16, 16, 16, 13, 14, 16, 16, 15, 16, 16, 10, 16, 15, 16, 14, 16, 16, 14, 16, 16, 14, 16, 16, 14, 15, 16, 16, 16, 14, 15, 14, 15, 13, 16, 16, 15, 17, 17, 17, 17, 17, 17, 14, 15, 17, 17, 16, 16, 17, 16, 15, 17, 16, 17, 11, 17, 16, 17, 16, 17, 16, 17, 17, 16, 17, 17, 16, 17, 17, 16, 16, 17, 17, 17, 16, 14, 17, 17, 17, 17, 15, 16, 14, 16, 15, 16, 13, 16, 15, 16, 14, 16, 15, 16, 12, 16, 15, 16, 17, 17, 17, 17, 17, 13, 16, 15, 17, 17, 17, 16, 15, 17, 17, 17, 16, 15, 17, 17, 14, 16, 17, 17, 16, 17, 17, 16, 15, 17, 16, 14, 17, 16, 15, 17, 16, 17, 17, 16, 17, 15, 16, 17, 14, 17, 16, 15, 17, 16, 17, 13, 17, 16, 17, 17, 16, 17, 14, 17, 16, 17, 16, 17, 16, 17, 9];
 
 // public methods:
 	/** docced in super class **/
-	p.getBounds = function() {
-		var q = Math.pow(this.quality, 0.6)*0.5;
-		return new createjs.Rectangle(-this.blurX*q,-this.blurY*q,2*this.blurX*q,2*this.blurY*q);
+	p.getBounds = function (rect) {
+		var x = this.blurX|0, y = this.blurY| 0;
+		if (x <= 0 && y <= 0) { return rect; }
+		var q = Math.pow(this.quality, 0.2);
+		return (rect || new createjs.Rectangle()).pad(x*q+1,y*q+1,x*q+1,y*q+1);
 	};
 
 	/** docced in super class **/
@@ -10341,206 +11240,207 @@ this.createjs = this.createjs||{};
 // private methods:
 
 	/** docced in super class **/
-	p._applyFilter = function(imageData) {
-		var radiusX = this.blurX/2;
-		if (isNaN(radiusX) || radiusX < 0 ) { return false; }
-		radiusX |= 0;
+	p._applyFilter = function (imageData) {
 
-		var radiusY = this.blurY/2;
-		if (isNaN(radiusY) || radiusY < 0 ) { return false; }
-		radiusY |= 0;
-
-		if ( radiusX == 0 && radiusY == 0 ) { return false; }
+		var radiusX = this.blurX >> 1;
+		if (isNaN(radiusX) || radiusX < 0) return false;
+		var radiusY = this.blurY >> 1;
+		if (isNaN(radiusY) || radiusY < 0) return false;
+		if (radiusX == 0 && radiusY == 0) return false;
 
 		var iterations = this.quality;
-		if (isNaN(iterations) || iterations < 1) { iterations = 1; }
+		if (isNaN(iterations) || iterations < 1) iterations = 1;
 		iterations |= 0;
-		if ( iterations > 3 ) { iterations = 3; }
-		if ( iterations < 1 ) { iterations = 1; }
-		
-		var pixels = imageData.data, width = imageData.width, height=imageData.height;
+		if (iterations > 3) iterations = 3;
+		if (iterations < 1) iterations = 1;
 
-		// TODO: there are a lot of unused variables in this method:
-		var x, y, i, p, yp, yi, yw, r_sum, g_sum, b_sum, a_sum, pr, pg, pb, pa;
+		var px = imageData.data;
+		var x=0, y=0, i=0, p=0, yp=0, yi=0, yw=0, r=0, g=0, b=0, a=0, pr=0, pg=0, pb=0, pa=0;
 
-		var divx = radiusX + radiusX + 1;
-		var divy = radiusY + radiusY + 1;
-		var widthMinus1  = width - 1;
-		var heightMinus1 = height - 1;
-		var rxp1  = radiusX + 1;
-		var ryp1  = radiusY + 1;
-		var stackStartX = {r:0,b:0,g:0,a:0,next:null};
-		var stackx = stackStartX;
+		var divx = (radiusX + radiusX + 1) | 0;
+		var divy = (radiusY + radiusY + 1) | 0;
+		var w = imageData.width | 0;
+		var h = imageData.height | 0;
+
+		var w1 = (w - 1) | 0;
+		var h1 = (h - 1) | 0;
+		var rxp1 = (radiusX + 1) | 0;
+		var ryp1 = (radiusY + 1) | 0;
+
+		var ssx = {r:0,b:0,g:0,a:0};
+		var sx = ssx;
 		for ( i = 1; i < divx; i++ )
 		{
-			stackx = stackx.next = {r:0,b:0,g:0,a:0,next:null};
+			sx = sx.n = {r:0,b:0,g:0,a:0};
 		}
-		stackx.next = stackStartX;
-		
-		var stackStartY = {r:0,b:0,g:0,a:0,next:null};
-		var stacky = stackStartY;
+		sx.n = ssx;
+
+		var ssy = {r:0,b:0,g:0,a:0};
+		var sy = ssy;
 		for ( i = 1; i < divy; i++ )
 		{
-			stacky = stacky.next = {r:0,b:0,g:0,a:0,next:null};
+			sy = sy.n = {r:0,b:0,g:0,a:0};
 		}
-		stacky.next = stackStartY;
-		
-		var stackIn = null;
+		sy.n = ssy;
 
-		var mul_table = BlurFilter.MUL_TABLE;
-		var shg_table = BlurFilter.SHG_TABLE;
-		
-		while ( iterations-- > 0 ) {
+		var si = null;
+
+
+		var mtx = BlurFilter.MUL_TABLE[radiusX] | 0;
+		var stx = BlurFilter.SHG_TABLE[radiusX] | 0;
+		var mty = BlurFilter.MUL_TABLE[radiusY] | 0;
+		var sty = BlurFilter.SHG_TABLE[radiusY] | 0;
+
+		while (iterations-- > 0) {
+
 			yw = yi = 0;
-			var mul_sum = mul_table[radiusX];
-			var shg_sum = shg_table[radiusX];
-			for ( y = height; --y > -1; )
-			{
-				r_sum = rxp1 * ( pr = pixels[yi] );
-				g_sum = rxp1 * ( pg = pixels[yi+1] );
-				b_sum = rxp1 * ( pb = pixels[yi+2] );
-				a_sum = rxp1 * ( pa = pixels[yi+3] );
+			var ms = mtx;
+			var ss = stx;
+			for (y = h; --y > -1;) {
+				r = rxp1 * (pr = px[(yi) | 0]);
+				g = rxp1 * (pg = px[(yi + 1) | 0]);
+				b = rxp1 * (pb = px[(yi + 2) | 0]);
+				a = rxp1 * (pa = px[(yi + 3) | 0]);
 
-				stackx = stackStartX;
+				sx = ssx;
 
 				for( i = rxp1; --i > -1; )
 				{
-					stackx.r = pr;
-					stackx.g = pg;
-					stackx.b = pb;
-					stackx.a = pa;
-					stackx = stackx.next;
+					sx.r = pr;
+					sx.g = pg;
+					sx.b = pb;
+					sx.a = pa;
+					sx = sx.n;
 				}
 
 				for( i = 1; i < rxp1; i++ )
 				{
-					p = yi + (( widthMinus1 < i ? widthMinus1 : i ) << 2 );
-					r_sum += ( stackx.r = pixels[p]);
-					g_sum += ( stackx.g = pixels[p+1]);
-					b_sum += ( stackx.b = pixels[p+2]);
-					a_sum += ( stackx.a = pixels[p+3]);
+					p = (yi + ((w1 < i ? w1 : i) << 2)) | 0;
+					r += ( sx.r = px[p]);
+					g += ( sx.g = px[p+1]);
+					b += ( sx.b = px[p+2]);
+					a += ( sx.a = px[p+3]);
 
-					stackx = stackx.next;
+					sx = sx.n;
 				}
 
-				stackIn = stackStartX;
-				for ( x = 0; x < width; x++ )
+				si = ssx;
+				for ( x = 0; x < w; x++ )
 				{
-					pixels[yi++] = (r_sum * mul_sum) >>> shg_sum;
-					pixels[yi++] = (g_sum * mul_sum) >>> shg_sum;
-					pixels[yi++] = (b_sum * mul_sum) >>> shg_sum;
-					pixels[yi++] = (a_sum * mul_sum) >>> shg_sum;
+					px[yi++] = (r * ms) >>> ss;
+					px[yi++] = (g * ms) >>> ss;
+					px[yi++] = (b * ms) >>> ss;
+					px[yi++] = (a * ms) >>> ss;
 
-					p =  ( yw + ( ( p = x + radiusX + 1 ) < widthMinus1 ? p : widthMinus1 ) ) << 2;
+					p = ((yw + ((p = x + radiusX + 1) < w1 ? p : w1)) << 2);
 
-					r_sum -= stackIn.r - ( stackIn.r = pixels[p]);
-					g_sum -= stackIn.g - ( stackIn.g = pixels[p+1]);
-					b_sum -= stackIn.b - ( stackIn.b = pixels[p+2]);
-					a_sum -= stackIn.a - ( stackIn.a = pixels[p+3]);
+					r -= si.r - ( si.r = px[p]);
+					g -= si.g - ( si.g = px[p+1]);
+					b -= si.b - ( si.b = px[p+2]);
+					a -= si.a - ( si.a = px[p+3]);
 
-					stackIn = stackIn.next;
+					si = si.n;
 
 				}
-				yw += width;
+				yw += w;
 			}
 
-			mul_sum = mul_table[radiusY];
-			shg_sum = shg_table[radiusY];
-			for ( x = 0; x < width; x++ )
-			{
-				yi = x << 2;
+			ms = mty;
+			ss = sty;
+			for (x = 0; x < w; x++) {
+				yi = (x << 2) | 0;
 
-				r_sum = ryp1 * ( pr = pixels[yi]);
-				g_sum = ryp1 * ( pg = pixels[yi+1]);
-				b_sum = ryp1 * ( pb = pixels[yi+2]);
-				a_sum = ryp1 * ( pa = pixels[yi+3]);
+				r = (ryp1 * (pr = px[yi])) | 0;
+				g = (ryp1 * (pg = px[(yi + 1) | 0])) | 0;
+				b = (ryp1 * (pb = px[(yi + 2) | 0])) | 0;
+				a = (ryp1 * (pa = px[(yi + 3) | 0])) | 0;
 
-				stacky = stackStartY;
-
+				sy = ssy;
 				for( i = 0; i < ryp1; i++ )
 				{
-					stacky.r = pr;
-					stacky.g = pg;
-					stacky.b = pb;
-					stacky.a = pa;
-					stacky = stacky.next;
+					sy.r = pr;
+					sy.g = pg;
+					sy.b = pb;
+					sy.a = pa;
+					sy = sy.n;
 				}
 
-				yp = width;
+				yp = w;
 
 				for( i = 1; i <= radiusY; i++ )
 				{
 					yi = ( yp + x ) << 2;
 
-					r_sum += ( stacky.r = pixels[yi]);
-					g_sum += ( stacky.g = pixels[yi+1]);
-					b_sum += ( stacky.b = pixels[yi+2]);
-					a_sum += ( stacky.a = pixels[yi+3]);
+					r += ( sy.r = px[yi]);
+					g += ( sy.g = px[yi+1]);
+					b += ( sy.b = px[yi+2]);
+					a += ( sy.a = px[yi+3]);
 
-					stacky = stacky.next;
+					sy = sy.n;
 
-					if( i < heightMinus1 )
+					if( i < h1 )
 					{
-						yp += width;
+						yp += w;
 					}
 				}
 
 				yi = x;
-				stackIn = stackStartY;
+				si = ssy;
 				if ( iterations > 0 )
 				{
-					for ( y = 0; y < height; y++ )
+					for ( y = 0; y < h; y++ )
 					{
 						p = yi << 2;
-						pixels[p+3] = pa =(a_sum * mul_sum) >>> shg_sum;
+						px[p+3] = pa =(a * ms) >>> ss;
 						if ( pa > 0 )
 						{
-							pixels[p]   = ((r_sum * mul_sum) >>> shg_sum ); 
-							pixels[p+1] = ((g_sum * mul_sum) >>> shg_sum );
-							pixels[p+2] = ((b_sum * mul_sum) >>> shg_sum );
+							px[p]   = ((r * ms) >>> ss );
+							px[p+1] = ((g * ms) >>> ss );
+							px[p+2] = ((b * ms) >>> ss );
 						} else {
-							pixels[p] = pixels[p+1] = pixels[p+2] = 0
+							px[p] = px[p+1] = px[p+2] = 0
 						}
 
-						p = ( x + (( ( p = y + ryp1) < heightMinus1 ? p : heightMinus1 ) * width )) << 2;
+						p = ( x + (( ( p = y + ryp1) < h1 ? p : h1 ) * w )) << 2;
 
-						r_sum -= stackIn.r - ( stackIn.r = pixels[p]);
-						g_sum -= stackIn.g - ( stackIn.g = pixels[p+1]);
-						b_sum -= stackIn.b - ( stackIn.b = pixels[p+2]);
-						a_sum -= stackIn.a - ( stackIn.a = pixels[p+3]);
+						r -= si.r - ( si.r = px[p]);
+						g -= si.g - ( si.g = px[p+1]);
+						b -= si.b - ( si.b = px[p+2]);
+						a -= si.a - ( si.a = px[p+3]);
 
-						stackIn = stackIn.next;
+						si = si.n;
 
-						yi += width;
+						yi += w;
 					}
 				} else {
-					for ( y = 0; y < height; y++ )
+					for ( y = 0; y < h; y++ )
 					{
 						p = yi << 2;
-						pixels[p+3] = pa =(a_sum * mul_sum) >>> shg_sum;
+						px[p+3] = pa =(a * ms) >>> ss;
 						if ( pa > 0 )
 						{
 							pa = 255 / pa;
-							pixels[p]   = ((r_sum * mul_sum) >>> shg_sum ) * pa; 
-							pixels[p+1] = ((g_sum * mul_sum) >>> shg_sum ) * pa;
-							pixels[p+2] = ((b_sum * mul_sum) >>> shg_sum ) * pa;
+							px[p]   = ((r * ms) >>> ss ) * pa;
+							px[p+1] = ((g * ms) >>> ss ) * pa;
+							px[p+2] = ((b * ms) >>> ss ) * pa;
 						} else {
-							pixels[p] = pixels[p+1] = pixels[p+2] = 0
+							px[p] = px[p+1] = px[p+2] = 0
 						}
 
-						p = ( x + (( ( p = y + ryp1) < heightMinus1 ? p : heightMinus1 ) * width )) << 2;
+						p = ( x + (( ( p = y + ryp1) < h1 ? p : h1 ) * w )) << 2;
 
-						r_sum -= stackIn.r - ( stackIn.r = pixels[p]);
-						g_sum -= stackIn.g - ( stackIn.g = pixels[p+1]);
-						b_sum -= stackIn.b - ( stackIn.b = pixels[p+2]);
-						a_sum -= stackIn.a - ( stackIn.a = pixels[p+3]);
+						r -= si.r - ( si.r = px[p]);
+						g -= si.g - ( si.g = px[p+1]);
+						b -= si.b - ( si.b = px[p+2]);
+						a -= si.a - ( si.a = px[p+3]);
 
-						stackIn = stackIn.next;
+						si = si.n;
 
-						yi += width;
+						yi += w;
 					}
 				}
 			}
+
 		}
 		return true;
 	};
@@ -10585,7 +11485,7 @@ this.createjs = this.createjs || {};
 	 * @class AlphaMapFilter
 	 * @extends Filter
 	 * @constructor
-	 * @param {Image|HTMLCanvasElement} alphaMap The greyscale image (or canvas) to use as the alpha value for the
+	 * @param {HTMLImageElement|HTMLCanvasElement} alphaMap The greyscale image (or canvas) to use as the alpha value for the
 	 * result. This should be exactly the same dimensions as the target.
 	 **/
 	function AlphaMapFilter(alphaMap) {
@@ -10596,7 +11496,7 @@ this.createjs = this.createjs || {};
 		 * The greyscale image (or canvas) to use as the alpha value for the result. This should be exactly the same
 		 * dimensions as the target.
 		 * @property alphaMap
-		 * @type Image|HTMLCanvasElement
+		 * @type HTMLImageElement|HTMLCanvasElement
 		 **/
 		this.alphaMap = alphaMap;
 		
@@ -10605,7 +11505,7 @@ this.createjs = this.createjs || {};
 		/**
 		 * @property _alphaMap
 		 * @protected
-		 * @type Image|HTMLCanvasElement
+		 * @type HTMLImageElement|HTMLCanvasElement
 		 **/
 		this._alphaMap = null;
 		
@@ -10617,6 +11517,9 @@ this.createjs = this.createjs || {};
 		this._mapData = null;
 	}
 	var p = createjs.extend(AlphaMapFilter, createjs.Filter);
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 
 
 // public methods:
@@ -10722,7 +11625,7 @@ this.createjs = this.createjs || {};
 	 * @class AlphaMaskFilter
 	 * @extends Filter
 	 * @constructor
-	 * @param {Image} mask
+	 * @param {HTMLImageElement|HTMLCanvasElement} mask
 	 **/
 	function AlphaMaskFilter(mask) {
 	
@@ -10731,11 +11634,14 @@ this.createjs = this.createjs || {};
 		/**
 		 * The image (or canvas) to use as the mask.
 		 * @property mask
-		 * @type Image
+		 * @type HTMLImageElement|HTMLCanvasElement
 		 **/
 		this.mask = mask;
 	}
 	var p = createjs.extend(AlphaMaskFilter, createjs.Filter);
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 	
 
 // public methods:
@@ -10893,6 +11799,9 @@ this.createjs = this.createjs||{};
 	}
 	var p = createjs.extend(ColorFilter, createjs.Filter);
 
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
+
 
 // public methods:
 	/** docced in super class **/
@@ -10957,6 +11866,19 @@ this.createjs = this.createjs||{};
 	}
 	var p = ColorMatrix.prototype;
 
+	/**
+	 * <strong>REMOVED</strong>. Removed in favor of using `MySuperClass_constructor`.
+	 * See {{#crossLink "Utility Methods/extend"}}{{/crossLink}} and {{#crossLink "Utility Methods/promote"}}{{/crossLink}}
+	 * for details.
+	 *
+	 * There is an inheritance tutorial distributed with EaselJS in /tutorials/Inheritance.
+	 *
+	 * @method initialize
+	 * @protected
+	 * @deprecated
+	 */
+	// p.initialize = function() {}; // searchable for devs wondering where it is.
+
 
 // constants:
 	/**
@@ -11013,19 +11935,21 @@ this.createjs = this.createjs||{};
 	 * @param {Number} contrast
 	 * @param {Number} saturation
 	 * @param {Number} hue
-	 * @protected
+	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 */
 	p.setColor = function(brightness,contrast,saturation,hue) {
-		return this.reset().adjustColor(brightness,contrast,saturation,hue);;
+		return this.reset().adjustColor(brightness,contrast,saturation,hue);
 	};
 
 	/**
 	 * Resets the matrix to identity values.
 	 * @method reset
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 */
 	p.reset = function() {
-		return this.copyMatrix(ColorMatrix.IDENTITY_MATRIX);
+		return this.copy(ColorMatrix.IDENTITY_MATRIX);
 	};
 
 	/**
@@ -11038,6 +11962,7 @@ this.createjs = this.createjs||{};
 	 * @param {Number} saturation
 	 * @param {Number} hue
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.adjustColor = function(brightness,contrast,saturation,hue) {
 		this.adjustHue(hue);
@@ -11052,6 +11977,7 @@ this.createjs = this.createjs||{};
 	 * @method adjustBrightness
 	 * @param {Number} value A value between -255 & 255 that will be added to the RGB channels.
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.adjustBrightness = function(value) {
 		if (value == 0 || isNaN(value)) { return this; }
@@ -11072,6 +11998,7 @@ this.createjs = this.createjs||{};
 	 * @method adjustContrast
 	 * @param {Number} value A value between -100 & 100.
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.adjustContrast = function(value) {
 		if (value == 0 || isNaN(value)) { return this; }
@@ -11104,6 +12031,7 @@ this.createjs = this.createjs||{};
 	 * @method adjustSaturation
 	 * @param {Number} value A value between -100 & 100.
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.adjustSaturation = function(value) {
 		if (value == 0 || isNaN(value)) { return this; }
@@ -11128,6 +12056,7 @@ this.createjs = this.createjs||{};
 	 * @method adjustHue
 	 * @param {Number} value A value between -180 & 180.
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.adjustHue = function(value) {
 		if (value == 0 || isNaN(value)) { return this; }
@@ -11152,6 +12081,7 @@ this.createjs = this.createjs||{};
 	 * @method concat
 	 * @param {Array} matrix An array or ColorMatrix instance.
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
 	p.concat = function(matrix) {
 		matrix = this._fixMatrix(matrix);
@@ -11166,7 +12096,7 @@ this.createjs = this.createjs||{};
 	 * @return {ColorMatrix} A clone of this ColorMatrix.
 	 **/
 	p.clone = function() {
-		return (new ColorMatrix()).copyMatrix(this);
+		return (new ColorMatrix()).copy(this);
 	};
 
 	/**
@@ -11184,11 +12114,12 @@ this.createjs = this.createjs||{};
 
 	/**
 	 * Copy the specified matrix's values to this matrix.
-	 * @method copyMatrix
+	 * @method copy
 	 * @param {Array} matrix An array or ColorMatrix instance.
 	 * @return {ColorMatrix} The ColorMatrix instance the method is called on (useful for chaining calls.)
+	 * @chainable
 	 **/
-	p.copyMatrix = function(matrix) {
+	p.copy = function(matrix) {
 		var l = ColorMatrix.LENGTH;
 		for (var i=0;i<l;i++) {
 			this[i] = matrix[i];
@@ -11308,6 +12239,9 @@ this.createjs = this.createjs||{};
 		this.matrix = matrix;
 	}
 	var p = createjs.extend(ColorMatrixFilter, createjs.Filter);
+
+	// TODO: deprecated
+	// p.initialize = function() {}; // searchable for devs wondering where it is. REMOVED. See docs for details.
 	
 
 // public methods:
@@ -11666,6 +12600,6 @@ this.createjs = this.createjs || {};
 	 * @type String
 	 * @static
 	 **/
-	s.buildDate = /*=date*/"Sat, 15 Nov 2014 22:52:44 GMT"; // injected by build process
+	s.buildDate = /*=date*/"Wed, 27 May 2015 18:12:21 GMT"; // injected by build process
 
 })();
