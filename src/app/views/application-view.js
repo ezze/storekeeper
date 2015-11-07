@@ -1,10 +1,10 @@
 define([
     'marionette',
-    './header-view',
+    './navbar-view',
     'hgn!templates/application'
 ], function(
     Marionette,
-    HeaderView,
+    NavbarView,
     template
 ) {
     'use strict';
@@ -17,12 +17,12 @@ define([
         },
         onBeforeShow: function() {
             var app = this.getOption('app'),
-                headerView = new HeaderView({
+                navbarView = new NavbarView({
                     app: app
                 });
 
-            app.addView(headerView, 'header');
-            this.getRegion('header').show(headerView);
+            app.addView(navbarView, 'navbar');
+            this.getRegion('header').show(navbarView);
         }
     });
 

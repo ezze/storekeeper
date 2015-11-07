@@ -49,7 +49,13 @@ define([
      * @class
      */
     var Storekeeper = function(options) {
+        _.bindAll(this);
+
         $(document).ready(function() {
+            if (!_.isObject(options.app)) {
+                throw new Error('Application is not defined or invalid.');
+            }
+
             if ((!_.isString(options.container) || _.isEmpty(options.container)) &&
                 !(options.container instanceof HTMLElement)
             ) {
@@ -60,21 +66,19 @@ define([
                 throw new Error('Level set source is not defined or invalid.');
             }
 
-            var jqContainer = $(options.container);
-            if (jqContainer.length === 0) {
+            var $container = $(options.container);
+            if ($container.length === 0) {
                 throw new Error('Container "' + options.container + '" doesn\'t exist.');
             }
-            this._container = jqContainer.get(0);
+
+            this._app = options.app;
+            this._container = $container.get(0);
 
             this.init();
             this.loadLevelSet(options.levelSetSource);
         }.bind(this));
 
-        $(window).on('resize', function() {
-            if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
-                this.levelSet.level.resize();
-            }
-        }.bind(this));
+        $(window).on('resize', this.onWindowResize);
     };
 
     /**
@@ -83,84 +87,53 @@ define([
      * @protected
      */
     Storekeeper.prototype.init = function() {
-        this.initNavbar();
+        this.initCommands();
         this.initEvents();
-        this.initUserControls();
+        this.enableUserControls();
         this.initTicker();
     };
 
     /**
-     * Initializes controls of navigation bar.
-     *
-     * @protected
+     * Initializes rendering ticker.
      */
-    Storekeeper.prototype.initNavbar = function() {
-        var storekeeper = this;
+    Storekeeper.prototype.initTicker = function() {
+        Easel.Ticker.setFPS(30);
+        Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
+    };
 
-        $(document).ready(function() {
-            var jqHeader = $('#header');
+    Storekeeper.prototype.initCommands = function() {
+        var handlerOptions = {},
+            commands = this._app.commands,
+            methodName;
 
-            if (!window.File || !window.FileList) {
-                jqHeader.find('a[href="#load-level-set"]').parent('li').addClass('disabled');
+        _.each([
+            'browse-level-set',
+            'load-level-set',
+            'next-level',
+            'previous-level',
+            'restart-level'
+        ], function(command) {
+            methodName = _.camelCase(command);
+            if (!_.isFunction(this[methodName])) {
+                return;
             }
 
-            jqHeader
-                .on('click', '.navbar-brand', function(event) {
-                    event.preventDefault();
-                })
-                .on('click', 'a', function(event) {
-                    if ($(this).parent('li').hasClass('disabled')) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        return;
-                    }
-
-                    if ($(this).siblings('.dropdown-menu').length === 0) {
-                        var jqNavbarCollapse = $(this).parents('.navbar-collapse');
-                        if (jqNavbarCollapse.hasClass('in')) {
-                            jqNavbarCollapse.collapse('hide');
+            handlerOptions[command] = _.bind(function(methodName) {
+                return {
+                    context: this,
+                    callback: function (options) {
+                        if (command === 'load-level-set') {
+                            this[methodName](options.link);
+                        }
+                        else {
+                            this[methodName]();
                         }
                     }
-                })
-                .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
-                    event.preventDefault();
-                    if ($(this).parent('li').hasClass('disabled')) {
-                        return;
-                    }
+                };
+            }, this)(methodName);
+        }, this);
 
-                    var source = $(this).attr('href');
-                    if (!source) {
-                        return;
-                    }
-
-                    if (source === '#load-level-set') {
-                        storekeeper.browseLevelSet();
-                    }
-                    else {
-                        storekeeper.loadLevelSet(source);
-                    }
-                })
-                .on('change', 'input.load-level-set', function(event) {
-                    var files = event.target.files;
-                    if (files.length === 0) {
-                        return;
-                    }
-                    var file = files[0];
-                    storekeeper.loadLevelSet(file);
-                })
-                .on('click', 'a[href="#restart-level"]', function(event) {
-                    event.preventDefault();
-                    storekeeper.restartLevel();
-                })
-                .on('click', 'a[href="#previous-level"]', function(event) {
-                    event.preventDefault();
-                    storekeeper.previousLevel();
-                })
-                .on('click', 'a[href="#next-level"]', function(event) {
-                    event.preventDefault();
-                    storekeeper.nextLevel();
-                });
-        });
+        commands.setHandlers(handlerOptions);
     };
 
     /**
@@ -250,92 +223,29 @@ define([
     };
 
     /**
-     * Initializes user's controls.
+     * Enables user's controls.
      *
      * @protected
      */
-    Storekeeper.prototype.initUserControls = function() {
+    Storekeeper.prototype.enableUserControls = function() {
         this._moveDirection = Direction.NONE;
-
-        $(window).on('keydown', function(event) {
-            if (event.ctrlKey && event.which === 79) {
-                // Ctrl + O
-                event.preventDefault();     // preventing a browser from showing open file dialog
-                this.browseLevelSet();
-                return;
-            }
-
-            if (event.ctrlKey && event.altKey && event.which === 82) {
-                // Ctrl + Alt + R
-                this.restartLevel();
-                return;
-            }
-
-            if (event.altKey && event.which === 90) {
-                // Alt + Z
-                this.previousLevel();
-                return;
-            }
-
-            if (event.altKey && event.which === 88) {
-                // Alt + X
-                this.nextLevel();
-                return;
-            }
-
-            var direction = Storekeeper.getDirectionByKeyCode(event.which);
-            if (direction === Direction.NONE) {
-                return;
-            }
-
-            event.preventDefault();
-            this._moveDirection = direction;
-        }.bind(this));
-
-        $(window).on('keyup', function(event) {
-            var direction = Storekeeper.getDirectionByKeyCode(event.which);
-            if (direction === this._moveDirection) {
-                this._moveDirection = Direction.NONE;
-            }
-        }.bind(this));
-
-        $(window).on('touchstart', function(event) {
-            if (!(event.target instanceof HTMLCanvasElement)) {
-                return;
-            }
-
-            var canvas = event.target;
-            var jqCanvas = $(canvas);
-
-            var originalEvent = event.originalEvent;
-            var touch = originalEvent.touches.item(0);
-
-            var touchCanvasX = touch.clientX - jqCanvas.offset().left;
-            var touchCanvasY = touch.clientY - jqCanvas.offset().top;
-
-            this._moveDirection = Storekeeper.getDirectionByTouchPoint(canvas, touchCanvasX, touchCanvasY);
-        }.bind(this));
-
-        $(window).on('touchend', function(event) {
-            this._moveDirection = Direction.NONE;
-        }.bind(this));
+        $(window).on('keydown', this.onKeyDown);
+        $(window).on('keyup', this.onKeyUp);
+        $(window).on('touchstart', this.onTouchStart);
+        $(window).on('touchend', this.onTouchEnd);
     };
 
     /**
-     * Initializes rendering ticker.
-     */
-    Storekeeper.prototype.initTicker = function() {
-        Easel.Ticker.setFPS(30);
-        Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
-    };
-
-    /**
-     * Opens a dialog to choose a level set to load from local computer.
+     * Disables user's controls.
      *
-     * @see module:Storekeeper#loadLevelSet
+     * @protected
      */
-    Storekeeper.prototype.browseLevelSet = function() {
-        $('#header').find('input.load-level-set:first').trigger('click');
+    Storekeeper.prototype.disableUserControls = function() {
+        this._moveDirection = Direction.NONE;
+        $(window).off('keydown', this.onKeyDown);
+        $(window).off('keyup', this.onKeyUp);
+        $(window).off('touchstart', this.onTouchStart);
+        $(window).off('touchend', this.onTouchEnd);
     };
 
     /**
@@ -345,7 +255,7 @@ define([
      * URL of levels' set to load.
      *
      * @see module:Storekeeper#browseLevelSet
-     * @see module:Storekeeper#onLevelSetLoaded
+     * @see module:Storekeeper#onLevelSetLoad
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
         var levelSet = new LevelSet({
@@ -359,7 +269,10 @@ define([
                     this._levelSet.destroy();
                 }
                 this._levelSet = levelSet;
-                this.onLevelSetLoaded(source);
+
+                this.onLevelSetLoad(source);
+
+                this._app.vent.trigger('level-set-load', source);
             }.bind(this)
         });
     };
@@ -374,44 +287,7 @@ define([
      * @param {String} source
      * Source levels' set was loaded by.
      */
-    Storekeeper.prototype.onLevelSetLoaded = function(source) {
-        var jqLevelsDropdown = $('#header').find('a[href="#levels"] ~ .dropdown-menu');
-        jqLevelsDropdown.find('a').each(function() {
-            if ($(this).attr('href') === source) {
-                $(this).parent('li').addClass('active');
-            }
-            else {
-                $(this).parent('li').removeClass('active');
-            }
-        });
-
-        var jqLoadLevelSetItem = jqLevelsDropdown.find('a[href="#load-level-set"]').parent('li');
-        var jqLocalLevelSetItem = jqLevelsDropdown.find('.local-level-set');
-
-        if (window.File && source instanceof window.File) {
-            var levelSetName = source.name;
-
-            if (jqLocalLevelSetItem.length === 0) {
-                jqLocalLevelSetItem = $('<li></li>')
-                    .addClass('local-level-set')
-                    .addClass('active')
-                    .append($('<a></a>')
-                        .text(levelSetName)
-                    );
-                jqLoadLevelSetItem.after(jqLocalLevelSetItem);
-                jqLoadLevelSetItem.after($('<li></li>')
-                    .addClass('divider')
-                );
-            }
-            else {
-                jqLocalLevelSetItem.children('a').text(levelSetName);
-            }
-        }
-        else {
-            jqLocalLevelSetItem.prev('li').remove();
-            jqLocalLevelSetItem.remove();
-        }
-
+    Storekeeper.prototype.onLevelSetLoad = function(source) {
         this.levelSet.level = 0;
     };
 
@@ -497,53 +373,96 @@ define([
     /**
      * Updates current game information in navigation bar.
      *
-     * @param {Object} data
+     * @param {Object} info
      * Object consisting of values to update:
      *
-     * @param {Number} [data.levelNumber]
+     * @param {Number} [info.levelNumber]
      * Order number of current active level.
      *
-     * @param {Number} [data.boxesCount]
+     * @param {Number} [info.boxesCount]
      * Overall count of boxes belonging to current level.
      *
-     * @param {Number} [data.boxesOnGoalCount]
+     * @param {Number} [info.boxesOnGoalCount]
      * Count of boxes belonging to current level and already placed on goals.
      *
-     * @param {Number} [data.pushesCount]
+     * @param {Number} [info.pushesCount]
      * Count of boxes' pushes caused by the worker.
      *
-     * @param {Number} [data.movesCount]
+     * @param {Number} [info.movesCount]
      * Count of moves performed by the worker.
      */
-    Storekeeper.prototype.updateInfo = function(data) {
-        data = data || {};
-        var jqHeader = $('#header');
+    Storekeeper.prototype.updateInfo = function(info) {
+        info = info || {};
+        this._app.vent.trigger('level-info-update', info);
+    };
 
-        if (_.isNumber(data.levelNumber)) {
-            var jqLevel = jqHeader.find('.level');
-            jqLevel.find('.name').text('Level');
-            jqLevel.find('.value').text(Storekeeper.formatInteger(data.levelNumber, 3));
+    Storekeeper.prototype.onWindowResize = function() {
+        if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
+            this.levelSet.level.resize();
+        }
+    };
+
+    Storekeeper.prototype.onKeyDown = function(event) {
+        if (event.ctrlKey && event.which === 79) {
+            // Ctrl + O
+            event.preventDefault();     // preventing a browser from showing open file dialog
+            this.browseLevelSet();
+            return;
         }
 
-        if (_.isNumber(data.boxesCount) && _.isNumber(data.boxesOnGoalCount)) {
-            var jqBoxesCount = jqHeader.find('.boxes-count');
-            jqBoxesCount.find('.name').text('Boxes');
-            jqBoxesCount.find('.value').text(Storekeeper.formatInteger(data.boxesOnGoalCount, 3) +
-                '/' + Storekeeper.formatInteger(data.boxesCount, 3)
-            );
+        if (event.ctrlKey && event.altKey && event.which === 82) {
+            // Ctrl + Alt + R
+            this.restartLevel();
+            return;
         }
 
-        if (_.isNumber(data.pushesCount)) {
-            var jqPushesCount = jqHeader.find('.pushes-count');
-            jqPushesCount.find('.name').text('Pushes');
-            jqPushesCount.find('.value').text(Storekeeper.formatInteger(data.pushesCount, 5));
+        if (event.altKey && event.which === 90) {
+            // Alt + Z
+            this.previousLevel();
+            return;
         }
 
-        if (_.isNumber(data.movesCount)) {
-            var jqMovesCount = jqHeader.find('.moves-count');
-            jqMovesCount.find('.name').text('Moves');
-            jqMovesCount.find('.value').text(Storekeeper.formatInteger(data.movesCount, 5));
+        if (event.altKey && event.which === 88) {
+            // Alt + X
+            this.nextLevel();
+            return;
         }
+
+        var direction = Storekeeper.getDirectionByKeyCode(event.which);
+        if (direction === Direction.NONE) {
+            return;
+        }
+
+        event.preventDefault();
+        this._moveDirection = direction;
+    };
+
+    Storekeeper.prototype.onKeyUp = function(event) {
+        var direction = Storekeeper.getDirectionByKeyCode(event.which);
+        if (direction === this._moveDirection) {
+            this._moveDirection = Direction.NONE;
+        }
+    };
+
+    Storekeeper.prototype.onTouchStart = function(event) {
+        if (!(event.target instanceof HTMLCanvasElement)) {
+            return;
+        }
+
+        var canvas = event.target;
+        var jqCanvas = $(canvas);
+
+        var originalEvent = event.originalEvent;
+        var touch = originalEvent.touches.item(0);
+
+        var touchCanvasX = touch.clientX - jqCanvas.offset().left;
+        var touchCanvasY = touch.clientY - jqCanvas.offset().top;
+
+        this._moveDirection = Storekeeper.getDirectionByTouchPoint(canvas, touchCanvasX, touchCanvasY);
+    };
+
+    Storekeeper.prototype.onTouchEnd = function(event) {
+        this._moveDirection = Direction.NONE;
     };
 
     /**
@@ -611,33 +530,6 @@ define([
         }
 
         return Direction.NONE;
-    };
-
-    /**
-     * Formats an integer by prepending leading zeros.
-     *
-     * @param {Number} number
-     * Integer number to format.
-     *
-     * @param {Number} digits
-     * Count of digits in formatted string.
-     *
-     * @returns {String}
-     */
-    Storekeeper.formatInteger = function(number, digits) {
-        if (!_.isNumber(number) || number % 1 !== 0) {
-            throw new Error('Number must be an integer.');
-        }
-
-        if (!_.isNumber(digits) || digits % 1 !== 0) {
-            throw new Error('Digits must be an integer.');
-        }
-
-        var formatted = '' + number;
-        for (var i = 0; i < digits - number.toString().length; i += 1) {
-            formatted = '0' + formatted;
-        }
-        return formatted;
     };
 
     Object.defineProperties(Storekeeper.prototype, {
