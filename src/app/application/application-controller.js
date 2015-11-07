@@ -27,8 +27,11 @@ define([
 
             app.getRegion('app').show(this._appView);
         },
-        main: function() {
+        game: function() {
             this._appView.getRegion('content').show(this._gameView);
+        },
+        editor: function() {
+            alert('Editor is not implemented yet!');
         }
     });
 

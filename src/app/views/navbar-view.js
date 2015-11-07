@@ -18,7 +18,6 @@ define([
     var NavbarView = Marionette.LayoutView.extend({
         template: template,
         ui: {
-            brand: '.navbar-brand',
             link: 'a',
             commandLink: '.navbar-command-link',
             levelSetFile: '.navbar-level-set-file',
@@ -28,7 +27,6 @@ define([
             movesCount: '.navbar-moves-count'
         },
         events: {
-            'click @ui.brand': 'onBrandClick',
             'click @ui.link': 'onLinkClick',
             'click @ui.commandLink': 'onCommandLinkClick',
             'change @ui.levelSetFile': 'onLevelSetFileChange'
@@ -55,9 +53,6 @@ define([
         },
         browseLevelSet: function() {
             this.ui.levelSetFile.trigger('click');
-        },
-        onBrandClick: function(event) {
-            event.preventDefault();
         },
         onLinkClick: function(event) {
             var $link = $(event.currentTarget);

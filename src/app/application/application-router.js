@@ -8,7 +8,9 @@ define([
     var ApplicationRouter = Marionette.AppRouter.extend({
         initialize: function(options) {
             options.appRoutes = {
-                '': 'main'
+                '': 'game',
+                'game': 'game',
+                'editor': 'editor'
             };
         }
     });
