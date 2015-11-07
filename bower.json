@@ -13,12 +13,16 @@
     "tests"
   ],
   "dependencies": {
+    "backbone": "~1.2.0",
     "bootstrap": "~3.3.5",
     "easeljs": "0.8.1",
     "jquery": "~2.1.1",
     "less": "~2.1.0",
-    "lodash": "~2.4.1",
+    "lodash": "~3.9.0",
+    "marionette": "~2.4.0",
+    "mustache.js": "~2.0.0",
     "requirejs": "~2.1.14",
-    "TweenJS": "0.6.1"
+    "TweenJS": "0.6.1",
+    "underscore": "~1.8.3"
   }
 }
