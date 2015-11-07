@@ -2,18 +2,6 @@ define([], function() {
     'use strict';
 
     return {
-        map: {
-            '*': {
-                jquery: 'no-conflict/jquery',
-                bootstrap: 'no-conflict/bootstrap'
-            },
-            'no-conflict/jquery': {
-                jquery: 'jquery'
-            },
-            'no-conflict/bootstrap': {
-                bootstrap: 'bootstrap'
-            }
-        },
         paths: {
             bootstrap: '../lib/bootstrap/dist/js/bootstrap',
             easel: '../lib/easeljs/lib/easeljs-0.8.1.combined',
@@ -22,6 +10,9 @@ define([], function() {
             tween: '../lib/TweenJS/lib/tweenjs-0.6.1.combined'
         },
         shim: {
+            bootstrap: {
+                deps: ['jquery']
+            },
             easel: {
                 exports: 'createjs'
             },
