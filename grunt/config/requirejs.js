@@ -4,7 +4,7 @@ module.exports = function(grunt) {
     'use strict';
 
     // Retrieving RequireJS config to use paths parameters for r.js optimizer
-    var configString = grunt.file.read('src/app/config.js');
+    var configString = grunt.file.read('src/app/require-config.js');
     var configRegExp = /return (\{[\s\S]*\});/i;
     var configMatch = configString.match(configRegExp);
     if (configMatch === null) {
@@ -23,7 +23,7 @@ module.exports = function(grunt) {
             options: {
                 almond: true,
                 baseUrl: 'src/app',
-                include: ['app'],
+                include: ['init'],
                 out: 'assets/js/storekeeper.' + item + '.js',
                 optimize: item === 'combined' ? 'none' : 'uglify2',
                 preserveLicenseComments: false,
