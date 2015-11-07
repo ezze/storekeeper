@@ -5,14 +5,12 @@ define([
     'require',
     'easel',
     'lodash',
-    '../sprite-sheet',
-    '../../exception'
+    '../sprite-sheet'
 ], function(
     require,
     Easel,
     _,
-    spriteSheet,
-    Exception
+    spriteSheet
 ) {
     'use strict';
 
@@ -41,15 +39,15 @@ define([
      */
     var SceneObject = function(options) {
         if (!options.level instanceof require('../level')) {
-            throw new Exception('Level is invalid or not specified.');
+            throw new Error('Level is invalid or not specified.');
         }
 
         if (!_.isNumber(options.row) || options.row % 1 !== 0) {
-            throw new Exception('Scene object\'s row must be an integer.');
+            throw new Error('Scene object\'s row must be an integer.');
         }
 
         if (!_.isNumber(options.column) || options.column % 1 !== 0) {
-            throw new Exception('Scene object\'s column must be an integer.');
+            throw new Error('Scene object\'s column must be an integer.');
         }
 
         this._name = '';
@@ -154,7 +152,7 @@ define([
             },
             set: function(row) {
                 if (!_.isNumber(row)) {
-                    throw new Exception('Row must be a number.');
+                    throw new Error('Row must be a number.');
                 }
                 this._row = row;
             }
@@ -173,7 +171,7 @@ define([
             },
             set: function(column) {
                 if (!_.isNumber(column)) {
-                    throw new Exception('Column must be a number.');
+                    throw new Error('Column must be a number.');
                 }
                 this._column = column;
             }

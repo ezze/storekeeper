@@ -5,14 +5,12 @@ define([
     'lodash',
     './scene-object',
     '../direction',
-    '../../event-manager',
-    '../../exception'
+    '../../event-manager'
 ], function(
     _,
     SceneObject,
     Direction,
-    EventManager,
-    Exception
+    EventManager
 ) {
     'use strict';
 
@@ -235,7 +233,7 @@ define([
             case Direction.RIGHT: column += 1; break;
             case Direction.UP: row -= 1; break;
             case Direction.DOWN: row += 1; break;
-            default: throw new Exception('Direction is invalid.');
+            default: throw new Error('Direction is invalid.');
         }
 
         return this.level.getObjects(row, column);
@@ -310,7 +308,7 @@ define([
      * </ul>
      */
     Movable.prototype.detectCollision = function(direction) {
-        throw new Exception('Method "detectCollision" is not implemented for object "' + this.name + '".');
+        throw new Error('Method "detectCollision" is not implemented for object "' + this.name + '".');
     };
 
     /**
@@ -323,7 +321,7 @@ define([
      * Direction of object's move.
      */
     Movable.prototype.startAnimation = function(direction) {
-        throw new Exception('Method "startAnimation" is not implemented for object "' + this.name + '".');
+        throw new Error('Method "startAnimation" is not implemented for object "' + this.name + '".');
     };
 
     /**

@@ -4,14 +4,12 @@
 define([
     'bootstrap',
     'jquery',
-    'lodash',
-    './exception'
+    'lodash'
 ], function(
     Bootstrap,
     $,
-    _,
-    Exception
-    ) {
+    _
+) {
     'use strict';
 
     /**
@@ -41,11 +39,11 @@ define([
         }
 
         if (!_.isString(options.title) || _.isEmpty(options.title)) {
-            throw new Exception('Title is invalid or not specified.');
+            throw new Error('Title is invalid or not specified.');
         }
 
         if (!_.isString(options.html) || _.isEmpty(options.html)) {
-            throw new Exception('Content HTML is invalid or not specified.');
+            throw new Error('Content HTML is invalid or not specified.');
         }
 
         if (!_.isBoolean(options.closeButton)) {

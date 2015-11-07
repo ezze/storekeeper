@@ -9,8 +9,7 @@ define([
     './loader/loader-json',
     './loader/loader-sok',
     './object/box',
-    '../event-manager',
-    '../exception'
+    '../event-manager'
 ], function(
     $,
     _,
@@ -19,8 +18,7 @@ define([
     LoaderJson,
     LoaderSok,
     Box,
-    EventManager,
-    Exception
+    EventManager
 ) {
     'use strict';
 
@@ -40,7 +38,7 @@ define([
      */
     var LevelSet = function(options) {
         if (!(options.container instanceof HTMLElement)) {
-            throw new Exception('Container is invalid or not specified.');
+            throw new Error('Container is invalid or not specified.');
         }
         this._container = options.container;
 
@@ -121,7 +119,7 @@ define([
         if ((window.File && !(options.source instanceof window.File)) &&
             (!_.isString(options.source) || _.isEmpty(options.source))
         ) {
-            throw new Exception('Level set\'s source is invalid or not specified.');
+            throw new Error('Level set\'s source is invalid or not specified.');
         }
 
         var source = options.source;
@@ -162,7 +160,7 @@ define([
                 break;
         }
         if (!(loader instanceof Loader)) {
-            throw new Exception('Unable to determine loader for "' + source + '".');
+            throw new Error('Unable to determine loader for "' + source + '".');
         }
 
         var loaderOptions = {
@@ -208,7 +206,7 @@ define([
      */
     LevelSet.prototype.add = function(level) {
         if (!(level instanceof Level)) {
-            throw new Exception('Level instance is expected.');
+            throw new Error('Level instance is expected.');
         }
 
         this._levels.push(level);
@@ -232,11 +230,11 @@ define([
     LevelSet.prototype.find = function(search) {
         if (_.isNumber(search)) {
             if (search % 1 !== 0) {
-                throw new Exception('Level\'s index must be an integer.');
+                throw new Error('Level\'s index must be an integer.');
             }
 
             if (search < 0 || search >= this._levels.length) {
-                throw new Exception('Level\'s index is out of bounds.');
+                throw new Error('Level\'s index is out of bounds.');
             }
 
             return {
@@ -247,7 +245,7 @@ define([
         else if (search instanceof Level) {
             var index = _.findIndex(this._levels, search);
             if (index === -1) {
-                throw new Exception('Level is not found.');
+                throw new Error('Level is not found.');
             }
 
             return {
@@ -256,7 +254,7 @@ define([
             };
         }
 
-        throw new Exception('Level\'s search argument is invalid.');
+        throw new Error('Level\'s search argument is invalid.');
     };
 
     /**
@@ -370,7 +368,7 @@ define([
             },
             set: function(name) {
                 if (!_.isString(name)) {
-                    throw new Exception('Level set\'s name must be a string.');
+                    throw new Error('Level set\'s name must be a string.');
                 }
                 this._name = name;
             }
@@ -387,7 +385,7 @@ define([
             },
             set: function(description) {
                 if (!_.isString(description)) {
-                    throw new Exception('Level set\'s description must be a string.');
+                    throw new Error('Level set\'s description must be a string.');
                 }
                 this._description = description;
             }

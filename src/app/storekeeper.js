@@ -7,7 +7,6 @@ define([
     'jquery',
     'lodash',
     './event-manager',
-    './exception',
     './show-modal',
     './level/direction',
     './level/level',
@@ -21,7 +20,6 @@ define([
     $,
     _,
     EventManager,
-    Exception,
     showModal,
     Direction,
     Level,
@@ -55,16 +53,16 @@ define([
             if ((!_.isString(options.container) || _.isEmpty(options.container)) &&
                 !(options.container instanceof HTMLElement)
             ) {
-                throw new Exception('Game container is not defined or invalid.');
+                throw new Error('Game container is not defined or invalid.');
             }
 
             if (!_.isString(options.levelSetSource) || _.isEmpty(options.levelSetSource)) {
-                throw new Exception('Level set source is not defined or invalid.');
+                throw new Error('Level set source is not defined or invalid.');
             }
 
             var jqContainer = $(options.container);
             if (jqContainer.length === 0) {
-                throw new Exception('Container "' + options.container + '" doesn\'t exist.');
+                throw new Error('Container "' + options.container + '" doesn\'t exist.');
             }
             this._container = jqContainer.get(0);
 
@@ -427,7 +425,7 @@ define([
      */
     Storekeeper.prototype.restartLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
-            throw new Exception('Level set is not loaded.');
+            throw new Error('Level set is not loaded.');
         }
         this.levelSet.restart();
     };
@@ -440,7 +438,7 @@ define([
      */
     Storekeeper.prototype.previousLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
-            throw new Exception('Level set is not loaded.');
+            throw new Error('Level set is not loaded.');
         }
 
         var levelIndex = this.levelSet.levelIndex;
@@ -460,7 +458,7 @@ define([
      */
     Storekeeper.prototype.nextLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
-            throw new Exception('Level set is not loaded.');
+            throw new Error('Level set is not loaded.');
         }
 
         var levelIndex = this.levelSet.levelIndex;
@@ -628,11 +626,11 @@ define([
      */
     Storekeeper.formatInteger = function(number, digits) {
         if (!_.isNumber(number) || number % 1 !== 0) {
-            throw new Exception('Number must be an integer.');
+            throw new Error('Number must be an integer.');
         }
 
         if (!_.isNumber(digits) || digits % 1 !== 0) {
-            throw new Exception('Digits must be an integer.');
+            throw new Error('Digits must be an integer.');
         }
 
         var formatted = '' + number;
@@ -666,7 +664,7 @@ define([
             },
             set: function(source) {
                 if (!(source instanceof LevelSet)) {
-                    throw new Exception('Level set is not specified or invalid.');
+                    throw new Error('Level set is not specified or invalid.');
                 }
                 this._levelSet = source;
             }

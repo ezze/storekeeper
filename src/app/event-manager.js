@@ -2,11 +2,9 @@
  * @module EventManager
  */
 define([
-    'lodash',
-    './exception'
+    'lodash'
 ], function(
-    _,
-    Exception
+    _
 ) {
     'use strict';
 
@@ -36,11 +34,11 @@ define([
                 name = [name];
             }
             if (!_.isArray(name)) {
-                throw new Exception('Event\'s name is invalid.');
+                throw new Error('Event\'s name is invalid.');
             }
             _.forEach(name, function(eventName) {
                 if (!_.isString(eventName)) {
-                    throw new Exception('Event\'s name is invalid.');
+                    throw new Error('Event\'s name is invalid.');
                 }
             });
 
@@ -48,11 +46,11 @@ define([
                 handler = [handler];
             }
             if (!_.isArray(handler)) {
-                throw new Exception('Event\'s handler is invalid.');
+                throw new Error('Event\'s handler is invalid.');
             }
             _.forEach(handler, function(func) {
                 if (!_.isFunction(func)) {
-                    throw new Exception('Event\'s handler is invalid.');
+                    throw new Error('Event\'s handler is invalid.');
                 }
             });
 
@@ -94,11 +92,11 @@ define([
                 name = [name];
             }
             if (!_.isArray(name)) {
-                throw new Exception('Event\'s name is invalid.');
+                throw new Error('Event\'s name is invalid.');
             }
             _.forEach(name, function(eventName) {
                 if (!_.isString(eventName)) {
-                    throw new Exception('Event\'s name is invalid.');
+                    throw new Error('Event\'s name is invalid.');
                 }
             });
 
@@ -108,7 +106,7 @@ define([
             if (_.isArray(exactHandler)) {
                 _.forEach(exactHandler, function(func) {
                     if (!_.isFunction(func)) {
-                        throw new Exception('Event\'s handler is invalid.');
+                        throw new Error('Event\'s handler is invalid.');
                     }
                 });
             }
@@ -207,12 +205,12 @@ define([
          */
         raiseEvent: function(name, params) {
             if (!_.isString(name)) {
-                throw new Exception('Event\'s name is invalid.');
+                throw new Error('Event\'s name is invalid.');
             }
 
             params = params || {};
             if (!_.isObject(params)) {
-                throw new Exception('Event\'s parameters are invalid.');
+                throw new Error('Event\'s parameters are invalid.');
             }
 
             if (!_.isArray(this._handlers[name])) {

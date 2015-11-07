@@ -6,16 +6,13 @@ define([
     './box',
     './movable',
     './wall',
-    '../direction',
-    '../../exception'
+    '../direction'
 ], function(
     _,
     Box,
     Movable,
     Wall,
-    Direction,
-    Level,
-    Exception
+    Direction
 ) {
     'use strict';
 
@@ -113,7 +110,7 @@ define([
                 }
 
                 if (!Direction.isValidHorizontal(lookDirection)) {
-                    throw new Exception('Look direction is invalid.');
+                    throw new Error('Look direction is invalid.');
                 }
                 this._lookDirection = lookDirection;
 

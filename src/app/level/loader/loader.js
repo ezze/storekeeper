@@ -4,13 +4,11 @@
 define([
     'jquery',
     'lodash',
-    '../../event-manager',
-    '../../exception'
+    '../../event-manager'
 ], function(
     $,
     _,
-    EventManager,
-    Exception
+    EventManager
 ) {
     'use strict';
 
@@ -53,7 +51,7 @@ define([
         }
 
         if (!_.isString(options.source) || _.isEmpty(options.source)) {
-            throw new Exception('Level set\'s data source is invalid or not specified.');
+            throw new Error('Level set\'s data source is invalid or not specified.');
         }
         this.loadByUrl(options);
     };
@@ -228,7 +226,7 @@ define([
      * @param {Object} data
      */
     Loader.prototype.parse = function(data) {
-        throw new Exception('Method "parse" is not implemented.');
+        throw new Error('Method "parse" is not implemented.');
     };
 
     Object.defineProperties(Loader.prototype, {
@@ -244,7 +242,7 @@ define([
             },
             set: function(name) {
                 if (!_.isString(name)) {
-                    throw new Exception('Level set\'s name must be a string.');
+                    throw new Error('Level set\'s name must be a string.');
                 }
                 this._name = name;
             }
@@ -261,7 +259,7 @@ define([
             },
             set: function(description) {
                 if (!_.isString(description)) {
-                    throw new Exception('Level set\'s description must be a string.');
+                    throw new Error('Level set\'s description must be a string.');
                 }
                 this._description = description;
             }
@@ -281,7 +279,7 @@ define([
             },
             set: function(levels) {
                 if (!_.isArray(levels)) {
-                    throw new Exception('Levels\' data must be an array.');
+                    throw new Error('Levels\' data must be an array.');
                 }
                 this._levels = levels;
             }

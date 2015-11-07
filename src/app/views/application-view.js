@@ -16,10 +16,13 @@ define([
             content: '.content'
         },
         onBeforeShow: function() {
-            var app = this.getOption('app');
-            this.getRegion('header').show(new HeaderView({
-                app: app
-            }));
+            var app = this.getOption('app'),
+                headerView = new HeaderView({
+                    app: app
+                });
+
+            app.addView(headerView, 'header');
+            this.getRegion('header').show(headerView);
         }
     });
 

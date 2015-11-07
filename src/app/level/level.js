@@ -11,9 +11,7 @@ define([
     './object/movable',
     './object/scene-object',
     './object/wall',
-    './object/worker',
-    '../event-manager',
-    '../exception'
+    './object/worker'
 ], function(
     Easel,
     $,
@@ -24,9 +22,7 @@ define([
     Movable,
     SceneObject,
     Wall,
-    Worker,
-    EventManager,
-    Exception
+    Worker
 ) {
     'use strict';
 
@@ -89,7 +85,7 @@ define([
         }
 
         if (!_.isArray(options.items)) {
-            throw new Exception('Level\'s items are invalid or not specified.');
+            throw new Error('Level\'s items are invalid or not specified.');
         }
 
         this._items = options.items;
@@ -120,7 +116,7 @@ define([
         }
 
         if (this._boxes.length !== this._goals.length || !(this._worker instanceof Worker)) {
-            throw new Exception('Incorrect ' + this._name + ' level');
+            throw new Error('Incorrect ' + this._name + ' level');
         }
 
         this.addObjectsToStage();
@@ -258,7 +254,7 @@ define([
     Level.prototype.addObjectToStage = function(object) {
         var sprite = object.sprite;
         if (this._camera.contains(sprite)) {
-            throw new Exception('Level\'s stage already contains the object.');
+            throw new Error('Level\'s stage already contains the object.');
         }
         this._camera.addChild(sprite);
     };

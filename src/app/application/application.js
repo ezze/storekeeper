@@ -23,7 +23,7 @@ define([
         initialize: function() {
             this._isInitialized = false;
 
-            this.viewsContainer = new BackboneBabysitter();
+            this._viewsContainer = new BackboneBabysitter();
 
             this.addRegions({
                 'app': '.application'
@@ -45,6 +45,12 @@ define([
         },
         isInitialized: function () {
             return this._isInitialized;
+        },
+        addView: function(view, indexer) {
+            this._viewsContainer.add(view, indexer);
+        },
+        removeView: function(view) {
+            this._viewsContainer.remove(view);
         }
     });
 
