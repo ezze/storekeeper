@@ -11,7 +11,8 @@ define([], function() {
         },
         paths: {
             backbone: '../lib/backbone/backbone',
-            'backbone-babysitter': '../lib/backbone.babysitter/lib/backbone.babysitter',
+            'backbone.babysitter': '../lib/backbone.babysitter/lib/backbone.babysitter',
+            'backbone.wreqr': '../lib/backbone.wreqr/lib/backbone.wreqr',
             bootstrap: '../lib/bootstrap/dist/js/bootstrap',
             easel: '../lib/easeljs/lib/easeljs-0.8.1.combined',
             hgn: '../lib/requirejs-hogan-plugin/hgn',

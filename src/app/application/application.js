@@ -1,6 +1,7 @@
 define([
     'backbone',
-    'backbone-babysitter',
+    'backbone.babysitter',
+    'backbone.wreqr',
     'bootstrap',
     'jquery',
     'lodash',
@@ -10,6 +11,7 @@ define([
 ], function(
     Backbone,
     BackboneBabysitter,
+    BackboneWreqr,
     Bootstrap,
     $,
     _,
@@ -20,10 +22,10 @@ define([
     'use strict';
 
     var Application = Marionette.Application.extend({
-        initialize: function() {
+        initialize: function(options) {
             this._isInitialized = false;
 
-            this.viewsContainer = new BackboneBabysitter();
+            this._viewsContainer = new BackboneBabysitter();
 
             this.addRegions({
                 'app': '.application'
@@ -41,10 +43,17 @@ define([
             });
 
             this._isInitialized = true;
-            this.trigger('initialize');
+
+            this.vent.trigger('initialize');
         },
         isInitialized: function () {
             return this._isInitialized;
+        },
+        addView: function(view, indexer) {
+            this._viewsContainer.add(view, indexer);
+        },
+        removeView: function(view) {
+            this._viewsContainer.remove(view);
         }
     });
 

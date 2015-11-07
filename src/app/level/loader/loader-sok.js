@@ -3,12 +3,10 @@
  */
 define([
     'lodash',
-    './loader',
-    '../../exception'
+    './loader'
 ], function(
     _,
-    Loader,
-    Exception
+    Loader
 ) {
     'use strict';
 

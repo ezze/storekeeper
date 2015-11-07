@@ -2,12 +2,11 @@
  * @module Storekeeper
  */
 define([
+    'backbone',
     'bootstrap',
     'easel',
     'jquery',
     'lodash',
-    './event-manager',
-    './exception',
     './show-modal',
     './level/direction',
     './level/level',
@@ -16,12 +15,11 @@ define([
     './level/object/movable',
     './level/object/worker'
 ], function(
+    Backbone,
     Bootstrap,
     Easel,
     $,
     _,
-    EventManager,
-    Exception,
     showModal,
     Direction,
     Level,
@@ -51,33 +49,39 @@ define([
      * @class
      */
     var Storekeeper = function(options) {
+        _.bindAll(this);
+
         $(document).ready(function() {
+            if (!_.isObject(options.app)) {
+                throw new Error('Application is not defined or invalid.');
+            }
+
             if ((!_.isString(options.container) || _.isEmpty(options.container)) &&
                 !(options.container instanceof HTMLElement)
             ) {
-                throw new Exception('Game container is not defined or invalid.');
+                throw new Error('Game container is not defined or invalid.');
             }
 
             if (!_.isString(options.levelSetSource) || _.isEmpty(options.levelSetSource)) {
-                throw new Exception('Level set source is not defined or invalid.');
+                throw new Error('Level set source is not defined or invalid.');
             }
 
-            var jqContainer = $(options.container);
-            if (jqContainer.length === 0) {
-                throw new Exception('Container "' + options.container + '" doesn\'t exist.');
+            var $container = $(options.container);
+            if ($container.length === 0) {
+                throw new Error('Container "' + options.container + '" doesn\'t exist.');
             }
-            this._container = jqContainer.get(0);
+
+            this._app = options.app;
+            this._container = $container.get(0);
 
             this.init();
             this.loadLevelSet(options.levelSetSource);
         }.bind(this));
 
-        $(window).on('resize', function() {
-            if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
-                this.levelSet.level.resize();
-            }
-        }.bind(this));
+        $(window).on('resize', this.onWindowResize);
     };
+
+    _.extend(Storekeeper.prototype, Backbone.Events);
 
     /**
      * Initializes the game.
@@ -85,84 +89,45 @@ define([
      * @protected
      */
     Storekeeper.prototype.init = function() {
-        this.initNavbar();
+        this.initCommands();
         this.initEvents();
-        this.initUserControls();
+        this.enableUserControls();
         this.initTicker();
     };
 
-    /**
-     * Initializes controls of navigation bar.
-     *
-     * @protected
-     */
-    Storekeeper.prototype.initNavbar = function() {
-        var storekeeper = this;
+    Storekeeper.prototype.initCommands = function() {
+        var handlerOptions = {},
+            commands = this._app.commands,
+            methodName;
 
-        $(document).ready(function() {
-            var jqHeader = $('#header');
-
-            if (!window.File || !window.FileList) {
-                jqHeader.find('a[href="#load-level-set"]').parent('li').addClass('disabled');
+        _.each([
+            'browse-level-set',
+            'load-level-set',
+            'next-level',
+            'previous-level',
+            'restart-level'
+        ], function(command) {
+            methodName = _.camelCase(command);
+            if (!_.isFunction(this[methodName])) {
+                return;
             }
 
-            jqHeader
-                .on('click', '.navbar-brand', function(event) {
-                    event.preventDefault();
-                })
-                .on('click', 'a', function(event) {
-                    if ($(this).parent('li').hasClass('disabled')) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        return;
-                    }
-
-                    if ($(this).siblings('.dropdown-menu').length === 0) {
-                        var jqNavbarCollapse = $(this).parents('.navbar-collapse');
-                        if (jqNavbarCollapse.hasClass('in')) {
-                            jqNavbarCollapse.collapse('hide');
+            handlerOptions[command] = _.bind(function(methodName) {
+                return {
+                    context: this,
+                    callback: function (options) {
+                        if (command === 'load-level-set') {
+                            this[methodName](options.link);
+                        }
+                        else {
+                            this[methodName]();
                         }
                     }
-                })
-                .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
-                    event.preventDefault();
-                    if ($(this).parent('li').hasClass('disabled')) {
-                        return;
-                    }
+                };
+            }, this)(methodName);
+        }, this);
 
-                    var source = $(this).attr('href');
-                    if (!source) {
-                        return;
-                    }
-
-                    if (source === '#load-level-set') {
-                        storekeeper.browseLevelSet();
-                    }
-                    else {
-                        storekeeper.loadLevelSet(source);
-                    }
-                })
-                .on('change', 'input.load-level-set', function(event) {
-                    var files = event.target.files;
-                    if (files.length === 0) {
-                        return;
-                    }
-                    var file = files[0];
-                    storekeeper.loadLevelSet(file);
-                })
-                .on('click', 'a[href="#restart-level"]', function(event) {
-                    event.preventDefault();
-                    storekeeper.restartLevel();
-                })
-                .on('click', 'a[href="#previous-level"]', function(event) {
-                    event.preventDefault();
-                    storekeeper.previousLevel();
-                })
-                .on('click', 'a[href="#next-level"]', function(event) {
-                    event.preventDefault();
-                    storekeeper.nextLevel();
-                });
-        });
+        commands.setHandlers(handlerOptions);
     };
 
     /**
@@ -171,156 +136,41 @@ define([
      * @protected
      */
     Storekeeper.prototype.initEvents = function() {
-        var eventManager = EventManager.instance;
-
-        eventManager.on([
-            LevelSet.EVENT_LEVEL_CHANGED,
-            LevelSet.EVENT_LEVEL_RESTARTED
-        ], function(eventName, params) {
-            var level = params.level;
-
-            this.updateInfo({
-                levelNumber: params.index + 1,
-                boxesCount: level.boxesCount,
-                boxesOnGoalCount: level.boxesOnGoalCount,
-                pushesCount: 0,
-                movesCount: level.worker.movesCount
-            });
-
-            level.resize(false);
-            level.update();
-        }.bind(this));
-
-        eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
-            params.level.update();
-            setTimeout(function() {
-                var deferred = showModal({
-                    title: 'Congratulations!',
-                    html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
-                    closeButton: true
-                });
-                deferred.done(function() {
-                    params.level.reset();
-                    this.nextLevel();
-                }.bind(this));
-            }.bind(this), 50);
-        }.bind(this));
-
-        eventManager.on([
-            Box.EVENT_MOVED_ON_GOAL,
-            Box.EVENT_MOVED_OUT_OF_GOAL
-        ], function(eventName, params) {
-            var level = params.box.level;
-            this.updateInfo({
-                boxesCount: level.boxesCount,
-                boxesOnGoalCount: level.boxesOnGoalCount
-            });
-        }.bind(this));
-
-        eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
-            if (params.object instanceof Box) {
-                // TODO: optimize if possible
-                var pushesCount = 0;
-                _.forEach(params.object.level.boxes, function(box) {
-                    pushesCount += box.movesCount;
-                });
-                this.updateInfo({
-                    pushesCount: pushesCount
-                });
-            }
-            else if (params.object instanceof Worker) {
-                this.updateInfo({
-                    movesCount: params.object.movesCount
-                });
-                this.levelSet.level.adjustCamera({
-                    cancel: false,
-                    smooth: true,
-                    delay: 50
-                });
-            }
-        }.bind(this));
-
-        eventManager.on([
-            Movable.EVENT_ANIMATED,
-            Movable.EVENT_STOPPED
-        ], function(eventName, params) {
-            if (!(params.object instanceof Worker)) {
-                return;
-            }
-            params.object.level.update();
-        });
+        var vent = this._app.vent;
+        this.listenTo(vent, LevelSet.EVENT_LEVEL_CHANGE, this.onLevelChange);
+        this.listenTo(vent, LevelSet.EVENT_LEVEL_RESTART, this.onLevelChange);
+        this.listenTo(vent, LevelSet.EVENT_LEVEL_COMPLETE, this.onLevelComplete);
+        this.listenTo(vent, Box.EVENT_MOVE_ON_GOAL, this.onBoxMove);
+        this.listenTo(vent, Box.EVENT_MOVE_OUT_OF_GOAL, this.onBoxMove);
+        this.listenTo(vent, Movable.EVENT_MOVE, this.onMovableMove);
+        this.listenTo(vent, Movable.EVENT_ANIMATE, this.onMovableAnimate);
+        this.listenTo(vent, Movable.EVENT_STOP, this.onMovableAnimate);
     };
 
     /**
-     * Initializes user's controls.
+     * Enables user's controls.
      *
      * @protected
      */
-    Storekeeper.prototype.initUserControls = function() {
+    Storekeeper.prototype.enableUserControls = function() {
         this._moveDirection = Direction.NONE;
+        $(window).on('keydown', this.onKeyDown);
+        $(window).on('keyup', this.onKeyUp);
+        $(window).on('touchstart', this.onTouchStart);
+        $(window).on('touchend', this.onTouchEnd);
+    };
 
-        $(window).on('keydown', function(event) {
-            if (event.ctrlKey && event.which === 79) {
-                // Ctrl + O
-                event.preventDefault();     // preventing a browser from showing open file dialog
-                this.browseLevelSet();
-                return;
-            }
-
-            if (event.ctrlKey && event.altKey && event.which === 82) {
-                // Ctrl + Alt + R
-                this.restartLevel();
-                return;
-            }
-
-            if (event.altKey && event.which === 90) {
-                // Alt + Z
-                this.previousLevel();
-                return;
-            }
-
-            if (event.altKey && event.which === 88) {
-                // Alt + X
-                this.nextLevel();
-                return;
-            }
-
-            var direction = Storekeeper.getDirectionByKeyCode(event.which);
-            if (direction === Direction.NONE) {
-                return;
-            }
-
-            event.preventDefault();
-            this._moveDirection = direction;
-        }.bind(this));
-
-        $(window).on('keyup', function(event) {
-            var direction = Storekeeper.getDirectionByKeyCode(event.which);
-            if (direction === this._moveDirection) {
-                this._moveDirection = Direction.NONE;
-            }
-        }.bind(this));
-
-        $(window).on('touchstart', function(event) {
-            if (!(event.target instanceof HTMLCanvasElement)) {
-                return;
-            }
-
-            var canvas = event.target;
-            var jqCanvas = $(canvas);
-
-            var originalEvent = event.originalEvent;
-            var touch = originalEvent.touches.item(0);
-
-            var touchCanvasX = touch.clientX - jqCanvas.offset().left;
-            var touchCanvasY = touch.clientY - jqCanvas.offset().top;
-
-            this._moveDirection = Storekeeper.getDirectionByTouchPoint(canvas, touchCanvasX, touchCanvasY);
-        }.bind(this));
-
-        $(window).on('touchend', function(event) {
-            this._moveDirection = Direction.NONE;
-        }.bind(this));
+    /**
+     * Disables user's controls.
+     *
+     * @protected
+     */
+    Storekeeper.prototype.disableUserControls = function() {
+        this._moveDirection = Direction.NONE;
+        $(window).off('keydown', this.onKeyDown);
+        $(window).off('keyup', this.onKeyUp);
+        $(window).off('touchstart', this.onTouchStart);
+        $(window).off('touchend', this.onTouchEnd);
     };
 
     /**
@@ -328,16 +178,33 @@ define([
      */
     Storekeeper.prototype.initTicker = function() {
         Easel.Ticker.setFPS(30);
-        Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
+        Easel.Ticker.addEventListener('tick', this.onAnimationFrame);
     };
 
     /**
-     * Opens a dialog to choose a level set to load from local computer.
+     * Triggers an event with updated level information.
      *
-     * @see module:Storekeeper#loadLevelSet
+     * @param {Object} info
+     * Object consisting of values to update:
+     *
+     * @param {Number} [info.levelNumber]
+     * Order number of current active level.
+     *
+     * @param {Number} [info.boxesCount]
+     * Overall count of boxes belonging to current level.
+     *
+     * @param {Number} [info.boxesOnGoalCount]
+     * Count of boxes belonging to current level and already placed on goals.
+     *
+     * @param {Number} [info.pushesCount]
+     * Count of boxes' pushes caused by the worker.
+     *
+     * @param {Number} [info.movesCount]
+     * Count of moves performed by the worker.
      */
-    Storekeeper.prototype.browseLevelSet = function() {
-        $('#header').find('input.load-level-set:first').trigger('click');
+    Storekeeper.prototype.updateLevelInfo = function(info) {
+        info = info || {};
+        this._app.vent.trigger('level-info-update', info);
     };
 
     /**
@@ -347,10 +214,11 @@ define([
      * URL of levels' set to load.
      *
      * @see module:Storekeeper#browseLevelSet
-     * @see module:Storekeeper#onLevelSetLoaded
+     * @see module:Storekeeper#onLevelSetLoad
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
         var levelSet = new LevelSet({
+            app: this._app,
             container: this.container
         });
 
@@ -360,61 +228,13 @@ define([
                 if (this._levelSet instanceof LevelSet) {
                     this._levelSet.destroy();
                 }
+
                 this._levelSet = levelSet;
-                this.onLevelSetLoaded(source);
+                this._levelSet.level = 0;
+
+                this._app.vent.trigger('level-set-load', source);
             }.bind(this)
         });
-    };
-
-    /**
-     * A method to invoke when levels' set is loaded.
-     *
-     * <p>Starts playing a first level of loaded set.</p>
-     *
-     * @protected
-     *
-     * @param {String} source
-     * Source levels' set was loaded by.
-     */
-    Storekeeper.prototype.onLevelSetLoaded = function(source) {
-        var jqLevelsDropdown = $('#header').find('a[href="#levels"] ~ .dropdown-menu');
-        jqLevelsDropdown.find('a').each(function() {
-            if ($(this).attr('href') === source) {
-                $(this).parent('li').addClass('active');
-            }
-            else {
-                $(this).parent('li').removeClass('active');
-            }
-        });
-
-        var jqLoadLevelSetItem = jqLevelsDropdown.find('a[href="#load-level-set"]').parent('li');
-        var jqLocalLevelSetItem = jqLevelsDropdown.find('.local-level-set');
-
-        if (window.File && source instanceof window.File) {
-            var levelSetName = source.name;
-
-            if (jqLocalLevelSetItem.length === 0) {
-                jqLocalLevelSetItem = $('<li></li>')
-                    .addClass('local-level-set')
-                    .addClass('active')
-                    .append($('<a></a>')
-                        .text(levelSetName)
-                    );
-                jqLoadLevelSetItem.after(jqLocalLevelSetItem);
-                jqLoadLevelSetItem.after($('<li></li>')
-                    .addClass('divider')
-                );
-            }
-            else {
-                jqLocalLevelSetItem.children('a').text(levelSetName);
-            }
-        }
-        else {
-            jqLocalLevelSetItem.prev('li').remove();
-            jqLocalLevelSetItem.remove();
-        }
-
-        this.levelSet.level = 0;
     };
 
     /**
@@ -427,7 +247,7 @@ define([
      */
     Storekeeper.prototype.restartLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
-            throw new Exception('Level set is not loaded.');
+            throw new Error('Level set is not loaded.');
         }
         this.levelSet.restart();
     };
@@ -440,7 +260,7 @@ define([
      */
     Storekeeper.prototype.previousLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
-            throw new Exception('Level set is not loaded.');
+            throw new Error('Level set is not loaded.');
         }
 
         var levelIndex = this.levelSet.levelIndex;
@@ -460,7 +280,7 @@ define([
      */
     Storekeeper.prototype.nextLevel = function() {
         if (!(this.levelSet instanceof LevelSet)) {
-            throw new Exception('Level set is not loaded.');
+            throw new Error('Level set is not loaded.');
         }
 
         var levelIndex = this.levelSet.levelIndex;
@@ -496,56 +316,141 @@ define([
         worker.move(this._moveDirection);
     };
 
-    /**
-     * Updates current game information in navigation bar.
-     *
-     * @param {Object} data
-     * Object consisting of values to update:
-     *
-     * @param {Number} [data.levelNumber]
-     * Order number of current active level.
-     *
-     * @param {Number} [data.boxesCount]
-     * Overall count of boxes belonging to current level.
-     *
-     * @param {Number} [data.boxesOnGoalCount]
-     * Count of boxes belonging to current level and already placed on goals.
-     *
-     * @param {Number} [data.pushesCount]
-     * Count of boxes' pushes caused by the worker.
-     *
-     * @param {Number} [data.movesCount]
-     * Count of moves performed by the worker.
-     */
-    Storekeeper.prototype.updateInfo = function(data) {
-        data = data || {};
-        var jqHeader = $('#header');
+    Storekeeper.prototype.onLevelChange = function(params) {
+        var level = params.level;
 
-        if (_.isNumber(data.levelNumber)) {
-            var jqLevel = jqHeader.find('.level');
-            jqLevel.find('.name').text('Level');
-            jqLevel.find('.value').text(Storekeeper.formatInteger(data.levelNumber, 3));
+        this.updateLevelInfo({
+            levelNumber: params.index + 1,
+            boxesCount: level.boxesCount,
+            boxesOnGoalCount: level.boxesOnGoalCount,
+            pushesCount: 0,
+            movesCount: level.worker.movesCount
+        });
+
+        level.resize(false);
+        level.update();
+    };
+
+    Storekeeper.prototype.onLevelComplete = function(params) {
+        params.level.update();
+        setTimeout(function() {
+            var deferred = showModal({
+                title: 'Congratulations!',
+                html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
+                closeButton: true
+            });
+            deferred.done(function() {
+                params.level.reset();
+                this.nextLevel();
+            }.bind(this));
+        }.bind(this), 50);
+    };
+
+    Storekeeper.prototype.onBoxMove = function(params) {
+        var level = params.box.level;
+        this.updateLevelInfo({
+            boxesCount: level.boxesCount,
+            boxesOnGoalCount: level.boxesOnGoalCount
+        });
+    };
+
+    Storekeeper.prototype.onMovableMove = function(params) {
+        if (params.object instanceof Box) {
+            // TODO: optimize if possible
+            var pushesCount = 0;
+            _.forEach(params.object.level.boxes, function(box) {
+                pushesCount += box.movesCount;
+            });
+            this.updateLevelInfo({
+                pushesCount: pushesCount
+            });
+        }
+        else if (params.object instanceof Worker) {
+            this.updateLevelInfo({
+                movesCount: params.object.movesCount
+            });
+            this.levelSet.level.adjustCamera({
+                cancel: false,
+                smooth: true,
+                delay: 50
+            });
+        }
+    };
+
+    Storekeeper.prototype.onMovableAnimate = function(params) {
+        if (!(params.object instanceof Worker)) {
+            return;
+        }
+        params.object.level.update();
+    };
+
+    Storekeeper.prototype.onWindowResize = function() {
+        if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
+            this.levelSet.level.resize();
+        }
+    };
+
+    Storekeeper.prototype.onKeyDown = function(event) {
+        if (event.ctrlKey && event.which === 79) {
+            // Ctrl + O
+            event.preventDefault();     // preventing a browser from showing open file dialog
+            this.browseLevelSet();
+            return;
         }
 
-        if (_.isNumber(data.boxesCount) && _.isNumber(data.boxesOnGoalCount)) {
-            var jqBoxesCount = jqHeader.find('.boxes-count');
-            jqBoxesCount.find('.name').text('Boxes');
-            jqBoxesCount.find('.value').text(Storekeeper.formatInteger(data.boxesOnGoalCount, 3) +
-                '/' + Storekeeper.formatInteger(data.boxesCount, 3)
-            );
+        if (event.ctrlKey && event.altKey && event.which === 82) {
+            // Ctrl + Alt + R
+            this.restartLevel();
+            return;
         }
 
-        if (_.isNumber(data.pushesCount)) {
-            var jqPushesCount = jqHeader.find('.pushes-count');
-            jqPushesCount.find('.name').text('Pushes');
-            jqPushesCount.find('.value').text(Storekeeper.formatInteger(data.pushesCount, 5));
+        if (event.altKey && event.which === 90) {
+            // Alt + Z
+            this.previousLevel();
+            return;
         }
 
-        if (_.isNumber(data.movesCount)) {
-            var jqMovesCount = jqHeader.find('.moves-count');
-            jqMovesCount.find('.name').text('Moves');
-            jqMovesCount.find('.value').text(Storekeeper.formatInteger(data.movesCount, 5));
+        if (event.altKey && event.which === 88) {
+            // Alt + X
+            this.nextLevel();
+            return;
         }
+
+        var direction = Storekeeper.getDirectionByKeyCode(event.which);
+        if (direction === Direction.NONE) {
+            return;
+        }
+
+        event.preventDefault();
+        this._moveDirection = direction;
+    };
+
+    Storekeeper.prototype.onKeyUp = function(event) {
+        var direction = Storekeeper.getDirectionByKeyCode(event.which);
+        if (direction === this._moveDirection) {
+            this._moveDirection = Direction.NONE;
+        }
+    };
+
+    Storekeeper.prototype.onTouchStart = function(event) {
+        if (!(event.target instanceof HTMLCanvasElement)) {
+            return;
+        }
+
+        var canvas = event.target;
+        var jqCanvas = $(canvas);
+
+        var originalEvent = event.originalEvent;
+        var touch = originalEvent.touches.item(0);
+
+        var touchCanvasX = touch.clientX - jqCanvas.offset().left;
+        var touchCanvasY = touch.clientY - jqCanvas.offset().top;
+
+        this._moveDirection = Storekeeper.getDirectionByTouchPoint(canvas, touchCanvasX, touchCanvasY);
+    };
+
+    Storekeeper.prototype.onTouchEnd = function(event) {
+        this._moveDirection = Direction.NONE;
     };
 
     /**
@@ -615,33 +520,6 @@ define([
         return Direction.NONE;
     };
 
-    /**
-     * Formats an integer by prepending leading zeros.
-     *
-     * @param {Number} number
-     * Integer number to format.
-     *
-     * @param {Number} digits
-     * Count of digits in formatted string.
-     *
-     * @returns {String}
-     */
-    Storekeeper.formatInteger = function(number, digits) {
-        if (!_.isNumber(number) || number % 1 !== 0) {
-            throw new Exception('Number must be an integer.');
-        }
-
-        if (!_.isNumber(digits) || digits % 1 !== 0) {
-            throw new Exception('Digits must be an integer.');
-        }
-
-        var formatted = '' + number;
-        for (var i = 0; i < digits - number.toString().length; i += 1) {
-            formatted = '0' + formatted;
-        }
-        return formatted;
-    };
-
     Object.defineProperties(Storekeeper.prototype, {
         /**
          * Gets game's container HTML element.
@@ -666,7 +544,7 @@ define([
             },
             set: function(source) {
                 if (!(source instanceof LevelSet)) {
-                    throw new Exception('Level set is not specified or invalid.');
+                    throw new Error('Level set is not specified or invalid.');
                 }
                 this._levelSet = source;
             }

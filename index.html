@@ -15,7 +15,7 @@
     (function() {
         var headElement = document.querySelector('head'),
             scriptElement = document.createElement('script'),
-            debugMode = new RegExp('^\\?debug', 'i').test(window.location.search),
+            debugMode = new RegExp('(\\?|&)debug', 'i').test(window.location.href),
             scriptUrl = debugMode ? 'src/lib/requirejs/require.js' : 'assets/js/storekeeper.min.js';
 
         scriptElement.setAttribute('src', scriptUrl);

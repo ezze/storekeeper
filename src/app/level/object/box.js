@@ -6,15 +6,13 @@ define([
     './goal',
     './movable',
     './wall',
-    '../direction',
-    '../../event-manager'
+    '../direction'
 ], function(
     _,
     Goal,
     Movable,
     Wall,
-    Direction,
-    EventManager
+    Direction
 ) {
     'use strict';
 
@@ -52,18 +50,18 @@ define([
      *
      * @type {String}
      *
-     * @see module:Box#onMoved
+     * @see module:Box#onMove
      */
-    Box.EVENT_MOVED_ON_GOAL = 'box:movedOnGoal';
+    Box.EVENT_MOVE_ON_GOAL = 'box:move-on-goal';
 
     /**
      * Name of an event raised when box is moved out of goal.
      *
      * @type {String}
      *
-     * @see module:Box#onBeforeMoved
+     * @see module:Box#onBeforeMove
      */
-    Box.EVENT_MOVED_OUT_OF_GOAL = 'box:movedOutOfGoal';
+    Box.EVENT_MOVE_OUT_OF_GOAL = 'box:move-out-of-goal';
 
     Box.prototype = Object.create(Movable.prototype);
 
@@ -92,7 +90,7 @@ define([
         // Doing nothing with a box during its movement
     };
 
-    Box.prototype.onBeforeMoved = function(params) {
+    Box.prototype.onBeforeMove = function(params) {
         var isOutOfGoal = false;
 
         var sourceObjects = this.level.getObjects(this.row, this.column);
@@ -119,12 +117,12 @@ define([
             this.sprite.gotoAndStop('box');
         }
 
-        return Movable.prototype.onBeforeMoved.apply(this, arguments);
+        return Movable.prototype.onBeforeMove.apply(this, arguments);
     };
 
-    Box.prototype.onMoved = function(params) {
-        var isSourceGoal = false;
-        var isTargetGoal = false;
+    Box.prototype.onMove = function(params) {
+        var isSourceGoal = false,
+            isTargetGoal = false;
 
         var sourceOjbects = this.getMoveTargetObjects(Direction.getCounterDirection(params.direction));
         _.forEach(sourceOjbects, function(object) {
@@ -144,19 +142,17 @@ define([
             }
         }, this);
 
-        var eventManager = EventManager.instance;
-
+        var vent = this._app.vent;
         if (!isSourceGoal && isTargetGoal) {
             this.sprite.gotoAndStop('boxOnGoal');
-
             this.level.onBoxOnGoal();
-            eventManager.raiseEvent(Box.EVENT_MOVED_ON_GOAL, {
+            vent.trigger(Box.EVENT_MOVE_ON_GOAL, {
                 box: this
             });
         }
         else if (isSourceGoal && !isTargetGoal) {
             this.level.onBoxOutOfGoal();
-            eventManager.raiseEvent(Box.EVENT_MOVED_OUT_OF_GOAL, {
+            vent.trigger(Box.EVENT_MOVE_OUT_OF_GOAL, {
                 box: this
             });
         }

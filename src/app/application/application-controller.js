@@ -18,12 +18,20 @@ define([
             this._appView = new ApplicationView({
                 app: app
             });
+            this._gameView = new GameView({
+                app: app
+            });
 
-            //app.addView(appView, 'app');
+            app.addView(this._appView, 'app');
+            app.addView(this._gameView, 'game');
+
             app.getRegion('app').show(this._appView);
         },
-        main: function() {
-            this._appView.getRegion('content').show(new GameView());
+        game: function() {
+            this._appView.getRegion('content').show(this._gameView);
+        },
+        editor: function() {
+            alert('Editor is not implemented yet!');
         }
     });
 

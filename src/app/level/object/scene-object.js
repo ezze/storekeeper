@@ -3,16 +3,16 @@
  */
 define([
     'require',
+    'backbone',
     'easel',
     'lodash',
-    '../sprite-sheet',
-    '../../exception'
+    '../sprite-sheet'
 ], function(
     require,
+    Backbone,
     Easel,
     _,
-    spriteSheet,
-    Exception
+    spriteSheet
 ) {
     'use strict';
 
@@ -40,17 +40,23 @@ define([
      * @class
      */
     var SceneObject = function(options) {
+        if (!options.app) {
+            throw new Error('Application is invalid or not specified.');
+        }
+
         if (!options.level instanceof require('../level')) {
-            throw new Exception('Level is invalid or not specified.');
+            throw new Error('Level is invalid or not specified.');
         }
 
         if (!_.isNumber(options.row) || options.row % 1 !== 0) {
-            throw new Exception('Scene object\'s row must be an integer.');
+            throw new Error('Scene object\'s row must be an integer.');
         }
 
         if (!_.isNumber(options.column) || options.column % 1 !== 0) {
-            throw new Exception('Scene object\'s column must be an integer.');
+            throw new Error('Scene object\'s column must be an integer.');
         }
+
+        this._app = options.app;
 
         this._name = '';
 
@@ -65,6 +71,8 @@ define([
 
         this.updatePixels();
     };
+
+    _.extend(SceneObject.prototype, Backbone.Events);
 
     /**
      * Calculates left offset of the object in pixels by its column index.
@@ -154,7 +162,7 @@ define([
             },
             set: function(row) {
                 if (!_.isNumber(row)) {
-                    throw new Exception('Row must be a number.');
+                    throw new Error('Row must be a number.');
                 }
                 this._row = row;
             }
@@ -173,7 +181,7 @@ define([
             },
             set: function(column) {
                 if (!_.isNumber(column)) {
-                    throw new Exception('Column must be a number.');
+                    throw new Error('Column must be a number.');
                 }
                 this._column = column;
             }
