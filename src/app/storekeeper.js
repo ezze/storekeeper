@@ -8,9 +8,10 @@ define([
     'lodash',
     './event-manager',
     './exception',
+    './show-modal',
     './level/direction',
     './level/level',
-    './level/levelset',
+    './level/level-set',
     './level/object/box',
     './level/object/movable',
     './level/object/worker'
@@ -21,6 +22,7 @@ define([
     _,
     EventManager,
     Exception,
+    showModal,
     Direction,
     Level,
     LevelSet,
@@ -69,6 +71,12 @@ define([
             this.init();
             this.loadLevelSet(options.levelSetSource);
         }.bind(this));
+
+        $(window).on('resize', function() {
+            if (this.levelSet instanceof LevelSet && this.levelSet.level instanceof Level) {
+                this.levelSet.level.resize();
+            }
+        }.bind(this));
     };
 
     /**
@@ -89,8 +97,16 @@ define([
      * @protected
      */
     Storekeeper.prototype.initNavbar = function() {
+        var storekeeper = this;
+
         $(document).ready(function() {
-            $('#header')
+            var jqHeader = $('#header');
+
+            if (!window.File || !window.FileList) {
+                jqHeader.find('a[href="#load-level-set"]').parent('li').addClass('disabled');
+            }
+
+            jqHeader
                 .on('click', '.navbar-brand', function(event) {
                     event.preventDefault();
                 })
@@ -98,21 +114,55 @@ define([
                     if ($(this).parent('li').hasClass('disabled')) {
                         event.preventDefault();
                         event.stopPropagation();
+                        return;
                     }
+
+                    if ($(this).siblings('.dropdown-menu').length === 0) {
+                        var jqNavbarCollapse = $(this).parents('.navbar-collapse');
+                        if (jqNavbarCollapse.hasClass('in')) {
+                            jqNavbarCollapse.collapse('hide');
+                        }
+                    }
+                })
+                .on('click', 'a[href="#levels"] ~ .dropdown-menu a', function(event) {
+                    event.preventDefault();
+                    if ($(this).parent('li').hasClass('disabled')) {
+                        return;
+                    }
+
+                    var source = $(this).attr('href');
+                    if (!source) {
+                        return;
+                    }
+
+                    if (source === '#load-level-set') {
+                        storekeeper.browseLevelSet();
+                    }
+                    else {
+                        storekeeper.loadLevelSet(source);
+                    }
+                })
+                .on('change', 'input.load-level-set', function(event) {
+                    var files = event.target.files;
+                    if (files.length === 0) {
+                        return;
+                    }
+                    var file = files[0];
+                    storekeeper.loadLevelSet(file);
                 })
                 .on('click', 'a[href="#restart-level"]', function(event) {
                     event.preventDefault();
-                    this.restartLevel();
-                }.bind(this))
+                    storekeeper.restartLevel();
+                })
                 .on('click', 'a[href="#previous-level"]', function(event) {
                     event.preventDefault();
-                    this.previousLevel();
-                }.bind(this))
+                    storekeeper.previousLevel();
+                })
                 .on('click', 'a[href="#next-level"]', function(event) {
                     event.preventDefault();
-                    this.nextLevel();
-                }.bind(this));
-        }.bind(this));
+                    storekeeper.nextLevel();
+                });
+        });
     };
 
     /**
@@ -121,11 +171,7 @@ define([
      * @protected
      */
     Storekeeper.prototype.initEvents = function() {
-        var eventManager = this._eventManager = new EventManager();
-
-        eventManager.on(LevelSet.EVENT_LOADED, function(eventName, params) {
-            this.onLevelSetLoaded.bind(this)(params.source);
-        }.bind(this));
+        var eventManager = EventManager.instance;
 
         eventManager.on([
             LevelSet.EVENT_LEVEL_CHANGED,
@@ -148,9 +194,15 @@ define([
         eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
             params.level.update();
             setTimeout(function() {
-                alert('Level ' + (params.levelIndex + 1) + ' is completed!');
-                params.level.reset();
-                this.nextLevel();
+                var deferred = showModal({
+                    title: 'Congratulations!',
+                    html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
+                    closeButton: true
+                });
+                deferred.done(function() {
+                    params.level.reset();
+                    this.nextLevel();
+                }.bind(this));
             }.bind(this), 50);
         }.bind(this));
 
@@ -208,6 +260,13 @@ define([
         this._moveDirection = Direction.NONE;
 
         $(window).on('keydown', function(event) {
+            if (event.ctrlKey && event.which === 79) {
+                // Ctrl + O
+                event.preventDefault();     // preventing a browser from showing open file dialog
+                this.browseLevelSet();
+                return;
+            }
+
             if (event.ctrlKey && event.altKey && event.which === 82) {
                 // Ctrl + Alt + R
                 this.restartLevel();
@@ -273,16 +332,37 @@ define([
     };
 
     /**
+     * Opens a dialog to choose a level set to load from local computer.
+     *
+     * @see module:Storekeeper#loadLevelSet
+     */
+    Storekeeper.prototype.browseLevelSet = function() {
+        $('#header').find('input.load-level-set:first').trigger('click');
+    };
+
+    /**
      * Loads levels' set by a given source.
      *
      * @param {String} source
      * URL of levels' set to load.
+     *
+     * @see module:Storekeeper#browseLevelSet
+     * @see module:Storekeeper#onLevelSetLoaded
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
-        this._levelSet = new LevelSet({
+        var levelSet = new LevelSet({
+            container: this.container
+        });
+
+        levelSet.load({
             source: source,
-            container: this.container,
-            eventManager: this.eventManager
+            onSucceed: function(params) {
+                if (this._levelSet instanceof LevelSet) {
+                    this._levelSet.destroy();
+                }
+                this._levelSet = levelSet;
+                this.onLevelSetLoaded(source);
+            }.bind(this)
         });
     };
 
@@ -297,6 +377,43 @@ define([
      * Source levels' set was loaded by.
      */
     Storekeeper.prototype.onLevelSetLoaded = function(source) {
+        var jqLevelsDropdown = $('#header').find('a[href="#levels"] ~ .dropdown-menu');
+        jqLevelsDropdown.find('a').each(function() {
+            if ($(this).attr('href') === source) {
+                $(this).parent('li').addClass('active');
+            }
+            else {
+                $(this).parent('li').removeClass('active');
+            }
+        });
+
+        var jqLoadLevelSetItem = jqLevelsDropdown.find('a[href="#load-level-set"]').parent('li');
+        var jqLocalLevelSetItem = jqLevelsDropdown.find('.local-level-set');
+
+        if (window.File && source instanceof window.File) {
+            var levelSetName = source.name;
+
+            if (jqLocalLevelSetItem.length === 0) {
+                jqLocalLevelSetItem = $('<li></li>')
+                    .addClass('local-level-set')
+                    .addClass('active')
+                    .append($('<a></a>')
+                        .text(levelSetName)
+                    );
+                jqLoadLevelSetItem.after(jqLocalLevelSetItem);
+                jqLoadLevelSetItem.after($('<li></li>')
+                    .addClass('divider')
+                );
+            }
+            else {
+                jqLocalLevelSetItem.children('a').text(levelSetName);
+            }
+        }
+        else {
+            jqLocalLevelSetItem.prev('li').remove();
+            jqLocalLevelSetItem.remove();
+        }
+
         this.levelSet.level = 0;
     };
 
@@ -371,7 +488,7 @@ define([
         }
 
         var level = this.levelSet.level;
-        if (!(level instanceof Level)) {
+        if (!(level instanceof Level) || level.isCompleted()) {
             return;
         }
 
@@ -535,17 +652,6 @@ define([
         container: {
             get: function() {
                 return this._container;
-            }
-        },
-        /**
-         * Gets game's event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:Storekeeper.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
             }
         },
         /**

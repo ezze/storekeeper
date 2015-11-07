@@ -1,6 +1,6 @@
 {
   "name": "Storekeeper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/ezze/storekeeperjs",
   "authors": [
     "Dmitriy Pushkov <ezze@ezze.org>"
@@ -14,11 +14,11 @@
   ],
   "dependencies": {
     "bootstrap": "~3.3.0",
-    "easeljs": "~0.7.1",
+    "easeljs": "*",
     "jquery": "~2.1.1",
-    "less": "~2.0.0",
+    "less": "~2.1.0",
     "lodash": "~2.4.1",
     "requirejs": "~2.1.14",
-    "TweenJS": "~0.5.1"
+    "TweenJS": "*"
   }
 }

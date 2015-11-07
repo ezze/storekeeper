@@ -36,9 +36,6 @@ define([
      * @param {Object} options
      * Object with the following properties:
      *
-     * @param {module:EventManager} [options.eventManager]
-     * Instance of event manager.
-     *
      * @param {String} [options.name]
      * Level's name.
      *
@@ -81,7 +78,7 @@ define([
 
         this._boxesOnGoalCount = 0;
 
-        this._eventManager = options.eventManager instanceof EventManager ? options.eventManager : null;
+        this._isTouchEnabled = false;
 
         if (_.isString(options.name) && !_.isEmpty(options.name)) {
             this.name = options.name;
@@ -548,6 +545,7 @@ define([
      */
     Level.prototype.enableTouch = function() {
         Easel.Touch.enable(this._stage);
+        this._isTouchEnabled = true;
     };
 
     /**
@@ -560,21 +558,24 @@ define([
      * @see http://www.createjs.com/Docs/EaselJS/classes/Touch.html
      */
     Level.prototype.disableTouch = function() {
+        if (!this._isTouchEnabled) {
+            return;
+        }
         Easel.Touch.disable(this._stage);
+        this._isTouchEnabled = false;
+    };
+
+    /**
+     * Destroys level's canvas and and disables touch controls.
+     *
+     * @see module Level#disableTouch
+     */
+    Level.prototype.destroy = function() {
+        this.disableTouch();
+        $(this.canvas).remove();
     };
 
     Object.defineProperties(Level.prototype, {
-        /**
-         * Gets instance of event manager.
-         *
-         * @type {module:EventManager}
-         * @memberof module:Level.prototype
-         */
-        eventManager: {
-            get: function() {
-                return this._eventManager;
-            }
-        },
         /**
          * Gets or sets level's name.
          *

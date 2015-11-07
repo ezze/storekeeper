@@ -112,7 +112,7 @@ define([
      * @see module:Direction
      */
     Movable.prototype.move = function(direction) {
-        var eventManager = this.level && this.level.eventManager;
+        var eventManager = EventManager.instance;
 
         var row = this.row;
         var column = this.column;
@@ -143,9 +143,7 @@ define([
                 target: collision.target
             };
 
-            if (eventManager instanceof EventManager) {
-                eventManager.raiseEvent(Movable.EVENT_COLLIDED, onCollidedParams);
-            }
+            eventManager.raiseEvent(Movable.EVENT_COLLIDED, onCollidedParams);
             this.onCollided(onCollidedParams);
 
             this.stop(direction);
@@ -160,9 +158,7 @@ define([
                 movesCount: this._movesCount
             };
 
-            if (eventManager && !eventManager.raiseEvent(
-                Movable.EVENT_BEFORE_MOVED, onBeforeMovedParams)
-            ) {
+            if (!eventManager.raiseEvent(Movable.EVENT_BEFORE_MOVED, onBeforeMovedParams)) {
                 this.stop(direction);
                 return false;
             }
@@ -197,9 +193,7 @@ define([
                 movesCount: this._movesCount
             };
 
-            if (eventManager instanceof EventManager) {
-                eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
-            }
+            eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
             this.onMoved(onMovedParams);
         }
 
@@ -215,9 +209,7 @@ define([
             direction: direction
         };
 
-        if (eventManager instanceof EventManager) {
-            eventManager.raiseEvent(Movable.EVENT_ANIMATED, onAnimatedParams);
-        }
+        eventManager.raiseEvent(Movable.EVENT_ANIMATED, onAnimatedParams);
         this.onAnimated(onAnimatedParams);
 
         return true;
@@ -293,9 +285,7 @@ define([
             direction: direction
         };
 
-        if (this.level.eventManager instanceof EventManager) {
-            this.level.eventManager.raiseEvent(Movable.EVENT_STOPPED, onStoppedParams);
-        }
+        EventManager.instance.raiseEvent(Movable.EVENT_STOPPED, onStoppedParams);
         this.onStopped(onStoppedParams);
     };
 

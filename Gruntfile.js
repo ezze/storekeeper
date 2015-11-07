@@ -12,8 +12,6 @@ module.exports = function(grunt) {
         }
     });
 
-    grunt.loadTasks('grunt/tasks');
-
     grunt.registerTask('css', [
         'copy:fonts',
         'less'

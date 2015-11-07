@@ -1,13 +1,80 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <link rel="stylesheet" type="text/css" href="assets/css/storekeeper.min.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script src="assets/js/storekeeper.min.js"></script>
         <title>Storekeeper</title>
+        <meta charset="utf-8" />
+        <meta name="description" content="JavaScript implementation of classic Sokoban game">
+        <meta name="keywords" content="storekeeper,sokoban,game,logic,puzzle,crossplatform,html,html5,javascript,ezze">
+        <meta name="author" content="Dmitriy Pushkov">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style type="text/css">
+            body.loading * {
+                display: none;
+            }
+        </style>
+        <script type="text/javascript">
+            (function() {
+                var isLoaded = false;
+                window.onload = function onLoaded() {
+                    if (!isLoaded) {
+                        setTimeout(onLoaded, 10);
+                        return;
+                    }
+                    document.querySelector('body').className = '';
+                };
+
+                var headElement = document.querySelector('head');
+
+                if (new RegExp('^\\?debug', 'i').test(window.location.search)) {
+                    // Debug mode
+                    var lessLinkElement = document.createElement('link');
+                    lessLinkElement.setAttribute('rel', 'stylesheet/less');
+                    lessLinkElement.setAttribute('type', 'text/css');
+                    lessLinkElement.setAttribute('href', 'src/less/storekeeper.less');
+                    headElement.appendChild(lessLinkElement);
+
+                    var configScriptElement = document.createElement('script');
+                    configScriptElement.innerHTML = 'var less = less || {}; less.env = \'development\'; ' +
+                        'var require = { urlArgs: \'q=\' + (new Date()).getTime() };';
+                    headElement.appendChild(configScriptElement);
+
+                    var lessScriptElement = document.createElement('script');
+                    lessScriptElement.setAttribute('type', 'text/javascript');
+                    lessScriptElement.setAttribute('src', 'src/lib/less/dist/less.js');
+
+                    lessScriptElement.onload = function() {
+                        var requireScriptElement = document.createElement('script');
+                        requireScriptElement.setAttribute('type', 'text/javascript');
+                        requireScriptElement.setAttribute('data-main', 'src/app/app');
+                        requireScriptElement.setAttribute('src', 'src/lib/requirejs/require.js');
+                        requireScriptElement.onload = function() {
+                            isLoaded = true;
+                        };
+                        headElement.appendChild(requireScriptElement);
+                    };
+                    headElement.appendChild(lessScriptElement);
+                }
+                else {
+                    // Production mode
+                    var cssLinkElement = document.createElement('link');
+                    cssLinkElement.setAttribute('rel', 'stylesheet');
+                    cssLinkElement.setAttribute('type', 'text/css');
+                    cssLinkElement.setAttribute('href', 'assets/css/storekeeper.min.css');
+                    headElement.appendChild(cssLinkElement);
+
+                    var scriptElement = document.createElement('script');
+                    scriptElement.setAttribute('type', 'text/javascript');
+                    scriptElement.setAttribute('src', 'assets/js/storekeeper.min.js');
+                    scriptElement.onload = function() {
+                        isLoaded = true;
+                    };
+                    headElement.appendChild(scriptElement);
+                }
+            }());
+        </script>
     </head>
 
-    <body>
+    <body class="loading">
 
         <div id="header" class="navbar navbar-default navbar-fixed-top" role="navigation">
             <div class="container-fluid">
@@ -24,7 +91,35 @@
                 <div class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
                         <li>
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Game <span class="caret"></span></a>
+                            <a href="#levels" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Levels <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href="#load-level-set">
+                                        <span>Open... <small>Ctrl+O</small></span>
+                                    </a>
+                                    <input class="load-level-set" type="file" />
+                                </li>
+                                <li class="divider"></li>
+                                <li><a href="levels/classic.json">Classic</a></li>
+                                <li class="divider"></li>
+                                <li><a href="levels/sasquatch-01.sok">Sasquatch 1</a></li>
+                                <li><a href="levels/sasquatch-02.sok">Sasquatch 2</a></li>
+                                <li><a href="levels/sasquatch-03.sok">Sasquatch 3</a></li>
+                                <li><a href="levels/sasquatch-04.sok">Sasquatch 4</a></li>
+                                <li><a href="levels/sasquatch-05.sok">Sasquatch 5</a></li>
+                                <li><a href="levels/sasquatch-06.sok">Sasquatch 6</a></li>
+                                <li><a href="levels/sasquatch-07.sok">Sasquatch 7</a></li>
+                                <li><a href="levels/sasquatch-08.sok">Sasquatch 8</a></li>
+                                <li><a href="levels/sasquatch-09.sok">Sasquatch 9</a></li>
+                                <li><a href="levels/sasquatch-10.sok">Sasquatch 10</a></li>
+                                <li><a href="levels/sasquatch-11.sok">Sasquatch 11</a></li>
+                                <li><a href="levels/sasquatch-12.sok">Sasquatch 12</a></li>
+                                <li class="divider"></li>
+                                <li><a href="levels/haikemono.sok">Haikemono</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#game" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Game <span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
                                 <li>
                                     <a href="#next-level">
@@ -43,12 +138,27 @@
                                 </li>
                             </ul>
                         </li>
+                        <li>
+                            <a href="#help" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Help <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href="https://github.com/ezze/storekeeperjs">
+                                        <span>View source</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://github.com/ezze/storekeeperjs/issues">
+                                        <span>Report a bug</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
 
                     <p class="level navbar-text">
                         <strong class="name"></strong> <span class="value"></span>
                     </p>
-                    <div class="navbar-right">
+                    <div class="navbar-right hidden-md">
                         <p class="boxes-count navbar-text">
                             <strong class="name"></strong> <span class="value"></span>
                         </p>

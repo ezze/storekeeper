@@ -27,7 +27,7 @@ module.exports = function(grunt) {
                 out: 'assets/js/storekeeper.' + item + '.js',
                 optimize: item === 'combined' ? 'none' : 'uglify2',
                 preserveLicenseComments: false,
-                generateSourceMaps: item === 'min',
+                generateSourceMaps: false,
                 findNestedDependencies: true,
                 map: config.map,
                 paths: config.paths,
