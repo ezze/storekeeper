@@ -2,11 +2,11 @@
  * @module Storekeeper
  */
 define([
+    'backbone',
     'bootstrap',
     'easel',
     'jquery',
     'lodash',
-    './event-manager',
     './show-modal',
     './level/direction',
     './level/level',
@@ -15,11 +15,11 @@ define([
     './level/object/movable',
     './level/object/worker'
 ], function(
+    Backbone,
     Bootstrap,
     Easel,
     $,
     _,
-    EventManager,
     showModal,
     Direction,
     Level,
@@ -81,6 +81,8 @@ define([
         $(window).on('resize', this.onWindowResize);
     };
 
+    _.extend(Storekeeper.prototype, Backbone.Events);
+
     /**
      * Initializes the game.
      *
@@ -91,14 +93,6 @@ define([
         this.initEvents();
         this.enableUserControls();
         this.initTicker();
-    };
-
-    /**
-     * Initializes rendering ticker.
-     */
-    Storekeeper.prototype.initTicker = function() {
-        Easel.Ticker.setFPS(30);
-        Easel.Ticker.addEventListener('tick', this.onAnimationFrame.bind(this));
     };
 
     Storekeeper.prototype.initCommands = function() {
@@ -142,84 +136,15 @@ define([
      * @protected
      */
     Storekeeper.prototype.initEvents = function() {
-        var eventManager = EventManager.instance;
-
-        eventManager.on([
-            LevelSet.EVENT_LEVEL_CHANGED,
-            LevelSet.EVENT_LEVEL_RESTARTED
-        ], function(eventName, params) {
-            var level = params.level;
-
-            this.updateInfo({
-                levelNumber: params.index + 1,
-                boxesCount: level.boxesCount,
-                boxesOnGoalCount: level.boxesOnGoalCount,
-                pushesCount: 0,
-                movesCount: level.worker.movesCount
-            });
-
-            level.resize(false);
-            level.update();
-        }.bind(this));
-
-        eventManager.on(LevelSet.EVENT_LEVEL_COMPLETED, function(eventName, params) {
-            params.level.update();
-            setTimeout(function() {
-                var deferred = showModal({
-                    title: 'Congratulations!',
-                    html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
-                    closeButton: true
-                });
-                deferred.done(function() {
-                    params.level.reset();
-                    this.nextLevel();
-                }.bind(this));
-            }.bind(this), 50);
-        }.bind(this));
-
-        eventManager.on([
-            Box.EVENT_MOVED_ON_GOAL,
-            Box.EVENT_MOVED_OUT_OF_GOAL
-        ], function(eventName, params) {
-            var level = params.box.level;
-            this.updateInfo({
-                boxesCount: level.boxesCount,
-                boxesOnGoalCount: level.boxesOnGoalCount
-            });
-        }.bind(this));
-
-        eventManager.on(Movable.EVENT_MOVED, function(eventName, params) {
-            if (params.object instanceof Box) {
-                // TODO: optimize if possible
-                var pushesCount = 0;
-                _.forEach(params.object.level.boxes, function(box) {
-                    pushesCount += box.movesCount;
-                });
-                this.updateInfo({
-                    pushesCount: pushesCount
-                });
-            }
-            else if (params.object instanceof Worker) {
-                this.updateInfo({
-                    movesCount: params.object.movesCount
-                });
-                this.levelSet.level.adjustCamera({
-                    cancel: false,
-                    smooth: true,
-                    delay: 50
-                });
-            }
-        }.bind(this));
-
-        eventManager.on([
-            Movable.EVENT_ANIMATED,
-            Movable.EVENT_STOPPED
-        ], function(eventName, params) {
-            if (!(params.object instanceof Worker)) {
-                return;
-            }
-            params.object.level.update();
-        });
+        var vent = this._app.vent;
+        this.listenTo(vent, LevelSet.EVENT_LEVEL_CHANGE, this.onLevelChange);
+        this.listenTo(vent, LevelSet.EVENT_LEVEL_RESTART, this.onLevelChange);
+        this.listenTo(vent, LevelSet.EVENT_LEVEL_COMPLETE, this.onLevelComplete);
+        this.listenTo(vent, Box.EVENT_MOVE_ON_GOAL, this.onBoxMove);
+        this.listenTo(vent, Box.EVENT_MOVE_OUT_OF_GOAL, this.onBoxMove);
+        this.listenTo(vent, Movable.EVENT_MOVE, this.onMovableMove);
+        this.listenTo(vent, Movable.EVENT_ANIMATE, this.onMovableAnimate);
+        this.listenTo(vent, Movable.EVENT_STOP, this.onMovableAnimate);
     };
 
     /**
@@ -249,6 +174,40 @@ define([
     };
 
     /**
+     * Initializes rendering ticker.
+     */
+    Storekeeper.prototype.initTicker = function() {
+        Easel.Ticker.setFPS(30);
+        Easel.Ticker.addEventListener('tick', this.onAnimationFrame);
+    };
+
+    /**
+     * Triggers an event with updated level information.
+     *
+     * @param {Object} info
+     * Object consisting of values to update:
+     *
+     * @param {Number} [info.levelNumber]
+     * Order number of current active level.
+     *
+     * @param {Number} [info.boxesCount]
+     * Overall count of boxes belonging to current level.
+     *
+     * @param {Number} [info.boxesOnGoalCount]
+     * Count of boxes belonging to current level and already placed on goals.
+     *
+     * @param {Number} [info.pushesCount]
+     * Count of boxes' pushes caused by the worker.
+     *
+     * @param {Number} [info.movesCount]
+     * Count of moves performed by the worker.
+     */
+    Storekeeper.prototype.updateLevelInfo = function(info) {
+        info = info || {};
+        this._app.vent.trigger('level-info-update', info);
+    };
+
+    /**
      * Loads levels' set by a given source.
      *
      * @param {String} source
@@ -259,6 +218,7 @@ define([
      */
     Storekeeper.prototype.loadLevelSet = function(source) {
         var levelSet = new LevelSet({
+            app: this._app,
             container: this.container
         });
 
@@ -268,27 +228,13 @@ define([
                 if (this._levelSet instanceof LevelSet) {
                     this._levelSet.destroy();
                 }
-                this._levelSet = levelSet;
 
-                this.onLevelSetLoad(source);
+                this._levelSet = levelSet;
+                this._levelSet.level = 0;
 
                 this._app.vent.trigger('level-set-load', source);
             }.bind(this)
         });
-    };
-
-    /**
-     * A method to invoke when levels' set is loaded.
-     *
-     * <p>Starts playing a first level of loaded set.</p>
-     *
-     * @protected
-     *
-     * @param {String} source
-     * Source levels' set was loaded by.
-     */
-    Storekeeper.prototype.onLevelSetLoad = function(source) {
-        this.levelSet.level = 0;
     };
 
     /**
@@ -370,30 +316,72 @@ define([
         worker.move(this._moveDirection);
     };
 
-    /**
-     * Updates current game information in navigation bar.
-     *
-     * @param {Object} info
-     * Object consisting of values to update:
-     *
-     * @param {Number} [info.levelNumber]
-     * Order number of current active level.
-     *
-     * @param {Number} [info.boxesCount]
-     * Overall count of boxes belonging to current level.
-     *
-     * @param {Number} [info.boxesOnGoalCount]
-     * Count of boxes belonging to current level and already placed on goals.
-     *
-     * @param {Number} [info.pushesCount]
-     * Count of boxes' pushes caused by the worker.
-     *
-     * @param {Number} [info.movesCount]
-     * Count of moves performed by the worker.
-     */
-    Storekeeper.prototype.updateInfo = function(info) {
-        info = info || {};
-        this._app.vent.trigger('level-info-update', info);
+    Storekeeper.prototype.onLevelChange = function(params) {
+        var level = params.level;
+
+        this.updateLevelInfo({
+            levelNumber: params.index + 1,
+            boxesCount: level.boxesCount,
+            boxesOnGoalCount: level.boxesOnGoalCount,
+            pushesCount: 0,
+            movesCount: level.worker.movesCount
+        });
+
+        level.resize(false);
+        level.update();
+    };
+
+    Storekeeper.prototype.onLevelComplete = function(params) {
+        params.level.update();
+        setTimeout(function() {
+            var deferred = showModal({
+                title: 'Congratulations!',
+                html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
+                closeButton: true
+            });
+            deferred.done(function() {
+                params.level.reset();
+                this.nextLevel();
+            }.bind(this));
+        }.bind(this), 50);
+    };
+
+    Storekeeper.prototype.onBoxMove = function(params) {
+        var level = params.box.level;
+        this.updateLevelInfo({
+            boxesCount: level.boxesCount,
+            boxesOnGoalCount: level.boxesOnGoalCount
+        });
+    };
+
+    Storekeeper.prototype.onMovableMove = function(params) {
+        if (params.object instanceof Box) {
+            // TODO: optimize if possible
+            var pushesCount = 0;
+            _.forEach(params.object.level.boxes, function(box) {
+                pushesCount += box.movesCount;
+            });
+            this.updateLevelInfo({
+                pushesCount: pushesCount
+            });
+        }
+        else if (params.object instanceof Worker) {
+            this.updateLevelInfo({
+                movesCount: params.object.movesCount
+            });
+            this.levelSet.level.adjustCamera({
+                cancel: false,
+                smooth: true,
+                delay: 50
+            });
+        }
+    };
+
+    Storekeeper.prototype.onMovableAnimate = function(params) {
+        if (!(params.object instanceof Worker)) {
+            return;
+        }
+        params.object.level.update();
     };
 
     Storekeeper.prototype.onWindowResize = function() {

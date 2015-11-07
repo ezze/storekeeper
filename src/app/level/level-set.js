@@ -2,23 +2,23 @@
  * @module LevelSet
  */
 define([
+    'backbone',
     'jquery',
     'lodash',
     './level',
     './loader/loader',
     './loader/loader-json',
     './loader/loader-sok',
-    './object/box',
-    '../event-manager'
+    './object/box'
 ], function(
+    Backbone,
     $,
     _,
     Level,
     Loader,
     LoaderJson,
     LoaderSok,
-    Box,
-    EventManager
+    Box
 ) {
     'use strict';
 
@@ -37,30 +37,16 @@ define([
      * @class
      */
     var LevelSet = function(options) {
+        if (!(options.app)) {
+            throw new Error('Application is invalid or not specified.');
+        }
+
         if (!(options.container instanceof HTMLElement)) {
             throw new Error('Container is invalid or not specified.');
         }
+
+        this._app = options.app;
         this._container = options.container;
-
-        this._onBoxMovedOnGoal = function(eventName, params) {
-            var level = params.box.level;
-            if (!level.isCompleted()) {
-                return;
-            }
-
-            var onLevelCompletedParams = {
-                levelSet: this,
-                level: level,
-                levelIndex: this.levelIndex
-            };
-
-            EventManager.instance.raiseEvent(LevelSet.EVENT_LEVEL_COMPLETED, onLevelCompletedParams);
-            this.onLevelCompleted(onLevelCompletedParams);
-        }.bind(this);
-
-        EventManager.instance.on([
-            Box.EVENT_MOVED_ON_GOAL
-        ], this._onBoxMovedOnGoal);
 
         this._name = '';
         this._description = '';
@@ -68,7 +54,11 @@ define([
         this._levelIndex = -1;
         this._level = null;
         this._levels = [];
+
+        this.listenTo(this._app.vent, Box.EVENT_MOVE_ON_GOAL, this.onBoxMoveOnGoal);
     };
+
+    _.extend(LevelSet.prototype, Backbone.Events);
 
     /**
      * Name of an event raised when active level is changed.
@@ -77,7 +67,7 @@ define([
      *
      * @see module:LevelSet#level
      */
-    LevelSet.EVENT_LEVEL_CHANGED = 'levelSet:levelChanged';
+    LevelSet.EVENT_LEVEL_CHANGE = 'level-set:level-change';
 
     /**
      * Name of an event raised when level is completed.
@@ -86,7 +76,7 @@ define([
      *
      * @see module:Level#isCompleted
      */
-    LevelSet.EVENT_LEVEL_COMPLETED = 'levelSet:levelCompleted';
+    LevelSet.EVENT_LEVEL_COMPLETE = 'level-set:level-complete';
 
     /**
      * Name of an event raised when active level is restarted.
@@ -96,7 +86,7 @@ define([
      * @see module:LevelSet#restart
      * @see module:Level#reset
      */
-    LevelSet.EVENT_LEVEL_RESTARTED = 'levelSet:levelRestarted';
+    LevelSet.EVENT_LEVEL_RESTART = 'level-set:level-restart';
 
     /**
      * Loads level set.
@@ -172,7 +162,9 @@ define([
 
                 var jqContainer = $(this.container);
                 _.forEach(loader.levels, function(levelData) {
-                    var level = new Level(levelData);
+                    var level = new Level(_.extend({
+                        app: this._app
+                    }, levelData));
                     this.add(level);
                     $(level.canvas)
                         .attr('width', jqContainer.width())
@@ -291,14 +283,14 @@ define([
     LevelSet.prototype.restart = function() {
         this._level.reset();
 
-        var onLevelRestartedParams = {
+        var levelRestartParams = {
             levelSet: this,
             level: this.level,
             index: this.levelIndex
         };
 
-        EventManager.instance.raiseEvent(LevelSet.EVENT_LEVEL_RESTARTED, onLevelRestartedParams);
-        this.onLevelRestarted(onLevelRestartedParams);
+        this._app.vent.trigger(LevelSet.EVENT_LEVEL_RESTART, levelRestartParams);
+        this.onLevelRestart(levelRestartParams);
     };
 
     /**
@@ -309,7 +301,7 @@ define([
      *
      * @see module:LevelSet#isCompleted
      */
-    LevelSet.prototype.onLevelCompleted = function(params) {};
+    LevelSet.prototype.onLevelComplete = function(params) {};
 
     /**
      * Method being called when level is changed.
@@ -319,7 +311,7 @@ define([
      *
      * @see module:LevelSet#level
      */
-    LevelSet.prototype.onLevelChanged = function(params) {};
+    LevelSet.prototype.onLevelChange = function(params) {};
 
     /**
      * Method being called when level is restarted.
@@ -329,19 +321,31 @@ define([
      *
      * @see module:LevelSet#restart
      */
-    LevelSet.prototype.onLevelRestarted = function(params) {};
+    LevelSet.prototype.onLevelRestart = function(params) {};
 
     /**
      * Method that should be called to unload the set.
      */
     LevelSet.prototype.destroy = function() {
-        if (_.isFunction(this._onBoxMovedOnGoal)) {
-            EventManager.instance.off(Box.EVENT_MOVED_ON_GOAL, this._onBoxMovedOnGoal);
-        }
-
         _.forEach(this._levels, function(level) {
             level.destroy();
         });
+    };
+
+    LevelSet.prototype.onBoxMoveOnGoal = function(params) {
+        var level = params.box.level;
+        if (!level.isCompleted()) {
+            return;
+        }
+
+        var levelCompleteParams = {
+            levelSet: this,
+            level: level,
+            levelIndex: this.levelIndex
+        };
+
+        this._app.vent.trigger(LevelSet.EVENT_LEVEL_COMPLETE, levelCompleteParams);
+        this.onLevelComplete(levelCompleteParams);
     };
 
     Object.defineProperties(LevelSet.prototype, {
@@ -424,14 +428,14 @@ define([
                     }
                 });
 
-                var onLevelChangedParams = {
+                var levelChangeParams = {
                     levelSet: this,
                     level: this.level,
                     index: this.levelIndex
                 };
 
-                EventManager.instance.raiseEvent(LevelSet.EVENT_LEVEL_CHANGED, onLevelChangedParams);
-                this.onLevelChanged(onLevelChangedParams);
+                this._app.vent.trigger(LevelSet.EVENT_LEVEL_CHANGE, levelChangeParams);
+                this.onLevelChange(levelChangeParams);
             }
         },
         /**

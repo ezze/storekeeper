@@ -4,13 +4,11 @@
 define([
     'lodash',
     './scene-object',
-    '../direction',
-    '../../event-manager'
+    '../direction'
 ], function(
     _,
     SceneObject,
-    Direction,
-    EventManager
+    Direction
 ) {
     'use strict';
 
@@ -50,35 +48,35 @@ define([
      *
      * @type {String}
      */
-    Movable.EVENT_ANIMATED = 'movable:animated';
+    Movable.EVENT_ANIMATE = 'movable:animate';
 
     /**
      * Name of an event raised just before movable scene object starts atomic move.
      *
      * @type {String}
      */
-    Movable.EVENT_BEFORE_MOVED = 'movable:beforeMoved';
+    Movable.EVENT_BEFORE_MOVE = 'movable:before-move';
 
     /**
      * Name of an event raised when movable scene object's atomic move is over.
      *
      * @type {String}
      */
-    Movable.EVENT_MOVED = 'movable:moved';
+    Movable.EVENT_MOVE = 'movable:move';
 
     /**
      * Name of an event raised when movable scene object is collided with another scene object.
      *
      * @type {String}
      */
-    Movable.EVENT_COLLIDED = 'movable:collided';
+    Movable.EVENT_COLLIDE = 'movable:collide';
 
     /**
      * Name of an event raised when movable scene object is stopped.
      *
      * @type {String}
      */
-    Movable.EVENT_STOPPED = 'movable:stopped';
+    Movable.EVENT_STOP = 'movable:stop';
 
     Movable.prototype = Object.create(SceneObject.prototype);
 
@@ -110,10 +108,9 @@ define([
      * @see module:Direction
      */
     Movable.prototype.move = function(direction) {
-        var eventManager = EventManager.instance;
-
-        var row = this.row;
-        var column = this.column;
+        var vent = this._app.vent,
+            row = this.row,
+            column = this.column;
 
         // Checking whether object's atomic move is in progress
         if (this.isMoving()) {
@@ -135,14 +132,14 @@ define([
         // in a given direction
         var collision;
         if (!this.isMoving() && (collision = this.detectCollision(direction)).detected) {
-            var onCollidedParams = {
+            var collideParams = {
                 object: this,
                 direction: direction,
                 target: collision.target
             };
 
-            eventManager.raiseEvent(Movable.EVENT_COLLIDED, onCollidedParams);
-            this.onCollided(onCollidedParams);
+            vent.trigger(Movable.EVENT_COLLIDE, collideParams);
+            this.onCollide(collideParams);
 
             this.stop(direction);
             return false;
@@ -150,18 +147,18 @@ define([
 
         if (!this.isMoving()) {
             // A chance to prevent atomic move's start through event handlers
-            var onBeforeMovedParams = {
+            var beforeMoveParams = {
                 object: this,
                 direction: direction,
                 movesCount: this._movesCount
             };
 
-            if (!eventManager.raiseEvent(Movable.EVENT_BEFORE_MOVED, onBeforeMovedParams)) {
+            if (!vent.trigger(Movable.EVENT_BEFORE_MOVE, beforeMoveParams)) {
                 this.stop(direction);
                 return false;
             }
 
-            if (!this.onBeforeMoved(onBeforeMovedParams)) {
+            if (!this.onBeforeMove(beforeMoveParams)) {
                 this.stop(direction);
                 return false;
             }
@@ -185,14 +182,14 @@ define([
         if (!this.isMoving()) {
             this._movesCount += 1;
 
-            var onMovedParams = {
+            var moveParams = {
                 object: this,
                 direction: direction,
                 movesCount: this._movesCount
             };
 
-            eventManager.raiseEvent(Movable.EVENT_MOVED, onMovedParams);
-            this.onMoved(onMovedParams);
+            vent.trigger(Movable.EVENT_MOVE, moveParams);
+            this.onMove(moveParams);
         }
 
         // Animating recent calculations - both the object and a target object (if present) affected by collision
@@ -202,13 +199,13 @@ define([
         this.play(direction);
 
         // Raising an event on each animation frame
-        var onAnimatedParams = {
+        var animateParams = {
             object: this,
             direction: direction
         };
 
-        eventManager.raiseEvent(Movable.EVENT_ANIMATED, onAnimatedParams);
-        this.onAnimated(onAnimatedParams);
+        vent.trigger(Movable.EVENT_ANIMATE, animateParams);
+        this.onAnimate(animateParams);
 
         return true;
     };
@@ -278,13 +275,13 @@ define([
 
         this._moveDirection = Direction.NONE;
 
-        var onStoppedParams = {
+        var stopParams = {
             object: this,
             direction: direction
         };
 
-        EventManager.instance.raiseEvent(Movable.EVENT_STOPPED, onStoppedParams);
-        this.onStopped(onStoppedParams);
+        this._app.vent.trigger(Movable.EVENT_STOP, stopParams);
+        this.onStop(stopParams);
     };
 
     /**
@@ -355,7 +352,7 @@ define([
      *
      * @see module:Movable#move
      */
-    Movable.prototype.onBeforeMoved = function(params) {
+    Movable.prototype.onBeforeMove = function(params) {
         return true;
     };
 
@@ -377,7 +374,7 @@ define([
      *
      * @see module:Movable#move
      */
-    Movable.prototype.onMoved = function(params) {};
+    Movable.prototype.onMove = function(params) {};
 
     /**
      * This method will be called when each next step of scene object's
@@ -394,7 +391,7 @@ define([
      *
      * @see module:Movable#move
      */
-    Movable.prototype.onAnimated = function(params) {};
+    Movable.prototype.onAnimate = function(params) {};
 
     /**
      * This method will be called when scene object is collided with another scene object
@@ -414,7 +411,7 @@ define([
      *
      * @see module:Movable#move
      */
-    Movable.prototype.onCollided = function(params) {};
+    Movable.prototype.onCollide = function(params) {};
 
     /**
      * This method will be called when sequential atomic moves of
@@ -431,7 +428,7 @@ define([
      *
      * @see module:Movable#move
      */
-    Movable.prototype.onStopped = function(params) {};
+    Movable.prototype.onStop = function(params) {};
 
     Object.defineProperties(Movable.prototype, {
         /**

@@ -54,6 +54,12 @@ define([
      * @class
      */
     var Level = function(options) {
+        if (!_.isObject(options.app)) {
+            throw new Error('Application is invalid or not specified.');
+        }
+
+        this._app = options.app;
+
         this._canvas = document.createElement('canvas');
         this._stage = new Easel.Stage(this._canvas);
 
@@ -146,6 +152,7 @@ define([
      */
     Level.prototype.createObject = function(character, row, column) {
         var options = {
+            app: this._app,
             level: this,
             row: row,
             column: column

@@ -3,11 +3,13 @@
  */
 define([
     'require',
+    'backbone',
     'easel',
     'lodash',
     '../sprite-sheet'
 ], function(
     require,
+    Backbone,
     Easel,
     _,
     spriteSheet
@@ -38,6 +40,10 @@ define([
      * @class
      */
     var SceneObject = function(options) {
+        if (!options.app) {
+            throw new Error('Application is invalid or not specified.');
+        }
+
         if (!options.level instanceof require('../level')) {
             throw new Error('Level is invalid or not specified.');
         }
@@ -49,6 +55,8 @@ define([
         if (!_.isNumber(options.column) || options.column % 1 !== 0) {
             throw new Error('Scene object\'s column must be an integer.');
         }
+
+        this._app = options.app;
 
         this._name = '';
 
@@ -63,6 +71,8 @@ define([
 
         this.updatePixels();
     };
+
+    _.extend(SceneObject.prototype, Backbone.Events);
 
     /**
      * Calculates left offset of the object in pixels by its column index.

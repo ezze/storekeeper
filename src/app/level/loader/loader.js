@@ -3,12 +3,10 @@
  */
 define([
     'jquery',
-    'lodash',
-    '../../event-manager'
+    'lodash'
 ], function(
     $,
-    _,
-    EventManager
+    _
 ) {
     'use strict';
 
