@@ -8,7 +8,7 @@ This is JavaScript implementation of Sokoban game.
 
     - Ubuntu:
 
-        sudo apt-get install nodejs npm
+            sudo apt-get install nodejs npm
 
 2. Install [Grunt.js command line interface](http://gruntjs.com/) globally:
 
@@ -34,4 +34,4 @@ This is JavaScript implementation of Sokoban game.
 
 Before making a pull request, please, be sure that your changes are rebased to `dev` branch.
 
-Special thanks to [Ivan Lobanov](https://github.com/arkhemlol) for contributing.
+Special thanks to [arkhemlol](https://github.com/arkhemlol) for contributing.
