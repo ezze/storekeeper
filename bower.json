@@ -1,7 +1,6 @@
 {
   "name": "Storekeeper",
-  "version": "0.1.1",
-  "homepage": "https://github.com/ezze/storekeeperjs",
+  "homepage": "https://github.com/ezze/storekeeper",
   "authors": [
     "Dmitriy Pushkov <ezze@ezze.org>"
   ],

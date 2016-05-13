@@ -1,6 +1,6 @@
 {
   "name": "Storekeeper",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "JavaScript implementation of Sokoban game",
   "main": "src/app/app.js",
   "scripts": {
@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/ezze/storekeeperjs"
+    "url": "git://github.com/ezze/storekeeper"
   },
   "author": "Dmitriy Pushkov",
   "license": "Apache 2.0",
   "bugs": {
-    "url": "https://github.com/ezze/storekeeperjs/issues"
+    "url": "https://github.com/ezze/storekeeper/issues"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
