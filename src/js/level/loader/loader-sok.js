@@ -44,7 +44,7 @@ LoaderSok.prototype.parse = function(data) {
 
     // TODO: implement reading metadata (titles, descriptions, etc.)
 
-    _.forEach(lines, function(line, i) {
+    _.each(lines, function(line, i) {
         line = line.replace(/\r$/, '');
 
         if (commentRegExp.test(line)) {

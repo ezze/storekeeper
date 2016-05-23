@@ -218,17 +218,17 @@ Level.prototype.addObject = function(object) {
  * @see module:Level#reset
  */
 Level.prototype.addObjectsToStage = function() {
-    _.forEach(this._walls, function(wall) {
+    _.each(this._walls, _.bind(function(wall) {
         this.addObjectToStage(wall);
-    }, this);
+    }, this));
 
-    _.forEach(this._goals, function(goal) {
+    _.each(this._goals, _.bind(function(goal) {
         this.addObjectToStage(goal);
-    }, this);
+    }, this));
 
-    _.forEach(this._boxes, function(box) {
+    _.each(this._boxes, _.bind(function(box) {
         this.addObjectToStage(box);
-    }, this);
+    }, this));
 
     this.addObjectToStage(this._worker);
 };
@@ -278,12 +278,12 @@ Level.prototype.getObjects = function(row, column) {
         objects.push(this._worker);
     }
 
-    _.forEach([
+    _.each([
         this._walls,
         this._goals,
         this._boxes
     ], function(objectsStack) {
-        _.forEach(objectsStack, function(object) {
+        _.each(objectsStack, function(object) {
             if (object.row === row && object.column === column) {
                 objects.push(object);
                 return false;

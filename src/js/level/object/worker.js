@@ -47,7 +47,7 @@ Worker.prototype.detectCollision = function(direction) {
     };
 
     var targetObjects = this.getMoveTargetObjects(direction);
-    _.forEach(targetObjects, function(object) {
+    _.each(targetObjects, function(object) {
         if (object instanceof Wall) {
             // Wall doesn't allow the worker to move in any case
             collision = {

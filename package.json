@@ -21,7 +21,7 @@
     "backbone.marionette": "2.4.5",
     "bootstrap": "^3.3.6",
     "jquery": "^2.2.3",
-    "lodash": "^3.9.3"
+    "lodash": "^4.13.1"
   },
   "devDependencies": {
     "babel-core": "^6.9.0",
@@ -39,7 +39,7 @@
     "grunt-jsdoc": "~0.5.7",
     "imports-loader": "^0.6.5",
     "load-grunt-config": "~0.16.0",
-    "lodash": "~3.9.3",
+    "lodash": "^4.13.1",
     "mustache-loader": "^0.3.1",
     "webpack": "^1.13.0",
     "webpack-dev-server": "^1.14.1"

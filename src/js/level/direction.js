@@ -54,7 +54,7 @@ var Direction = {
  * @see module:Direction.isValidVertical
  */
 Direction.isValid = function(direction) {
-    return _.contains([
+    return _.includes([
         Direction.NONE,
         Direction.LEFT,
         Direction.RIGHT,
@@ -75,7 +75,7 @@ Direction.isValid = function(direction) {
  * @see module:Direction.isValidVertical
  */
 Direction.isValidHorizontal = function(direction) {
-    return _.contains([
+    return _.includes([
         Direction.LEFT,
         Direction.RIGHT
     ], direction);
@@ -93,7 +93,7 @@ Direction.isValidHorizontal = function(direction) {
  * @see module:Direction.isValidHorizontal
  */
 Direction.isValidVertical = function(direction) {
-    return _.contains([
+    return _.includes([
         Direction.UP,
         Direction.DOWN
     ], direction);

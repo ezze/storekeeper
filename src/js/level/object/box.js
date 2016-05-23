@@ -63,7 +63,7 @@ Box.prototype.detectCollision = function(direction) {
     };
 
     var targetObjects = this.getMoveTargetObjects(direction);
-    _.forEach(targetObjects, function(object) {
+    _.each(targetObjects, function(object) {
         if (object instanceof Wall || object instanceof Box) {
             // Wall or another box don't allow the box being moved
             collision = {
@@ -85,7 +85,7 @@ Box.prototype.onBeforeMove = function(params) {
     var isOutOfGoal = false;
 
     var sourceObjects = this.level.getObjects(this.row, this.column);
-    _.forEach(sourceObjects, function(object) {
+    _.each(sourceObjects, function(object) {
         if (object instanceof Goal) {
             // Box is on goal just before moving
             isOutOfGoal = true;
@@ -95,7 +95,7 @@ Box.prototype.onBeforeMove = function(params) {
 
     if (isOutOfGoal) {
         var targetObjects = this.getMoveTargetObjects(params.direction);
-        _.forEach(targetObjects, function(object) {
+        _.each(targetObjects, function(object) {
             if (object instanceof Goal) {
                 // Box will move on another goal
                 isOutOfGoal = false;
@@ -116,7 +116,7 @@ Box.prototype.onMove = function(params) {
         isTargetGoal = false;
 
     var sourceOjbects = this.getMoveTargetObjects(Direction.getCounterDirection(params.direction));
-    _.forEach(sourceOjbects, function(object) {
+    _.each(sourceOjbects, function(object) {
         if (object instanceof Goal) {
             // Box is moved from goal
             isSourceGoal = true;
@@ -125,7 +125,7 @@ Box.prototype.onMove = function(params) {
     });
 
     var targetObjects = this.level.getObjects(this.row, this.column);
-    _.forEach(targetObjects, function(object) {
+    _.each(targetObjects, function(object) {
         if (object instanceof Goal) {
             // Box is moved on goal
             isTargetGoal = true;

@@ -1,22 +1,32 @@
 'use strict';
 
-var Backbone = require('backbone'),
-    Bootstrap = require('bootstrap'),
-    Easel = require('easel'),
-    $ = require('jquery'),
-    _ = require('lodash'),
-    showModal = require('./show-modal'),
-    Direction = require('./level/direction'),
-    Level = require('./level/level'),
-    LevelSet = require('./level/level-set'),
-    Box = require('./level/object/box'),
-    Movable = require('./level/object/movable'),
-    Worker = require('./level/object/worker');
+import Backbone from 'backbone';
+import Easel from 'easel';
+
+import $ from 'jquery';
+import _ from 'lodash';
+import Bootstrap from 'bootstrap';
+
+import showModal from './show-modal';
+
+import Direction from './level/direction';
+import Level from './level/level';
+import LevelSet from './level/level-set';
+import Box from './level/object/box';
+import Movable from './level/object/movable';
+import Worker from './level/object/worker';
 
 var Storekeeper = function(options) {
-    _.bindAll(this);
+    _.bindAll(this, [
+        'onWindowResize',
+        'onAnimationFrame',
+        'onKeyDown',
+        'onKeyUp',
+        'onTouchStart',
+        'onTouchEnd'
+    ]);
 
-    $(document).ready(function() {
+    $(document).ready(_.bind(function() {
         if (!_.isObject(options.app)) {
             throw new Error('Application is not defined or invalid.');
         }
@@ -41,10 +51,11 @@ var Storekeeper = function(options) {
 
         this.init();
         this.loadLevelSet(options.levelSetSource);
-    }.bind(this));
+    }, this));
 
     $(window).on('resize', this.onWindowResize);
 };
+
 
 _.extend(Storekeeper.prototype, Backbone.Events);
 
@@ -71,7 +82,7 @@ Storekeeper.prototype.initCommands = function() {
         'next-level',
         'previous-level',
         'restart-level'
-    ], function(command) {
+    ], _.bind(function(command) {
         methodName = _.camelCase(command);
         if (!_.isFunction(this[methodName])) {
             return;
@@ -90,7 +101,7 @@ Storekeeper.prototype.initCommands = function() {
                 }
             };
         }, this)(methodName);
-    }, this);
+    }, this));
 
     commands.setHandlers(handlerOptions);
 };
@@ -189,7 +200,7 @@ Storekeeper.prototype.loadLevelSet = function(source) {
 
     levelSet.load({
         source: source,
-        onSucceed: function(params) {
+        onSucceed: _.bind(function(params) {
             if (this._levelSet instanceof LevelSet) {
                 this._levelSet.destroy();
             }
@@ -198,7 +209,7 @@ Storekeeper.prototype.loadLevelSet = function(source) {
             this._levelSet.level = 0;
 
             this._app.vent.trigger('level-set-load', source);
-        }.bind(this)
+        }, this)
     });
 };
 
@@ -298,17 +309,17 @@ Storekeeper.prototype.onLevelChange = function(params) {
 
 Storekeeper.prototype.onLevelComplete = function(params) {
     params.level.update();
-    setTimeout(function() {
+    setTimeout(_.bind(function() {
         var deferred = showModal({
             title: 'Congratulations!',
             html: '<p>' + 'Level ' + (params.levelIndex + 1) + ' is completed!' + '</p>',
             closeButton: true
         });
-        deferred.done(function() {
+        deferred.done(_.bind(function() {
             params.level.reset();
             this.nextLevel();
-        }.bind(this));
-    }.bind(this), 50);
+        }, this));
+    }, this), 50);
 };
 
 Storekeeper.prototype.onBoxMove = function(params) {
@@ -323,7 +334,7 @@ Storekeeper.prototype.onMovableMove = function(params) {
     if (params.object instanceof Box) {
         // TODO: optimize if possible
         var pushesCount = 0;
-        _.forEach(params.object.level.boxes, function(box) {
+        _.each(params.object.level.boxes, function(box) {
             pushesCount += box.movesCount;
         });
         this.updateLevelInfo({

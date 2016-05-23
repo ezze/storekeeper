@@ -150,7 +150,7 @@ LevelSet.prototype.load = function(options) {
             this.description = loader.description;
 
             var jqContainer = $(this.container);
-            _.forEach(loader.levels, function(levelData) {
+            _.each(loader.levels, _.bind(function(levelData) {
                 var level = new Level(_.extend({
                     app: this._app
                 }, levelData));
@@ -159,7 +159,7 @@ LevelSet.prototype.load = function(options) {
                     .attr('width', jqContainer.width())
                     .attr('height', jqContainer.height());
                 jqContainer.append(level.canvas);
-            }, this);
+            }, this));
 
             if (onSucceed !== null) {
                 onSucceed(params);
@@ -316,7 +316,7 @@ LevelSet.prototype.onLevelRestart = function(params) {};
  * Method that should be called to unload the set.
  */
 LevelSet.prototype.destroy = function() {
-    _.forEach(this._levels, function(level) {
+    _.each(this._levels, function(level) {
         level.destroy();
     });
 };

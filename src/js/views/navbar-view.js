@@ -24,8 +24,6 @@ var NavbarView = Marionette.LayoutView.extend({
         'change @ui.levelSetFile': 'onLevelSetFileChange'
     },
     initialize: function(options) {
-        _.bindAll(this);
-
         var app = options.app,
             vent = app.vent,
             commands = app.commands;
