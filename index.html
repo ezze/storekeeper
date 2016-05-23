@@ -8,32 +8,9 @@
     <meta name="author" content="Dmitriy Pushkov">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" type="text/css" href="assets/css/storekeeper.min.css" />
+    <script src="assets/js/storekeeper.js"></script>
 </head>
 <body>
-
-<script>
-    (function() {
-        var headElement = document.querySelector('head'),
-            scriptElement = document.createElement('script'),
-            debugMode = new RegExp('(\\?|&)debug', 'i').test(window.location.href),
-            scriptUrl = debugMode ? 'src/lib/requirejs/require.js' : 'assets/js/storekeeper.min.js';
-
-        scriptElement.setAttribute('src', scriptUrl);
-        headElement.appendChild(scriptElement);
-
-        scriptElement.onload = function() {
-            if (debugMode) {
-                require({
-                    baseUrl: './src/app',
-                    urlArgs: 'q=' + (new Date()).getTime()
-                });
-            }
-            require(['./init'], function(init) {
-                init();
-            });
-        };
-    })();
-</script>
 
 <div class="application"></div>
 

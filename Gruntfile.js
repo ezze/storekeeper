@@ -17,14 +17,8 @@ module.exports = function(grunt) {
         'less'
     ]);
 
-    grunt.registerTask('js', [
-        'jshint',
-        'requirejs'
-    ]);
-
     grunt.registerTask('build', [
-        'css',
-        'js'
+        'css'
     ]);
 
     grunt.registerTask('rebuild', [
