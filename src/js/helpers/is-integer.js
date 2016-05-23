@@ -1,5 +1,5 @@
 'use strict';
 
-module.exports = function(value) {
+export default function(value) {
     return typeof value === 'number' && value % 1 === 0;
 };

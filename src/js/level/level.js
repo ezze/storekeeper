@@ -757,4 +757,4 @@ Object.defineProperties(Level.prototype, {
     }
 });
 
-module.exports = Level;
+export default Level;

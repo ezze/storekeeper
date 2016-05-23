@@ -10,4 +10,4 @@ var ApplicationRouter = Marionette.AppRouter.extend({
     }
 });
 
-module.exports = ApplicationRouter;
+export default ApplicationRouter;

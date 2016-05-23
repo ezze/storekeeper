@@ -432,4 +432,4 @@ Object.defineProperties(Movable.prototype, {
     }
 });
 
-module.exports = Movable;
+export default Movable;

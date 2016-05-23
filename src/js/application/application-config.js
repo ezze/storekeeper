@@ -28,6 +28,6 @@ levels.push({
     }]
 });
 
-module.exports = {
+export default {
     levels: levels
 };

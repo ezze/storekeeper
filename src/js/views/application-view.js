@@ -20,4 +20,4 @@ var ApplicationView = Marionette.LayoutView.extend({
     }
 });
 
-module.exports = ApplicationView;
+export default ApplicationView;

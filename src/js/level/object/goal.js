@@ -31,4 +31,4 @@ var Goal = function(options) {
 
 Goal.prototype = Object.create(SceneObject.prototype);
 
-module.exports = Goal;
+export default Goal;

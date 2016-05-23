@@ -527,4 +527,4 @@ Object.defineProperties(Storekeeper.prototype, {
     }
 });
 
-module.exports = Storekeeper;
+export default Storekeeper;

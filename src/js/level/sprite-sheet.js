@@ -22,7 +22,7 @@ var data = {
     }
 };
 
-module.exports = {
+export default {
     instance: new Easel.SpriteSheet(data),
     data: data
 };

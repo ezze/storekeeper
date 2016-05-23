@@ -152,4 +152,4 @@ var NavbarView = Marionette.LayoutView.extend({
     }
 });
 
-module.exports = NavbarView;
+export default NavbarView;

@@ -113,4 +113,4 @@ Object.defineProperties(Worker.prototype, {
     }
 });
 
-module.exports = Worker;
+export default Worker;

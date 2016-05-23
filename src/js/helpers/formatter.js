@@ -2,7 +2,7 @@
 
 import _ from 'lodash';
 
-module.exports = {
+export default {
     /**
      * Formats an integer by prepending leading zeros.
      *

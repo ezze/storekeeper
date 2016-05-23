@@ -19,4 +19,4 @@ var GameView = Marionette.LayoutView.extend({
     }
 });
 
-module.exports = GameView;
+export default GameView;

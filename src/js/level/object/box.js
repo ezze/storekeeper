@@ -149,4 +149,4 @@ Box.prototype.onMove = function(params) {
     }
 };
 
-module.exports = Box;
+export default Box;

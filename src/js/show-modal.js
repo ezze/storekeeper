@@ -104,4 +104,4 @@ var showModal = function(options) {
     return deferred;
 };
 
-module.exports = showModal;
+export default showModal;

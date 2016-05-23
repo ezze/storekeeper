@@ -117,4 +117,4 @@ Direction.getCounterDirection = function(direction) {
     }
 };
 
-module.exports = Direction;
+export default Direction;

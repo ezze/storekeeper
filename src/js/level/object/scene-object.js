@@ -185,4 +185,4 @@ Object.defineProperties(SceneObject.prototype, {
  */
 SceneObject.spriteSheet = spriteSheet;
 
-module.exports = SceneObject;
+export default SceneObject;

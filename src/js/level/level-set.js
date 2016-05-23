@@ -451,4 +451,4 @@ Object.defineProperties(LevelSet.prototype, {
     }
 });
 
-module.exports = LevelSet;
+export default LevelSet;

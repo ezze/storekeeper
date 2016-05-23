@@ -45,4 +45,4 @@ var Application = Marionette.Application.extend({
     }
 });
 
-module.exports = Application;
+export default Application;

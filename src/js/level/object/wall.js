@@ -31,4 +31,4 @@ var Wall = function(options) {
 
 Wall.prototype = Object.create(SceneObject.prototype);
 
-module.exports = Wall;
+export default Wall;

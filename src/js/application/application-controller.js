@@ -29,4 +29,4 @@ var ApplicationController = Marionette.Controller.extend({
     }
 });
 
-module.exports = ApplicationController;
+export default ApplicationController;
