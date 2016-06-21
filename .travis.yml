@@ -2,6 +2,10 @@ language: node_js
 node_js:
   - "node"
   - "4.x"
+branches:
+  only:
+    - master
+    - dev
 install:
   - npm install
 before_script:
