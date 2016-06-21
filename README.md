@@ -28,7 +28,12 @@ This is JavaScript implementation of Sokoban game.
 
 6. Build the project:
 
-        gulp
+        npm run build
+
+    By default project is built for `development` environment. In order to build for `production` environment run
+the following command:
+
+        NODE_ENV=production npm run build       
         
 ## Gulp tasks
 
@@ -41,7 +46,6 @@ The following Gulp tasks are available:
 - `clean` — removes everything in `assets` directory;
 - `dev` — builds everything and watches for changes in JavaScript to rebuild;
 - `server` — starts [Webpack Dev Server](https://webpack.github.io/docs/webpack-dev-server.html) at `http://localhost:8080`.
-
 
 ## Contributing
 

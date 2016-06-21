@@ -4,6 +4,9 @@
   "description": "JavaScript implementation of Sokoban game",
   "main": "src/js/init.js",
   "scripts": {
+    "build": "gulp build",
+    "clean": "gulp clean",
+    "server": "gulp server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -44,8 +47,5 @@
     "mustache-loader": "^0.3.1",
     "webpack": "^1.13.0",
     "webpack-dev-server": "^1.14.1"
-  },
-  "scripts": {
-    "build": "gulp build"
   }
 }
