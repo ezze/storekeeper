@@ -58,11 +58,6 @@ var Storekeeper = function(options) {
 
 _.extend(Storekeeper.prototype, Backbone.Events);
 
-/**
- * Initializes the game.
- *
- * @protected
- */
 Storekeeper.prototype.init = function() {
     this.initCommands();
     this.initEvents();
@@ -105,11 +100,6 @@ Storekeeper.prototype.initCommands = function() {
     commands.setHandlers(handlerOptions);
 };
 
-/**
- * Initializes events' handlers.
- *
- * @protected
- */
 Storekeeper.prototype.initEvents = function() {
     var vent = this._app.vent;
     this.listenTo(vent, LevelSet.EVENT_LEVEL_CHANGE, this.onLevelChange);
@@ -122,11 +112,6 @@ Storekeeper.prototype.initEvents = function() {
     this.listenTo(vent, Movable.EVENT_STOP, this.onMovableAnimate);
 };
 
-/**
- * Enables user's controls.
- *
- * @protected
- */
 Storekeeper.prototype.enableUserControls = function() {
     this._moveDirection = Direction.NONE;
     $(window).on('keydown', this.onKeyDown);
@@ -135,11 +120,6 @@ Storekeeper.prototype.enableUserControls = function() {
     $(window).on('touchend', this.onTouchEnd);
 };
 
-/**
- * Disables user's controls.
- *
- * @protected
- */
 Storekeeper.prototype.disableUserControls = function() {
     this._moveDirection = Direction.NONE;
     $(window).off('keydown', this.onKeyDown);
@@ -148,49 +128,16 @@ Storekeeper.prototype.disableUserControls = function() {
     $(window).off('touchend', this.onTouchEnd);
 };
 
-/**
- * Initializes rendering ticker.
- */
 Storekeeper.prototype.initTicker = function() {
     Easel.Ticker.setFPS(30);
     Easel.Ticker.addEventListener('tick', this.onAnimationFrame);
 };
 
-/**
- * Triggers an event with updated level information.
- *
- * @param {Object} info
- * Object consisting of values to update:
- *
- * @param {Number} [info.levelNumber]
- * Order number of current active level.
- *
- * @param {Number} [info.boxesCount]
- * Overall count of boxes belonging to current level.
- *
- * @param {Number} [info.boxesOnGoalCount]
- * Count of boxes belonging to current level and already placed on goals.
- *
- * @param {Number} [info.pushesCount]
- * Count of boxes' pushes caused by the worker.
- *
- * @param {Number} [info.movesCount]
- * Count of moves performed by the worker.
- */
 Storekeeper.prototype.updateLevelInfo = function(info) {
     info = info || {};
     this._app.vent.trigger('level-info-update', info);
 };
 
-/**
- * Loads levels' set by a given source.
- *
- * @param {String} source
- * URL of levels' set to load.
- *
- * @see module:Storekeeper#browseLevelSet
- * @see module:Storekeeper#onLevelSetLoad
- */
 Storekeeper.prototype.loadLevelSet = function(source) {
     var levelSet = new LevelSet({
         app: this._app,
@@ -212,14 +159,6 @@ Storekeeper.prototype.loadLevelSet = function(source) {
     });
 };
 
-/**
- * Restarts currently active level.
- *
- * @see module:Storekeeper#previousLevel
- * @see module:Storekeeper#nextLevel
- * @see module:LevelSet#restart
- * @see module:Level#reset
- */
 Storekeeper.prototype.restartLevel = function() {
     if (!(this.levelSet instanceof LevelSet)) {
         throw new Error('Level set is not loaded.');
@@ -227,12 +166,6 @@ Storekeeper.prototype.restartLevel = function() {
     this.levelSet.restart();
 };
 
-/**
- * Switches to the previous level of current levels' set.
- *
- * @see module:Storekeeper#nextLevel
- * @see module:Storekeeper#restartLevel
- */
 Storekeeper.prototype.previousLevel = function() {
     if (!(this.levelSet instanceof LevelSet)) {
         throw new Error('Level set is not loaded.');
@@ -247,12 +180,6 @@ Storekeeper.prototype.previousLevel = function() {
     this.levelSet.level = levelIndex;
 };
 
-/**
- * Switches to the next level of current levels' set.
- *
- * @see module:Storekeeper#previousLevel
- * @see module:Storekeeper#restartLevel
- */
 Storekeeper.prototype.nextLevel = function() {
     if (!(this.levelSet instanceof LevelSet)) {
         throw new Error('Level set is not loaded.');
@@ -267,16 +194,6 @@ Storekeeper.prototype.nextLevel = function() {
     this.levelSet.level = levelIndex;
 };
 
-/**
- * This method will be invoked on each animation frame of the game.
- *
- * <p>It checks where some direction is set by the user and tries to cause
- * worker's move in this direction.</p>
- *
- * @protected
- *
- * @param {Object} event
- */
 Storekeeper.prototype.onAnimationFrame = function(event) {
     if (!(this.levelSet instanceof LevelSet)) {
         return;
@@ -428,16 +345,6 @@ Storekeeper.prototype.onTouchEnd = function(event) {
     this._moveDirection = Direction.NONE;
 };
 
-/**
- * Gets worker's desired direction by key code.
- *
- * @param {Number} code
- * Code of a key.
- *
- * @returns {String}
- *
- * @see module:Storekeeper.getDirectionByTouchPoint
- */
 Storekeeper.getDirectionByKeyCode = function(code) {
     switch (code) {
         case 37: case 65: return Direction.LEFT;        // arrow left or A
@@ -448,27 +355,6 @@ Storekeeper.getDirectionByKeyCode = function(code) {
     }
 };
 
-/**
- * Gets worker's desired direction by pixel coordinates of a touch
- * relative to top left corner of touched HTML element.
- *
- * <p>In order to determine a direction the touched HTML element (generally, a canvas)
- * is splitted by two diagonals into four sections, each corresponding to possible
- * worker's direction. The result direction depends on which section touch point belongs to.</p>
- *
- * @param {HTMLElement} target
- * HTML element where touch event is occurred.
- *
- * @param {Number} x
- * Horizontal coordinate of touch point relative to <code>target</code>.
- *
- * @param {Number} y
- * Vertical coordinate of touch point relative to <code>target</code>.
- *
- * @returns {String}
- *
- * @see module:Storekeeper.getDirectionByKeyCode
- */
 Storekeeper.getDirectionByTouchPoint = function(target, x, y) {
     var jqTarget = $(target);
     var targetWidth = jqTarget.width();
@@ -496,23 +382,11 @@ Storekeeper.getDirectionByTouchPoint = function(target, x, y) {
 };
 
 Object.defineProperties(Storekeeper.prototype, {
-    /**
-     * Gets game's container HTML element.
-     *
-     * @type HTMLElement
-     * @memberof module:Storekeeper.prototype
-     */
     container: {
         get: function() {
             return this._container;
         }
     },
-    /**
-     * Gets or sets loaded levels' set.
-     *
-     * @type {module:LevelSet}
-     * @memberof module:Storekeeper.prototype
-     */
     levelSet: {
         get: function() {
             return this._levelSet;
