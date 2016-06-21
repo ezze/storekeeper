@@ -73,7 +73,8 @@ module.exports = {
         }),
         new webpack.ResolverPlugin(
             new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(".bower.json", ["main"])
-        )
+        ),
+        new webpack.NoErrorsPlugin()
     ],
     devtool: NODE_ENV === 'development' ? 'cheap-inline-module-source-map' : null,
     watch: false
