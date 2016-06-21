@@ -1,5 +1,7 @@
 # Storekeeper
 
+[![Build Status](https://travis-ci.org/ezze/storekeeper.svg?branch=dev)](https://travis-ci.org/ezze/storekeeper)
+
 This is JavaScript implementation of Sokoban game.
 
 ## Building
