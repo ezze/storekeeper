@@ -10,9 +10,9 @@ This is JavaScript implementation of Sokoban game.
 
             sudo apt-get install nodejs npm
 
-2. Install [Gulp command line interface](http://gulpjs.com/) globally:
+2. Install [Gulp command line interface](http://gulpjs.com/) and [Webpack](https://webpack.github.io/) globally:
 
-        npm install -g gulp-cli
+        npm install -g gulp-cli webpack
 
 3. Install [Bower](http://bower.io/) globally:
 
