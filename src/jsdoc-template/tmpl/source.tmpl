@@ -1,9 +1,0 @@
-<?js
-    var data = obj;
-    var replacement = '</code></li><li><code>';
-?>
-    <section>
-        <article>
-            <pre class="source-code"><ol><li><code><?js= data.code.replace(/\r\n/g, replacement).replace(/[\r\n]/g, replacement) ?></code></li></ol></pre>
-        </article>
-    </section>

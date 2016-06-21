@@ -1,8 +1,9 @@
 'use strict';
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = process.env.NODE_ENV || 'dev';
 
 var webpack = require('webpack'),
+    rcLoader = require('rcloader'),
     path = require('path');
 
 module.exports = {
@@ -12,6 +13,11 @@ module.exports = {
         filename: 'storekeeper' + '.js'
     },
     module: {
+        preLoaders: [{
+            test: /\.js$/,
+            loader: 'jshint-loader',
+            include: path.resolve(__dirname, 'src/js')
+        }],
         loaders: [{
             test: /\.jsx?$/,
             loader: 'babel',
@@ -76,7 +82,29 @@ module.exports = {
         ),
         new webpack.NoErrorsPlugin()
     ],
-    devtool: NODE_ENV === 'development' ? 'cheap-inline-module-source-map' : null,
+    jshint: {
+        esversion: 6,
+        node: true,
+        
+        browser: true,
+        camelcase: true,
+        curly: true,
+        devel: true,
+        eqeqeq: true,
+        expr: false,
+        indent: 4,
+        maxdepth: 4,
+        maxlen: 120,
+        newcap: false,
+        noarg: true,
+        quotmark: "single",
+        undef: true,
+        unused: "vars",
+
+        emitErrors: false,
+        failOnHint: false
+    },
+    devtool: NODE_ENV === 'dev' ? 'cheap-inline-module-source-map' : null,
     watch: false
 };
 

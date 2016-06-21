@@ -5,7 +5,6 @@ import Easel from 'easel';
 
 import $ from 'jquery';
 import _ from 'lodash';
-import Bootstrap from 'bootstrap';
 
 import showModal from './show-modal';
 

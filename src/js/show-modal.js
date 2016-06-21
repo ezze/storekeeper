@@ -2,7 +2,6 @@
 
 import $ from 'jquery';
 import _ from 'lodash';
-import Bootstrap from 'bootstrap';
 
 /**
  * Shows Bootstrap's modal window.
