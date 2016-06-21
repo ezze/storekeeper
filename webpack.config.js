@@ -3,7 +3,6 @@
 const NODE_ENV = process.env.NODE_ENV || 'dev';
 
 var webpack = require('webpack'),
-    rcLoader = require('rcloader'),
     path = require('path');
 
 module.exports = {
