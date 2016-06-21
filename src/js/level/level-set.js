@@ -11,20 +11,6 @@ import LoaderSok from './loader/loader-sok';
 
 import Box from './object/box';
 
-/**
- * Represents a set of [levels]{@link module:Level}.
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {HTMLElement} options.container
- * HTML container to place levels' HTML canvases in.
- *
- * @author Dmitriy Pushkov <ezze@ezze.org>
- * @since 0.1.0
- * @alias module:LevelSet
- * @class
- */
 var LevelSet = function(options) {
     if (!(options.app)) {
         throw new Error('Application is invalid or not specified.');
@@ -49,51 +35,10 @@ var LevelSet = function(options) {
 
 _.extend(LevelSet.prototype, Backbone.Events);
 
-/**
- * Name of an event raised when active level is changed.
- *
- * @type {String}
- *
- * @see module:LevelSet#level
- */
 LevelSet.EVENT_LEVEL_CHANGE = 'level-set:level-change';
-
-/**
- * Name of an event raised when level is completed.
- *
- * @type {String}
- *
- * @see module:Level#isCompleted
- */
 LevelSet.EVENT_LEVEL_COMPLETE = 'level-set:level-complete';
-
-/**
- * Name of an event raised when active level is restarted.
- *
- * @type {String}
- *
- * @see module:LevelSet#restart
- * @see module:Level#reset
- */
 LevelSet.EVENT_LEVEL_RESTART = 'level-set:level-restart';
 
-/**
- * Loads level set.
- *
- * @protected
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {String|File} options.source
- * URL of level set or its file instance.
- *
- * @param {Function} [options.onSucceed]
- * Function to invoke on successful level set's load.
- *
- * @param {Function} [options.onFailed]
- * Function to invoke on failed level set's load.
- */
 LevelSet.prototype.load = function(options) {
     if ((window.File && !(options.source instanceof window.File)) &&
         (!_.isString(options.source) || _.isEmpty(options.source))
@@ -176,15 +121,6 @@ LevelSet.prototype.load = function(options) {
     loader.load(loaderOptions);
 };
 
-/**
- * Adds a level to the set.
- *
- * @param {module:Level} level
- * Level to add.
- *
- * @see module:LevelSet#remove
- * @see module:LevelSet#find
- */
 LevelSet.prototype.add = function(level) {
     if (!(level instanceof Level)) {
         throw new Error('Level instance is expected.');
@@ -193,21 +129,6 @@ LevelSet.prototype.add = function(level) {
     this._levels.push(level);
 };
 
-/**
- * Finds a level in the set by its zero-based index or reference.
- *
- * @param {Number|module:Level} search
- *
- * @returns {Object}
- * Object consisting of the following properties:
- * <ul>
- * <li><code>index</code> &ndash; found level's zero-based index;</li>
- * <li><code>level</code> &ndash; reference to found [level]{@link module:Level}.</li>
- * </ul>
- *
- * @see module:LevelSet#add
- * @see module:LevelSet#remove
- */
 LevelSet.prototype.find = function(search) {
     if (_.isNumber(search)) {
         if (search % 1 !== 0) {
@@ -238,15 +159,6 @@ LevelSet.prototype.find = function(search) {
     throw new Error('Level\'s search argument is invalid.');
 };
 
-/**
- * Removes a level from the set.
- *
- * @param {module:Level} level
- * Reference to level to remove.
- *
- * @see module:LevelSet#add
- * @see module:LevelSet#find
- */
 LevelSet.prototype.remove = function(level) {
     // TODO: add ability to remove level by index
 
@@ -264,11 +176,6 @@ LevelSet.prototype.remove = function(level) {
     this._levels.splice(index, 1);
 };
 
-/**
- * Restarts current active level of the set.
- *
- * @see module:Level#reset
- */
 LevelSet.prototype.restart = function() {
     this._level.reset();
 
@@ -282,39 +189,12 @@ LevelSet.prototype.restart = function() {
     this.onLevelRestart(levelRestartParams);
 };
 
-/**
- * Method being called when current level is completed.
- *
- * @param {Object} params
- * Object of event's parameters.
- *
- * @see module:LevelSet#isCompleted
- */
 LevelSet.prototype.onLevelComplete = function(params) {};
 
-/**
- * Method being called when level is changed.
- *
- * @param {Object} params
- * Object of event's parameters.
- *
- * @see module:LevelSet#level
- */
 LevelSet.prototype.onLevelChange = function(params) {};
 
-/**
- * Method being called when level is restarted.
- *
- * @param {Object} params
- * Object of event's parameters.
- *
- * @see module:LevelSet#restart
- */
 LevelSet.prototype.onLevelRestart = function(params) {};
 
-/**
- * Method that should be called to unload the set.
- */
 LevelSet.prototype.destroy = function() {
     _.each(this._levels, function(level) {
         level.destroy();
@@ -338,23 +218,11 @@ LevelSet.prototype.onBoxMoveOnGoal = function(params) {
 };
 
 Object.defineProperties(LevelSet.prototype, {
-    /**
-     * Gets HTML element containing canvases of set's levels.
-     *
-     * @type {HTMLElement}
-     * @memberof module:LevelSet.prototype
-     */
     container: {
         get: function() {
             return this._container;
         }
     },
-    /**
-     * Gets or sets a name of the set.
-     *
-     * @type {String}
-     * @memberof module:LevelSet.prototype
-     */
     name: {
         get: function () {
             return this._name;
@@ -366,12 +234,6 @@ Object.defineProperties(LevelSet.prototype, {
             this._name = name;
         }
     },
-    /**
-     * Gets or sets a description of the set.
-     *
-     * @type {String}
-     * @memberof module:LevelSet.prototype
-     */
     description: {
         get: function() {
             return this._description;
@@ -383,15 +245,6 @@ Object.defineProperties(LevelSet.prototype, {
             this._description = description;
         }
     },
-    /**
-     * Gets or sets active level.
-     *
-     * <p>Active level can be specified not only by [level]{@link module:Level}'s instance
-     * but also by its zero-based index.</p>
-     *
-     * @type {module:Level|Number}
-     * @memberof module:LevelSet.prototype
-     */
     level: {
         get: function() {
             return this._level;
@@ -427,23 +280,11 @@ Object.defineProperties(LevelSet.prototype, {
             this.onLevelChange(levelChangeParams);
         }
     },
-    /**
-     * Gets zero-based index of active level.
-     *
-     * @type {Number}
-     * @memberof module:LevelSet.prototype
-     */
     levelIndex: {
         get: function() {
             return this._levelIndex;
         }
     },
-    /**
-     * Gets a count of levels in the set.
-     *
-     * @type {Number}
-     * @memberof module:LevelSet.prototype
-     */
     count: {
         get: function() {
             return this._levels.length;

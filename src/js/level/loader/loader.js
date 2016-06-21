@@ -3,38 +3,12 @@
 import $ from 'jquery';
 import _ from 'lodash';
 
-/**
- * Abstract class each level set loader should be derived from.
- *
- * @author Dmitriy Pushkov <ezze@ezze.org>
- * @since 0.1.1
- * @alias module:Loader
- * @class
- */
 var Loader = function() {
     this._name = '';
     this._description = '';
     this._levels = [];
 };
 
-/**
- * Loads level set.
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {String|File} options.source
- * URL of level set or its file instance.
- *
- * @param {String} [options.dataType]
- * Level set's format.
- *
- * @param {Function} [options.onSucceed]
- * Function to invoke on successful level set's load.
- *
- * @param {Function} [options.onFailed]
- * Function to invoke on failed level set's load.
- */
 Loader.prototype.load = function(options) {
     if (window.File && FileReader && options.source instanceof window.File) {
         this.loadByFile(options);
@@ -47,26 +21,6 @@ Loader.prototype.load = function(options) {
     this.loadByUrl(options);
 };
 
-/**
- * Loads a level by URL.
- *
- * @protected
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {String} options.source
- * URL of level set.
- *
- * @param {String} [options.dataType]
- * Level set's format.
- *
- * @param {Function} [options.onSucceed]
- * Function to invoke on successful level set's load.
- *
- * @param {Function} [options.onFailed]
- * Function to invoke on failed level set's load.
- */
 Loader.prototype.loadByUrl = function(options) {
     var url = options.source;
 
@@ -107,26 +61,6 @@ Loader.prototype.loadByUrl = function(options) {
     $.ajax(loadOptions);
 };
 
-/**
- * Loads a level by File instance.
- *
- * @protected
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {File} options.source
- * Level set's file instance.
- *
- * @param {String} [options.dataType]
- * Level set's format.
- *
- * @param {Function} [options.onSucceed]
- * Function to invoke on successful level set's load.
- *
- * @param {Function} [options.onFailed]
- * Function to invoke on failed level set's load.
- */
 Loader.prototype.loadByFile = function(options) {
     var file = options.source;
 
@@ -162,71 +96,17 @@ Loader.prototype.loadByFile = function(options) {
     reader.readAsBinaryString(blob);
 };
 
-/**
- * Method being invoked on successful level set's load.
- *
- * @param {Object} params
- * Object with the following properties:
- *
- * @param {module:Loader} params.loader
- * Reference to this loader.
- *
- * @param {String|File} params.source
- * Source used to fetch level set's <code>data</code>.
- *
- * @param {String} params.type
- * Type of the used <code>source</code>: <code>url</code> or <code>file</code>.
- *
- * @param {Object} params.data
- * Data fetched from the source.
- *
- * @see module:Loader#onFailed
- */
 Loader.prototype.onSucceed = function(params) {
     params.loader.parse(params.data);
 };
 
-/**
- * Method being invoked on failed level set's load.
- *
- * @param {Object} params
- * Object with the following properties:
- *
- * @param {module:Loader} params.loader
- * Reference to this loader.
- *
- * @param {String|File} params.source
- * Source used to fetch level set's data.
- *
- * @param {String} params.type
- * Type of the used <code>source</code>: <code>url</code> or <code>file</code>.
- *
- * @see module:Loader#onSucceed
- */
 Loader.prototype.onFailed = function(params) {};
 
-/**
- * Parses data fetched on successful call of {@link module:Loader#load} method.
- *
- * <p>This method should be implemented in derived class and set
- * {@link module:Loader#name}, {@link module:Loader#description} and
- * {@link module:Loader#levels} properties.</p>
- *
- * @abstract
- *
- * @param {Object} data
- */
 Loader.prototype.parse = function(data) {
     throw new Error('Method "parse" is not implemented.');
 };
 
 Object.defineProperties(Loader.prototype, {
-    /**
-     * Gets or sets a name of loaded level set.
-     *
-     * @type {String}
-     * @memberof module:Loader.prototype
-     */
     name: {
         get: function() {
             return this._name;
@@ -238,12 +118,6 @@ Object.defineProperties(Loader.prototype, {
             this._name = name;
         }
     },
-    /**
-     * Gets or sets a description of loaded level set.
-     *
-     * @type {String}
-     * @memberof module:Loader.prototype
-     */
     description: {
         get: function() {
             return this._description;
@@ -255,15 +129,6 @@ Object.defineProperties(Loader.prototype, {
             this._description = description;
         }
     },
-    /**
-     * Gets or sets levels' data of loaded level set.
-     *
-     * <p>Each array item represents <code>options</code> argument
-     * being passed to {@link module:Level}'s constructor.</p>
-     *
-     * @type {Array}
-     * @memberof module:Loader.prototype
-     */
     levels: {
         get: function() {
             return this._levels;
@@ -277,4 +142,4 @@ Object.defineProperties(Loader.prototype, {
     }
 });
 
-module.exports = Loader;
+export default Loader;

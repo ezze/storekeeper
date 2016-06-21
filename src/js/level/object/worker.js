@@ -7,27 +7,6 @@ import Movable from './movable';
 import Wall from './wall';
 import Direction from '../direction';
 
-/**
- * Represents worker's scene object.
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {module:Level} options.level
- * Level the worker will be added to.
- *
- * @param {Number} options.row
- * Zero-based row of the level the worker will be placed in.
- *
- * @param {Number} options.column
- * Zero-based column of the level the worker will be placed in.
- *
- * @author Dmitriy Pushkov <ezze@ezze.org>
- * @since 0.1.0
- * @alias module:Worker
- * @class
- * @augments module:Movable
- */
 var Worker = function(options) {
     Movable.apply(this, arguments);
     this._name = 'Worker';
@@ -85,12 +64,6 @@ Worker.prototype.stopAnimation = function() {
 };
 
 Object.defineProperties(Worker.prototype, {
-    /**
-     * Gets or sets worker's look [direction]{@link module:Direction}.
-     *
-     * @type {String}
-     * @memberof module:Worker.prototype
-     */
     lookDirection: {
         get: function() {
             return this._lookDirection;

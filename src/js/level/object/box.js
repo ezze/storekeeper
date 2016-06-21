@@ -7,27 +7,6 @@ import Movable from './movable';
 import Wall from './wall';
 import Direction from '../direction';
 
-/**
- * Represents box' scene object.
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {module:Level} options.level
- * Level the box will be added to.
- *
- * @param {Number} options.row
- * Zero-based row of the level the box will be placed in.
- *
- * @param {Number} options.column
- * Zero-based column of the level the box will be placed in.
- *
- * @author Dmitriy Pushkov <ezze@ezze.org>
- * @since 0.1.0
- * @alias module:Box
- * @class
- * @augments module:Movable
- */
 var Box = function(options) {
     Movable.apply(this, arguments);
     this._name = 'Box';
@@ -36,22 +15,7 @@ var Box = function(options) {
     this._sprite.gotoAndStop(isOnGoal ? 'boxOnGoal' : 'box');
 };
 
-/**
- * Name of an event raised when box is moved on goal.
- *
- * @type {String}
- *
- * @see module:Box#onMove
- */
 Box.EVENT_MOVE_ON_GOAL = 'box:move-on-goal';
-
-/**
- * Name of an event raised when box is moved out of goal.
- *
- * @type {String}
- *
- * @see module:Box#onBeforeMove
- */
 Box.EVENT_MOVE_OUT_OF_GOAL = 'box:move-out-of-goal';
 
 Box.prototype = Object.create(Movable.prototype);

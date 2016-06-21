@@ -6,29 +6,6 @@ import _ from 'lodash';
 
 import spriteSheet from '../sprite-sheet';
 
-/**
- * Represents a scene object of a [level]{@link module:Level}.
- *
- * <p>Any scene object that can be added to the level by {@link module:Level#addObject} method
- * must be derived from this class.</p>
- *
- * @param {Object} options
- * Object with the following properties:
- *
- * @param {module:Level} options.level
- * Level this object will be added to.
- *
- * @param {Number} options.row
- * Zero-based row of the level this object will be placed in.
- *
- * @param {Number} options.column
- * Zero-based column of the level this object will be placed in.
- *
- * @author Dmitriy Pushkov <ezze@ezze.org>
- * @since 0.1.0
- * @alias module:SceneObject
- * @class
- */
 var SceneObject = function(options) {
     if (!options.app) {
         throw new Error('Application is invalid or not specified.');
@@ -64,88 +41,35 @@ var SceneObject = function(options) {
 
 _.extend(SceneObject.prototype, Backbone.Events);
 
-/**
- * Calculates left offset of the object in pixels by its column index.
- *
- * @param {Number} column
- * Column's zero-based index.
- *
- * @returns {Number}
- *
- * @see module:SceneObject#rowToPixels
- * @see module:SceneObject#updatePixels
- */
 SceneObject.prototype.columnToPixels = function(column) {
     return column * this._width;
 };
 
-/**
- * Calculates top offset of the object in pixels by its row index.
- *
- * @param {Number} row
- * Row's zero-based index.
- *
- * @returns {Number}
- *
- * @see module:SceneObject#columnToPixels
- * @see module:SceneObject#updatePixels
- */
 SceneObject.prototype.rowToPixels = function(row) {
     return row * this._height;
 };
 
-/**
- * Updates coordinates of scene object's sprite according to its
- * current {@link module:SceneObject#row} and {@link module:SceneObject#column}.
- */
 SceneObject.prototype.updatePixels = function() {
     this._sprite.x = this.columnToPixels(this.column);
     this._sprite.y = this.rowToPixels(this.row);
 };
 
 Object.defineProperties(SceneObject.prototype, {
-    /**
-     * Gets scene object's name.
-     *
-     * @type {String}
-     * @memberof module:SceneObject.prototype
-     */
     name: {
         get: function() {
             return this._name;
         }
     },
-    /**
-     * Gets a level this scene object added to.
-     *
-     * @type {module:Level}
-     * @memberof module:SceneObject.prototype
-     */
     level: {
         get: function() {
             return this._level;
         }
     },
-    /**
-     * Gets scene object's sprite.
-     *
-     * @type {Object}
-     * @memberof module:SceneObject.prototype
-     * @see http://www.createjs.com/Docs/EaselJS/classes/Sprite.html
-     */
     sprite: {
         get: function() {
             return this._sprite;
         }
     },
-    /**
-     * Gets or sets zero-based (and not necessarily integer)
-     * index of [level]{@link module:SceneObject#level}'s row this scene object is located at.
-     *
-     * @type {Number}
-     * @memberof module:SceneObject.prototype
-     * @see module:SceneObject#column
-     */
     row: {
         get: function() {
             return this._row;
@@ -157,14 +81,6 @@ Object.defineProperties(SceneObject.prototype, {
             this._row = row;
         }
     },
-    /**
-     * Gets or sets zero-based (and not necessarily integer)
-     * index of [level]{@link module:SceneObject#level}'s column this scene object is located at.
-     *
-     * @type {Number}
-     * @memberof module:SceneObject.prototype
-     * @see module:SceneObject#row
-     */
     column: {
         get: function() {
             return this._column;
@@ -178,11 +94,6 @@ Object.defineProperties(SceneObject.prototype, {
     }
 });
 
-/**
- * Holds a sprite sheet object this scene object is based on.
- *
- * @type {Object}
- */
 SceneObject.spriteSheet = spriteSheet;
 
 export default SceneObject;
