@@ -49,6 +49,44 @@ The following Gulp tasks are available:
 - `dev` — builds everything and watches for changes in JavaScript to rebuild;
 - `server` — starts [Webpack Dev Server](https://webpack.github.io/docs/webpack-dev-server.html) at `http://localhost:8080`.
 
+## Building for Android
+
+In order to build the game for Android follow these steps:
+
+1. Install [Apache Cordova](https://cordova.apache.org/) globally:
+
+        npm install -g cordova
+
+2. Install [Android SDK](https://developer.android.com/studio/index.html). 
+
+3. Create new Cordova project:
+
+         cordova create ./cordova org.ezze.storekeeper.Storekeeper
+        
+4. Add Android platform to Cordova:
+
+        cd ./cordova
+        cordova platform add android
+        
+5. Set up `ANDROID_HOME` path (put these lines at the end of `~/.bashrc` to apply constantly):
+
+        export ANDROID_HOME=/home/ezze/Android/Sdk
+        export PATH=${PATH}:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+
+6. Install required versions of SDK, platform tools and build tools:
+
+        android sdk
+
+    or
+     
+        android list skd --all
+        android sdk -u -a -t <package-no>             
+
+7. Build APK:
+
+        cd ./cordova
+        cordova build android
+
 ## Contributing
 
 Before making a pull request, please, be sure that your changes are rebased to `dev` branch.
