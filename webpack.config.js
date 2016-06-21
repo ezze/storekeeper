@@ -56,7 +56,6 @@ module.exports = {
         modulesDirectories: ['node_modules', 'bower_components'],
         extensions: ['', '.js'],
         alias: {
-            marionette: 'backbone.marionette',
             easel: 'EaselJS',
             tween: 'TweenJS',
             hgn: 'requirejs-hogan-plugin'
