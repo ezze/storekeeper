@@ -1,7 +1,9 @@
 'use strict';
 
 var gulp = require('gulp'),
-    webpack = require('webpack-stream'),
+    gutil = require('gulp-util'),
+    webpack = require('webpack'),
+    WebpackDevServer = require('webpack-dev-server'),
     environments = require('gulp-environments'),
     development = environments.development(),
     clean = require('gulp-clean'),
@@ -40,13 +42,39 @@ gulp.task('css', function() {
     return stream.pipe(gulp.dest('./assets/css'));
 });
 
-gulp.task('js', function() {
-    var config = require('./webpack.config.js');
-    return gulp.src('./src/init.js')
-        .pipe(webpack(config))
-        .pipe(gulp.dest('assets/js'));
+var webpackConfig = Object.create(require('./webpack.config.js')),
+    webpackCompiler = webpack(webpackConfig);
+
+gulp.task('js', function(callback) {
+    webpackCompiler.run(function(error, stats) {
+        if (error) {
+            throw new gutil.PluginError('js', error);
+        }
+        gutil.log('[js]', stats.toString({
+            colors: true
+        }));
+        callback();
+    });
+});
+
+gulp.task('server', function() {
+    new WebpackDevServer(webpackCompiler, {
+        publicPath: '/' + webpackConfig.output.publicPath,
+        stats: {
+            colors: true
+        }
+    }).listen(8080, 'localhost', function(error) {
+        if (error) {
+            throw new gutil.PluginError('server', error);
+        }
+        gutil.log('[server]', 'http://localhost:8080/webpack-dev-server/index.html');
+    });
 });
 
 gulp.task('build', ['copy', 'css', 'js']);
+
+gulp.task('dev', ['build'], function() {
+    gulp.watch(['src/js/**/*'], ['js']);
+});
 
 gulp.task('default', ['build']);

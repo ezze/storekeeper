@@ -36,13 +36,16 @@
     "gulp-environments": "^0.1.1",
     "gulp-less": "^3.1.0",
     "gulp-sourcemaps": "^1.6.0",
+    "gulp-util": "^3.0.7",
     "imports-loader": "^0.6.5",
     "jshint": "^2.9.2",
     "jshint-loader": "^0.8.3",
     "lodash": "^4.13.1",
     "mustache-loader": "^0.3.1",
     "webpack": "^1.13.0",
-    "webpack-dev-server": "^1.14.1",
-    "webpack-stream": "^3.2.0"
+    "webpack-dev-server": "^1.14.1"
+  },
+  "scripts": {
+    "build": "gulp build"
   }
 }

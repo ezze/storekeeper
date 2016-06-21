@@ -29,6 +29,19 @@ This is JavaScript implementation of Sokoban game.
 6. Build the project:
 
         gulp
+        
+## Gulp tasks
+
+The following Gulp tasks are available:
+
+- `build` (by default) — builds everything including CSS, JS and fonts in `assets` directory;
+- `copy` — copies fonts to `assets/fonts` directory;
+- `css` — compiles [LESS](http://lesscss.org/) in `assets/css` directory;
+- `js` — [hints](http://jshint.com/) and builds JavaScript in `assets/js` directory;
+- `clean` — removes everything in `assets` directory;
+- `dev` — builds everything and watches for changes in JavaScript to rebuild;
+- `server` — starts [Webpack Dev Server](https://webpack.github.io/docs/webpack-dev-server.html) at `http://localhost:8080`.
+
 
 ## Contributing
 
