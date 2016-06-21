@@ -15,4 +15,4 @@ before_script:
   - npm install -g bower
   - bower install
 script:
-  - NODE_ENV=production gulp
+  - NODE_ENV=production npm run build
