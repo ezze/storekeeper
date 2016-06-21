@@ -1,4 +1,8 @@
 .idea
-/node_modules
-/refdoc
 *.log
+
+bower_components
+node_modules
+
+/assets
+/refdoc

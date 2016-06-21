@@ -1,0 +1,87 @@
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header .navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#game">Storekeeper</a>
+        </div>
+
+        <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Levels <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href="#" class="navbar-command-link" data-command="browse-level-set">
+                                <span>Open... <small>Ctrl+O</small></span>
+                            </a>
+                            <input class="navbar-level-set-file" type="file" />
+                        </li>
+
+                        {{#levels}}
+                        <li class="divider"></li>
+                        {{#levelSets}}
+                        <li><a href="{{url}}" class="navbar-command-link" data-command="load-level-set">{{name}}</a></li>
+                        {{/levelSets}}
+                        {{/levels}}
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Game <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href="#" class="navbar-command-link" data-command="next-level">
+                                <span>Go to next level <small>Alt+X</small></span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="navbar-command-link" data-command="previous-level">
+                                <span>Go to previous level <small>Alt+Z</small></span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="navbar-command-link" data-command="restart-level">
+                                <span><small>Ctrl+Alt+R</small>Restart level</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="https://github.com/ezze/storekeeperjs" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Help <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href="https://github.com/ezze/storekeeperjs">
+                                <span>View source</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/ezze/storekeeperjs/issues">
+                                <span>Report a bug</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <p class="navbar-level navbar-text">
+                <strong class="name"></strong> <span class="value"></span>
+            </p>
+
+            <div class="navbar-right hidden-md">
+                <p class="navbar-boxes-count navbar-text">
+                    <strong class="name"></strong> <span class="value"></span>
+                </p>
+                <p class="navbar-pushes-count navbar-text">
+                    <strong class="name"></strong> <span class="value"></span>
+                </p>
+                <p class="navbar-moves-count navbar-text">
+                    <strong class="name"></strong> <span class="value"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
