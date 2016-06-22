@@ -23,20 +23,17 @@ var NavbarView = Marionette.LayoutView.extend({
         'change @ui.levelSetFile': 'onLevelSetFileChange'
     },
     initialize: function(options) {
-        var app = options.app,
-            vent = app.vent,
-            commands = app.commands;
+        this._app = options.app;
 
-        this.listenTo(vent, 'level-set-load', this.onLevelSetLoad);
-        this.listenTo(vent, 'level-info-update', this.onLevelInfoUpdate);
-        commands.setHandler('browse-level-set', this.browseLevelSet);
+        this.listenTo(this._app.vent, 'level-set-load', this.onLevelSetLoad);
+        this.listenTo(this._app.vent, 'level-info-update', this.onLevelInfoUpdate);
+        this._app.commands.setHandler('browse-level-set', this.browseLevelSet);
     },
     serializeData: function() {
-        var data = NavbarView.__super__.serializeData.apply(this, arguments),
-            app = this.getOption('app');
+        var data = NavbarView.__super__.serializeData.apply(this, arguments);
 
         data.isFileApiSupported = (window.File && window.FileList) ? true : false;
-        data.levels = app.getOption('levels');
+        data.levels = this._app.getOption('levels');
 
         return data;
     },
@@ -63,11 +60,14 @@ var NavbarView = Marionette.LayoutView.extend({
         event.preventDefault();
 
         var $link = $(event.currentTarget),
-            command = $link.attr('data-command'),
-            app = this.getOption('app'),
-            commands = app.commands;
+            command = $link.attr('data-command');
 
-        commands.execute(command, {
+        var $navbarCollapse = $link.parents('.navbar-collapse');
+        if ($navbarCollapse.hasClass('in')) {
+            $navbarCollapse.collapse('hide');
+        }
+
+        this._app.commands.execute(command, {
             link: $link.attr('href')
         });
     },
@@ -77,11 +77,9 @@ var NavbarView = Marionette.LayoutView.extend({
             return;
         }
 
-        var file = files[0],
-            app = this.getOption('app'),
-            commands = app.commands;
+        var file = files[0];
 
-        commands.execute('load-level-set', {
+        this._app.commands.execute('load-level-set', {
             link: file
         });
     },

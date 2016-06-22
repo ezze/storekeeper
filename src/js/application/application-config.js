@@ -12,6 +12,7 @@ var sasquatchLevelSets = {
     name: 'Sasquatch',
     levelSets: []
 };
+
 for (var i = 1; i <= 12; i += 1) {
     sasquatchLevelSets.levelSets.push({
         name: 'Sasquatch ' + i,
