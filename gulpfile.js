@@ -105,7 +105,7 @@ gulp.task('cordova:clean', function() {
 });
 
 gulp.task('cordova:copy', ['build'], function() {
-    return gulp.src(['./assets/**/*', './index.html'])
+    return gulp.src(['./assets/**/*', './index.html'], { base: '.' })
         .pipe(gulp.dest('./cordova/www'));
 });
 
