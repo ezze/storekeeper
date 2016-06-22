@@ -1,5 +1,9 @@
 'use strict';
 
+/* jshint ignore:start */
+import Bootstrap from 'bootstrap';
+/* jshint ignore:end */
+
 import Marionette from 'backbone.marionette';
 import NavbarView from './navbar-view';
 

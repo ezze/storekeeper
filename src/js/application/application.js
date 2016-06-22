@@ -4,10 +4,6 @@ import Backbone from 'backbone';
 import Marionette from 'backbone.marionette';
 import BackboneBabysitter from 'backbone.babysitter';
 
-/* jshint ignore:start */
-import Bootstrap from 'bootstrap';
-/* jshint ignore:end */
-
 import ApplicationController from './application-controller';
 import ApplicationRouter from './application-router';
 
