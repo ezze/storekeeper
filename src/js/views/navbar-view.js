@@ -1,6 +1,7 @@
 'use strict';
 
 import $ from 'jquery';
+import _ from 'lodash';
 import Marionette from 'backbone.marionette';
 
 import formatter from '../helpers/formatter';

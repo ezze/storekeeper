@@ -31,7 +31,12 @@ gulp.task('copy:levels', function() {
         .pipe(gulp.dest('./assets/levels'));
 });
 
-gulp.task('copy', ['copy:fonts', 'copy:img', 'copy:levels']);
+gulp.task('copy:favicon', function() {
+    return gulp.src('./src/favicon/**/*')
+        .pipe(gulp.dest('./assets/favicon'));
+});
+
+gulp.task('copy', ['copy:fonts', 'copy:img', 'copy:levels', 'copy:favicon']);
 
 gulp.task('css', function() {
     var stream = gulp.src('./src/less/storekeeper.less');
