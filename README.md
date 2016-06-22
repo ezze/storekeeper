@@ -82,7 +82,7 @@ In order to build the game for Android follow these steps:
 
     or
      
-        android list skd --all
+        android list sdk --all
         android sdk -u -a -t <package-no>             
 
 7. Prepare application files in `cordova/www` directory:
