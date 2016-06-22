@@ -3,7 +3,7 @@
 import Easel from 'easel';
     
 var data = {
-    images: ['img/sprites.png'],
+    images: ['assets/img/sprites.png'],
     frames: {
         width: 32,
         height: 32,

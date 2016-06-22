@@ -6,20 +6,38 @@ var gulp = require('gulp'),
     WebpackDevServer = require('webpack-dev-server'),
     environments = require('gulp-environments'),
     development = environments.development(),
+    runSequence = require('run-sequence'),
     clean = require('gulp-clean'),
     less = require('gulp-less'),
     cleanCss = require('gulp-clean-css'),
     sourcemaps = require('gulp-sourcemaps');
 
 gulp.task('clean', function() {
-    return gulp.src('./assets/*', { read: false })
+    return gulp.src('./assets', { read: false })
         .pipe(clean());
 });
 
-gulp.task('copy', function() {
-    return gulp.src('./src/fonts/*')
+gulp.task('copy:fonts', function() {
+    return gulp.src('./src/fonts/**/*')
         .pipe(gulp.dest('./assets/fonts'));
 });
+
+gulp.task('copy:img', function() {
+    return gulp.src('./src/img/**/*')
+        .pipe(gulp.dest('./assets/img'));
+});
+
+gulp.task('copy:levels', function() {
+    return gulp.src('./src/levels/**/*')
+        .pipe(gulp.dest('./assets/levels'));
+});
+
+gulp.task('copy:favicon', function() {
+    return gulp.src('./src/favicon/**/*')
+        .pipe(gulp.dest('./assets/favicon'));
+});
+
+gulp.task('copy', ['copy:fonts', 'copy:img', 'copy:levels', 'copy:favicon']);
 
 gulp.task('css', function() {
     var stream = gulp.src('./src/less/storekeeper.less');
@@ -58,6 +76,7 @@ gulp.task('js', function(callback) {
 });
 
 gulp.task('server', function() {
+    console.log(webpackConfig.output.publicPath);
     new WebpackDevServer(webpackCompiler, {
         publicPath: '/' + webpackConfig.output.publicPath,
         stats: {
@@ -72,9 +91,26 @@ gulp.task('server', function() {
 });
 
 gulp.task('build', ['copy', 'css', 'js']);
+gulp.task('rebuild', function(callback) {
+    runSequence('clean', 'build', callback);
+});
 
 gulp.task('dev', ['build'], function() {
     gulp.watch(['src/js/**/*'], ['js']);
+});
+
+gulp.task('cordova:clean', function() {
+    return gulp.src('./cordova/www', { read: false })
+        .pipe(clean());
+});
+
+gulp.task('cordova:copy', ['build'], function() {
+    return gulp.src(['./assets/**/*', './index.html'], { base: '.' })
+        .pipe(gulp.dest('./cordova/www'));
+});
+
+gulp.task('cordova', function(callback) {
+    runSequence('cordova:clean', 'cordova:copy', callback);
 });
 
 gulp.task('default', ['build']);

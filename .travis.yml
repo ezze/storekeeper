@@ -1,0 +1,18 @@
+language: node_js
+node_js:
+  - "6"
+  - "5"
+  - "4"
+branches:
+  only:
+    - master
+    - dev
+install:
+  - npm install
+before_script:
+  - npm install -g gulp-cli
+  - npm install -g webpack
+  - npm install -g bower
+  - bower install
+script:
+  - NODE_ENV=production npm run build

@@ -3,26 +3,6 @@
 import $ from 'jquery';
 import _ from 'lodash';
 
-/**
- * Shows Bootstrap's modal window.
- *
- * <p>If another window is already shown this function will do nothing.</p>
- *
- * @author Dmitriy Pushkov <ezze@ezze.org>
- * @since 0.1.1
- * @alias module:showModal
- * @function
- *
- * @param {Object} options
- *      JavaScript object with the following properties:
- * @param {String} options.title
- *      Window's title text.
- * @param {String} options.html
- *      HTML contents of window's body.
- * @param {Boolean} [options.closeButton=false]
- *      If set to <code>true</code> then window can be closed by user.
- * @returns {Object} jQuery deferred object.
- */
 var showModal = function(options) {
     var jqBody = $('body');
     if (jqBody.children('.modal').length > 0) {
