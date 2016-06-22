@@ -23,6 +23,10 @@ var NavbarView = Marionette.LayoutView.extend({
         'change @ui.levelSetFile': 'onLevelSetFileChange'
     },
     initialize: function(options) {
+        _.bindAll(this, [
+            'browseLevelSet'
+        ]);
+
         this._app = options.app;
 
         this.listenTo(this._app.vent, 'level-set-load', this.onLevelSetLoad);
