@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="org.ezze.storekeeper.Storekeeper" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="org.ezze.storekeeper.Storekeeper" version="0.2.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Storekeeper</name>
     <description>
         Sokoban game
@@ -20,6 +20,12 @@
         <preference name="android-minSdkVersion" value="17" />
         <preference name="android-targetSdkVersion" value="24" />
         <preference name="android-compileSdkVersion" value="24" />
+        <icon src="www/assets/favicon/android-icon-36x36.png" density="ldpi" />
+        <icon src="www/assets/favicon/android-icon-48x48.png" density="mdpi" />
+        <icon src="www/assets/favicon/android-icon-72x72.png" density="hdpi" />
+        <icon src="www/assets/favicon/android-icon-96x96.png" density="xhdpi" />
+        <icon src="www/assets/favicon/android-icon-144x144.png" density="xxhdpi" />
+        <icon src="www/assets/favicon/android-icon-192x192.png" density="xxxhdpi" />
         <allow-intent href="market:*" />
     </platform>
     <platform name="ios">
