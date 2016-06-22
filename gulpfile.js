@@ -6,13 +6,14 @@ var gulp = require('gulp'),
     WebpackDevServer = require('webpack-dev-server'),
     environments = require('gulp-environments'),
     development = environments.development(),
+    runSequence = require('run-sequence'),
     clean = require('gulp-clean'),
     less = require('gulp-less'),
     cleanCss = require('gulp-clean-css'),
     sourcemaps = require('gulp-sourcemaps');
 
 gulp.task('clean', function() {
-    return gulp.src('./assets/**/*', { read: false })
+    return gulp.src('./assets', { read: false })
         .pipe(clean());
 });
 
@@ -90,9 +91,26 @@ gulp.task('server', function() {
 });
 
 gulp.task('build', ['copy', 'css', 'js']);
+gulp.task('rebuild', function(callback) {
+    runSequence('clean', 'build', callback);
+});
 
 gulp.task('dev', ['build'], function() {
     gulp.watch(['src/js/**/*'], ['js']);
+});
+
+gulp.task('cordova:clean', function() {
+    return gulp.src('./cordova/www', { read: false })
+        .pipe(clean());
+});
+
+gulp.task('cordova:copy', ['build'], function() {
+    return gulp.src(['./assets/**/*', './index.html'])
+        .pipe(gulp.dest('./cordova/www'));
+});
+
+gulp.task('cordova', function(callback) {
+    runSequence('cordova:clean', 'cordova:copy', callback);
 });
 
 gulp.task('default', ['build']);

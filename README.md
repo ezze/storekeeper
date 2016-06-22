@@ -41,13 +41,16 @@ the following command:
 
 The following Gulp tasks are available:
 
-- `build` (by default) — builds everything including CSS, JS and fonts in `assets` directory;
-- `copy` — copies fonts to `assets/fonts` directory;
+- `build` (by default) — builds everything including CSS, JS, fonts, images, levels and favicons in `assets` directory;
+- `rebuild` — rebuilds everything in `assets` directory;
+- `copy` — copies fonts to `assets/fonts` directory, images to `assets/img` directory, levels to `assets/levels`
+directory and favicons to `assets/favicon` directory;
 - `css` — compiles [LESS](http://lesscss.org/) in `assets/css` directory;
 - `js` — [hints](http://jshint.com/) and builds JavaScript in `assets/js` directory;
 - `clean` — removes everything in `assets` directory;
 - `dev` — builds everything and watches for changes in JavaScript to rebuild;
-- `server` — starts [Webpack Dev Server](https://webpack.github.io/docs/webpack-dev-server.html) at `http://localhost:8080`.
+- `server` — starts [Webpack Dev Server](https://webpack.github.io/docs/webpack-dev-server.html) at `http://localhost:8080`;
+- `cordova` — prepares Cordova application in `cordova/www` directory.
 
 ## Building for Android
 
@@ -82,7 +85,11 @@ In order to build the game for Android follow these steps:
         android list skd --all
         android sdk -u -a -t <package-no>             
 
-7. Build APK:
+7. Prepare application files in `cordova/www` directory:
+
+        gulp cordova
+
+8. Build APK:
 
         cd ./cordova
         cordova build android
