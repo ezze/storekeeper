@@ -4,7 +4,7 @@ var levels = [{
     name: 'Classic',
     levelSets: [{
         name: 'Classic',
-        url: 'levels/classic.json'
+        url: 'assets/levels/classic.json'
     }]
 }];
 
@@ -15,7 +15,7 @@ var sasquatchLevelSets = {
 for (var i = 1; i <= 12; i += 1) {
     sasquatchLevelSets.levelSets.push({
         name: 'Sasquatch ' + i,
-        url: 'levels/sasquatch-' + (i < 10 ? '0' : '') + i + '.sok'
+        url: 'assets/levels/sasquatch-' + (i < 10 ? '0' : '') + i + '.sok'
     });
 }
 levels.push(sasquatchLevelSets);
@@ -24,7 +24,7 @@ levels.push({
     name: 'Haikemono',
     levelSets: [{
         name: 'Haikemono',
-        url: 'levels/haikemono.sok'
+        url: 'assets/levels/haikemono.sok'
     }]
 });
 

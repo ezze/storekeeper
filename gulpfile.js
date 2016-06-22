@@ -12,14 +12,26 @@ var gulp = require('gulp'),
     sourcemaps = require('gulp-sourcemaps');
 
 gulp.task('clean', function() {
-    return gulp.src('./assets/*', { read: false })
+    return gulp.src('./assets/**/*', { read: false })
         .pipe(clean());
 });
 
-gulp.task('copy', function() {
-    return gulp.src('./src/fonts/*')
+gulp.task('copy:fonts', function() {
+    return gulp.src('./src/fonts/**/*')
         .pipe(gulp.dest('./assets/fonts'));
 });
+
+gulp.task('copy:img', function() {
+    return gulp.src('./src/img/**/*')
+        .pipe(gulp.dest('./assets/img'));
+});
+
+gulp.task('copy:levels', function() {
+    return gulp.src('./src/levels/**/*')
+        .pipe(gulp.dest('./assets/levels'));
+});
+
+gulp.task('copy', ['copy:fonts', 'copy:img', 'copy:levels']);
 
 gulp.task('css', function() {
     var stream = gulp.src('./src/less/storekeeper.less');
@@ -58,6 +70,7 @@ gulp.task('js', function(callback) {
 });
 
 gulp.task('server', function() {
+    console.log(webpackConfig.output.publicPath);
     new WebpackDevServer(webpackCompiler, {
         publicPath: '/' + webpackConfig.output.publicPath,
         stats: {

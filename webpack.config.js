@@ -9,6 +9,7 @@ module.exports = {
     entry: './src/js/init.js',
     output: {
         path: __dirname + '/assets/js',
+        publicPath: '/',
         filename: 'storekeeper' + '.js'
     },
     module: {

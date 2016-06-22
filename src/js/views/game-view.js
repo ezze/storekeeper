@@ -14,7 +14,8 @@ var GameView = Marionette.LayoutView.extend({
         new Storekeeper({
             app: app,
             container: this.ui.field.get(0),
-            levelSetSource: 'levels/classic.json'
+            levelSetSource: 'assets/levels/classic.json'
+
         });
     }
 });
