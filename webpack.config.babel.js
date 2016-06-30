@@ -2,10 +2,10 @@
 
 const NODE_ENV = process.env.NODE_ENV || 'dev';
 
-var webpack = require('webpack'),
-    path = require('path');
+import webpack from 'webpack';
+import path from 'path';
 
-module.exports = {
+var config = {
     target: 'node',
     node: {
         __dirname: true,
@@ -111,7 +111,7 @@ module.exports = {
 };
 
 if (NODE_ENV === 'production') {
-    module.exports.plugins.push(new webpack.optimize.UglifyJsPlugin({
+    config.plugins.push(new webpack.optimize.UglifyJsPlugin({
         compress: {
             warnings: false,
             drop_console: true,
@@ -119,3 +119,5 @@ if (NODE_ENV === 'production') {
         }
     }));
 }
+
+export default config;
