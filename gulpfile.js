@@ -60,8 +60,9 @@ gulp.task('css', function() {
     return stream.pipe(gulp.dest('./assets/css'));
 });
 
-var webpackConfig = Object.create(require('./webpack.config.js')),
-    webpackCompiler = webpack(webpackConfig);
+var webpackConfig = Object.create(require('./webpack.config.js'));
+
+var webpackCompiler = webpack(webpackConfig);
 
 gulp.task('js', function(callback) {
     webpackCompiler.run(function(error, stats) {
@@ -78,7 +79,8 @@ gulp.task('js', function(callback) {
 gulp.task('server', function() {
     console.log(webpackConfig.output.publicPath);
     new WebpackDevServer(webpackCompiler, {
-        publicPath: '/' + webpackConfig.output.publicPath,
+        publicPath: webpackConfig.output.publicPath,
+        compress: true,
         stats: {
             colors: true
         }
@@ -86,7 +88,7 @@ gulp.task('server', function() {
         if (error) {
             throw new gutil.PluginError('server', error);
         }
-        gutil.log('[server]', 'http://localhost:8080/webpack-dev-server/index.html');
+        gutil.log('[webpack-dev-server]', 'http://localhost:8080/webpack-dev-server/index.html');
     });
 });
 
@@ -96,7 +98,7 @@ gulp.task('rebuild', function(callback) {
 });
 
 gulp.task('dev', ['build'], function() {
-    gulp.watch(['src/js/**/*'], ['js']);
+    gulp.watch(['./index.js', './lib/**/*'], ['js']);
 });
 
 gulp.task('cordova:clean', function() {

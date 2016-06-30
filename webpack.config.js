@@ -6,17 +6,25 @@ var webpack = require('webpack'),
     path = require('path');
 
 module.exports = {
-    entry: './src/js/init.js',
+    target: 'node',
+    node: {
+        __dirname: true,
+        __filename: true
+    },
+    context: __dirname,
+    entry: {
+        index: ['./index.js']
+    },
     output: {
         path: __dirname + '/assets/js',
-        publicPath: '/',
-        filename: 'storekeeper' + '.js'
+        publicPath: '/assets/js',
+        filename: '[name]' + '.js'
     },
     module: {
         preLoaders: [{
             test: /\.js$/,
             loader: 'jshint-loader',
-            include: path.resolve(__dirname, 'src/js')
+            include: path.resolve(__dirname, 'lib')
         }],
         loaders: [{
             test: /\.jsx?$/,
@@ -24,11 +32,7 @@ module.exports = {
             exclude: [
                 path.resolve(__dirname, 'node_modules'),
                 path.resolve(__dirname, 'bower_components')
-            ],
-            query: {
-                presets: ['es2015'],
-                plugins: ['transform-runtime']
-            }
+            ]
         }, {
             test: /\.js/,
             loader: 'imports?define=>false'     // disabling AMD support
@@ -103,8 +107,7 @@ module.exports = {
         emitErrors: false,
         failOnHint: false
     },
-    devtool: NODE_ENV === 'dev' ? 'cheap-inline-module-source-map' : null,
-    watch: false
+    devtool: NODE_ENV === 'dev' ? 'cheap-inline-module-source-map' : null
 };
 
 if (NODE_ENV === 'production') {
