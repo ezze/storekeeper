@@ -3,7 +3,7 @@
 import LevelMap from '../../lib/level/level-map';
 import levelSetJson from '../../levels/original.json';
 
-describe('Level map initialization', () => {
+describe('Level map', () => {
     let items = [
         '######',
         '#.   ####',
@@ -31,6 +31,7 @@ describe('Level map initialization', () => {
             rows: 9,
             columns: 9
         });
+
         levelMap = new LevelMap(items);
         expect(levelMap.rows).toBe(size.rows);
         expect(levelMap.columns).toBe(size.columns);
@@ -103,5 +104,34 @@ describe('Level map initialization', () => {
         expect(levelMap.rows).toBe(4);
         expect(levelMap.columns).toBe(5);
         expect(levelMap.items).toEqual(truncatedItems);
+    });
+
+    it('Validation', () => {
+        let levelMap;
+        levelSetJson.levels.forEach(function(level) {
+            levelMap = new LevelMap(level.items);
+            expect(levelMap.validate()).toBe(true);
+        });
+
+        levelMap = new LevelMap(items);
+        expect(levelMap.validate()).toBe(true);
+
+        levelMap.insert(3, 4, ' ');
+        expect(levelMap.validate()).toBe(false);
+
+        levelMap.insert(1, 4, '@');
+        expect(levelMap.validate()).toBe(true);
+
+        levelMap.insert(3, 1, '*');
+        expect(levelMap.validate()).toBe(false);
+
+        levelMap.insert(3, 4, '.');
+        expect(levelMap.validate()).toBe(true);
+
+        levelMap.insert(1, 4, '+');
+        expect(levelMap.validate()).toBe(false);
+
+        levelMap.insert(3, 1, '$');
+        expect(levelMap.validate()).toBe(true);
     });
 });
