@@ -15,13 +15,20 @@ describe('Level map initialization', () => {
         ' ##   ##',
         '  #####'
     ];
+    
+    let truncatedItems = [
+        '#####',
+        '#   #',
+        '#.$@#',
+        '#####'
+    ];
 
     it('Size detection', () => {
         let size, levelMap;
 
         size = LevelMap.detectSize(items);
         expect(size).toEqual({
-            rows: items.length,
+            rows: 9,
             columns: 9
         });
         levelMap = new LevelMap(items);
@@ -77,8 +84,19 @@ describe('Level map initialization', () => {
         expect(levelMap.at(levelMap.rows - 1, levelMap.columns - 1)).toBe('*');
 
         levelMap.rows = 4;
-        //levelMap.columns = 5;
+        levelMap.columns = 5;
+        levelMap.insert(3, 1, '#');
+        levelMap.insert(3, 2, '#');
+        levelMap.insert(3, 3, '#');
+        levelMap.insert(3, 4, '#');
+        levelMap.insert(2, 3, '@');
+        levelMap.remove(1, 1);
+        expect(levelMap.items).toEqual(truncatedItems);
 
-        console.log(levelMap.toString());
+        levelMap.columns = 9;
+        expect(levelMap.items).toEqual(truncatedItems);
+
+        levelMap.rows = 9;
+        expect(levelMap.items).not.toEqual(truncatedItems);
     });
 });
