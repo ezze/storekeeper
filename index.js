@@ -1,6 +1,5 @@
 import Level from './lib/level/level';
 import LevelMap from './lib/level/level-map';
-//import Loader from './lib/level/loader/loader-json';
 
 import levelSet from './levels/original.json';
 
