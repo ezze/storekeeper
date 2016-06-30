@@ -13,9 +13,11 @@ import less from 'gulp-less';
 import cleanCss from 'gulp-clean-css';
 import sourceMaps from 'gulp-sourcemaps';
 
-let webpackConfig = Object.create(require('./webpack.config.js')),
+let webpackConfig = Object.create(require('./webpack.config.babel.js').default),
     webpackCompiler = webpack(webpackConfig),
     development = environments.development();
+
+console.log(webpackConfig);
 
 gulp.task('clean', () => {
     return gulp.src('./assets', { read: false }).pipe(clean());
@@ -73,6 +75,7 @@ gulp.task('js', (callback) => {
 });
 
 gulp.task('server', () => {
+    console.log(webpackConfig);
     new WebpackDevServer(webpackCompiler, {
         publicPath: webpackConfig.output.publicPath,
         compress: true,
