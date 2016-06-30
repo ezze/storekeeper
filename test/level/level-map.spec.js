@@ -98,5 +98,10 @@ describe('Level map initialization', () => {
 
         levelMap.rows = 9;
         expect(levelMap.items).not.toEqual(truncatedItems);
+
+        levelMap.normalize();
+        expect(levelMap.rows).toBe(4);
+        expect(levelMap.columns).toBe(5);
+        expect(levelMap.items).toEqual(truncatedItems);
     });
 });
