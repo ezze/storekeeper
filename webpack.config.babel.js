@@ -34,8 +34,12 @@ var config = {
                 path.resolve(__dirname, 'bower_components')
             ]
         }, {
-            test: /\.js/,
-            loader: 'imports?define=>false'     // disabling AMD support
+            test: /\.json$/,
+            loader: 'json',
+            exclude: [
+                path.resolve(__dirname, 'node_modules'),
+                path.resolve(__dirname, 'bower_components')
+            ]
         }, {
             test: /\.mustache$/,
             loader: 'mustache',

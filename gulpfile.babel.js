@@ -12,12 +12,11 @@ import clean from 'gulp-clean';
 import less from 'gulp-less';
 import cleanCss from 'gulp-clean-css';
 import sourceMaps from 'gulp-sourcemaps';
+import jasmine from 'gulp-jasmine';
 
 let webpackConfig = Object.create(require('./webpack.config.babel.js').default),
     webpackCompiler = webpack(webpackConfig),
     development = environments.development();
-
-console.log(webpackConfig);
 
 gulp.task('clean', () => {
     return gulp.src('./assets', { read: false }).pipe(clean());
@@ -65,7 +64,9 @@ gulp.task('css', () => {
 gulp.task('js', (callback) => {
     webpackCompiler.run(function(error, stats) {
         if (error) {
-            throw new gutil.PluginError('js', error);
+            throw new gutil.PluginError('js', error, {
+                showStack: true
+            });
         }
         gutil.log('[js]', stats.toString({
             colors: true
@@ -75,7 +76,6 @@ gulp.task('js', (callback) => {
 });
 
 gulp.task('server', () => {
-    console.log(webpackConfig);
     new WebpackDevServer(webpackCompiler, {
         publicPath: webpackConfig.output.publicPath,
         compress: true,
@@ -84,7 +84,9 @@ gulp.task('server', () => {
         }
     }).listen(8080, 'localhost', function(error) {
         if (error) {
-            throw new gutil.PluginError('server', error);
+            throw new gutil.PluginError('server', error, {
+                showStack: true
+            });
         }
         gutil.log('[webpack-dev-server]', 'http://localhost:8080/webpack-dev-server/index.html');
     });
@@ -97,6 +99,12 @@ gulp.task('rebuild', (callback) => {
 
 gulp.task('dev', ['build'], () => {
     gulp.watch(['./index.js', './lib/**/*'], ['js']);
+});
+
+gulp.task('test', () => {
+    gulp.src('./test/**/*.spec.js').pipe(jasmine({
+        verbose: true
+    }));
 });
 
 gulp.task('cordova:clean', () => {

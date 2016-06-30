@@ -88,6 +88,7 @@ directory and favicons to `assets/favicon` directory;
 - `clean` — removes everything in `assets` directory;
 - `dev` — builds everything and watches for changes in JavaScript to rebuild;
 - `server` — starts [Webpack Dev Server](https://webpack.github.io/docs/webpack-dev-server.html) at `http://localhost:8080`;
+- `test` — test JavaScript code with [Jasmine](http://jasmine.github.io/);
 - `cordova` — prepares Cordova application in `cordova/www` directory.
 
 ## Contributing
