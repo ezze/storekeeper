@@ -1,13 +1,9 @@
 'use strict';
 
-import SceneObject from './scene-object';
+import Item from './item';
 
-var Goal = function(options) {
-    SceneObject.apply(this, arguments);
-    this._name = 'Goal';
-    this._sprite.gotoAndStop('goal');
-};
-
-Goal.prototype = Object.create(SceneObject.prototype);
-
-export default Goal;
+export default class Goal extends Item {
+    constructor() {
+        super();
+    }
+}

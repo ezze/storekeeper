@@ -1,13 +1,9 @@
 'use strict';
 
-import SceneObject from './scene-object';
+import Item from './item';
 
-var Wall = function(options) {
-    SceneObject.apply(this, arguments);
-    this._name = 'Wall';
-    this._sprite.gotoAndStop('wall');
-};
-
-Wall.prototype = Object.create(SceneObject.prototype);
-
-export default Wall;
+export default class Wall extends Item {
+    constructor() {
+        super();
+    }
+}
