@@ -1,6 +1,6 @@
 'use strict';
 
-const NODE_ENV = process.env.NODE_ENV || 'dev';
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 import webpack from 'webpack';
 import path from 'path';
@@ -29,23 +29,20 @@ var config = {
         loaders: [{
             test: /\.jsx?$/,
             loader: 'babel',
-            exclude: [
-                path.resolve(__dirname, 'node_modules'),
-                path.resolve(__dirname, 'bower_components')
+            include: [
+                path.resolve(__dirname, 'lib')
             ]
         }, {
             test: /\.json$/,
             loader: 'json',
-            exclude: [
-                path.resolve(__dirname, 'node_modules'),
-                path.resolve(__dirname, 'bower_components')
+            include: [
+                path.resolve(__dirname, 'lib')
             ]
         }, {
             test: /\.mustache$/,
             loader: 'mustache',
-            exclude: [
-                path.resolve(__dirname, 'node_modules'),
-                path.resolve(__dirname, 'bower_components')
+            include: [
+                path.resolve(__dirname, 'lib')
             ]
         }, {
             include: [
@@ -92,7 +89,6 @@ var config = {
     jshint: {
         esversion: 6,
         node: true,
-        
         browser: true,
         camelcase: true,
         curly: true,
@@ -107,11 +103,10 @@ var config = {
         quotmark: "single",
         undef: true,
         unused: "vars",
-
         emitErrors: false,
         failOnHint: false
     },
-    devtool: NODE_ENV === 'dev' ? 'cheap-inline-module-source-map' : null
+    devtool: NODE_ENV === 'development' ? 'cheap-inline-module-source-map' : null
 };
 
 if (NODE_ENV === 'production') {

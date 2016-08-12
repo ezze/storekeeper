@@ -5,13 +5,15 @@ import WebpackDevServer from 'webpack-dev-server';
 
 import gulp from 'gulp';
 import gutil from 'gulp-util';
-
+import watch from 'gulp-watch';
+import batch from 'gulp-batch';
 import environments from 'gulp-environments';
 import runSequence from 'run-sequence';
 import clean from 'gulp-clean';
 import less from 'gulp-less';
 import cleanCss from 'gulp-clean-css';
 import sourceMaps from 'gulp-sourcemaps';
+import autoprefixer from 'gulp-autoprefixer';
 import jasmine from 'gulp-jasmine';
 
 let webpackConfig = Object.create(require('./webpack.config.babel.js').default),
@@ -41,14 +43,23 @@ gulp.task('copy:favicon', () => {
 gulp.task('copy', ['copy:fonts', 'copy:img', 'copy:levels', 'copy:favicon']);
 
 gulp.task('css', () => {
-    var stream = gulp.src('./src/less/storekeeper.less');
+    let stream = gulp.src('./src/less/storekeeper.less'),
+        l = less({
+            relativePaths: true
+        });
+
+    l.on('error', function(e) {
+        gutil.log(e);
+        stream.end();
+    });
 
     if (development) {
         stream = stream.pipe(sourceMaps.init());
     }
 
-    stream = stream.pipe(less({
-        relativePaths: true
+    stream = stream.pipe(l).pipe(autoprefixer({
+        browsers: ['last 2 versions'],
+        cascade: false
     }));
 
     if (development) {
@@ -98,7 +109,44 @@ gulp.task('rebuild', (callback) => {
 });
 
 gulp.task('dev', ['build'], () => {
-    gulp.watch(['./index.js', './lib/**/*'], ['js']);
+    watch([
+        'index.js',
+        'lib/**/*.js',
+        'lib/**/*.json',
+        'lib/**/*.mustache'
+    ], batch(function(events, callback) {
+        gulp.start('js', callback);
+    }));
+
+    watch([
+        'src/less/**/*.less'
+    ], batch((events, callback) => {
+        gulp.start('css', callback);
+    }));
+
+    watch([
+        'src/fonts/**/*.*'
+    ], batch((events, callback) => {
+        gulp.start('copy:fonts', callback);
+    }));
+
+    watch([
+        'src/img/**/*.*'
+    ], batch((events, callback) => {
+        gulp.start('copy:img', callback);
+    }));
+
+    watch([
+        'src/levels/**/*.*'
+    ], batch((events, callback) => {
+        gulp.start('copy:levels', callback);
+    }));
+
+    watch([
+        'src/favicon/**/*.*'
+    ], batch((events, callback) => {
+        gulp.start('copy:favicon', callback);
+    }));
 });
 
 gulp.task('test', () => {
