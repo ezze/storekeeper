@@ -10,7 +10,7 @@ import Goal from './object/goal';
 import Box from './object/box';
 
 export default class Level {
-    constructor(items) {
+    constructor(items, options) {
         if (items instanceof LevelMap) {
             this.map = items;
         }
@@ -21,6 +21,9 @@ export default class Level {
         if (!this.map.validate()) {
             throw new Error('Level map is invalid.');
         }
+
+        options = options || {};
+        this.stepsPerMove = options.stepsPerMove || 8;
 
         this.initialize();
     }
@@ -48,23 +51,36 @@ export default class Level {
                 }
             }
         }
+
+        this._isAnimating = false;
     }
 
-    at(row, column) {
+    at(row, column, filter) {
         let items = [];
 
-        if (this._worker.row === row && this._worker.column === column) {
-            items.push(this._worker);
+        if (!filter) {
+            filter = ['worker', 'walls', 'goals', 'boxes'];
         }
 
-        _.each([this._walls, this._goals, this._boxes], function(typedItems) {
-            _.each(typedItems, function(typedItem) {
-                if (typedItem.row === row && typedItem.column === column) {
-                    items.push(typedItem);
-                    return false;
-                }
-                return true;
-            });
+        _.each(filter, filterType => {
+            switch (filterType) {
+                case 'wall': filterType = 'walls'; break;
+                case 'goal': filterType = 'goals'; break;
+                case 'box': filterType = 'boxes'; break;
+            }
+
+            if (filterType === 'worker' && this._worker.row === row && this._worker.column === column) {
+                items.push(this._worker);
+            }
+            else {
+                _.each(this['_' + filterType], item => {
+                    if (item.row === row && item.column === column) {
+                        items.push(item);
+                        return false;
+                    }
+                    return true;
+                });
+            }
         });
 
         return items;
@@ -90,6 +106,14 @@ export default class Level {
 
     get columns() {
         return this._map.columns;
+    }
+
+    get stepsPerMove() {
+        return this._stepsPerMove;
+    }
+
+    set stepsPerMove(stepsPerMove) {
+        this._stepsPerMove = stepsPerMove;
     }
 
     get worker() {

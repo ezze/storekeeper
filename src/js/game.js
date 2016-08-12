@@ -17,12 +17,24 @@ class Game {
         this.renderer = options.renderer;
         this.levelSet = options.levelSet instanceof LevelSet ? options.levelSet : new LevelSet();
 
+        this.bindMethods();
         this.initializeTicker();
+        this.enableControls();
+
+    }
+
+    bindMethods() {
+        _.bindAll(
+            this,
+            'onKeyDown',
+            'onKeyUp',
+            'onTouchStart',
+            'onTouchEnd',
+            'onTick'
+        );
     }
 
     initializeTicker() {
-        _.bindAll(this, ['onTick']);
-
         let ticker = this._ticker = new Ticker({
             fps: 30
         });
@@ -77,25 +89,25 @@ class Game {
             this.browseLevelSet();
             return;
         }
+        */
 
+        /*
         if (event.ctrlKey && event.altKey && event.which === 82) {
             // Ctrl + Alt + R
             this.restartLevel();
             return;
         }
-
-        if (event.altKey && event.which === 90) {
-            // Alt + Z
-            this.previousLevel();
-            return;
-        }
-
-        if (event.altKey && event.which === 88) {
-            // Alt + X
-            this.nextLevel();
-            return;
-        }
         */
+
+        if (event.altKey && event.which === 90) {       // Alt + Z
+            this.levelSet.goToPrevious();
+            return;
+        }
+
+        if (event.altKey && event.which === 88) {       // Alt + X
+            this.levelSet.goToNext();
+            return;
+        }
 
         var direction = GameDirection.byKeyCode(event.which);
         if (direction === Direction.NONE) {

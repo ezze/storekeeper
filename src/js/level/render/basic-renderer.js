@@ -21,6 +21,12 @@ class BasicRenderer extends Renderer {
         context.fillText('@', x, y);
     }
 
+    renderWorkerOverGoal(context, x, y, item) {
+        context.font = font;
+        context.fillStyle = '#ffd';
+        context.fillText('+', x, y);
+    }
+
     renderWall(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#c00';
@@ -33,10 +39,24 @@ class BasicRenderer extends Renderer {
         context.fillText('.', x, y);
     }
 
+    renderGoalBehindWorker(context, x, y, item) {
+        // Do nothing
+    }
+
+    renderGoalBehindBox(context, x, y, item) {
+        // Do nothing
+    }
+
     renderBox(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#dd0';
         context.fillText('$', x, y);
+    }
+
+    renderBoxOverGoal(context, x, y, item) {
+        context.font = font;
+        context.fillStyle = '#0d0';
+        context.fillText('*', x, y);
     }
 }
 

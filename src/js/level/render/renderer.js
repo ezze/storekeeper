@@ -26,15 +26,18 @@ class Renderer {
 
         this._$container = $(this._container);
 
-        this.canvas.width = this._$container.width();
-        this.canvas.height = this._$container.height();
-
         this._level = null;
 
         this._cameraOffsetX = 0;
         this._cameraOffsetY = 0;
 
         $(window).on('resize', this.onWindowResize);
+        this.adjustCanvasSize();
+    }
+
+    adjustCanvasSize() {
+        this.canvas.width = this._$container.outerWidth(true);
+        this.canvas.height = this._$container.outerHeight(true);
     }
 
     render() {
@@ -66,30 +69,39 @@ class Renderer {
         let x = this._cameraOffsetX + item.column * this.itemWidth,
             y = this._cameraOffsetY + (item.row + 1) * this.itemHeight;
 
-        if (item instanceof Worker) {
-            this.renderWorker(context, x, y, item);
-        }
-        else if (item instanceof Wall) {
+        if (item instanceof Wall) {
             this.renderWall(context, x, y, item);
         }
         else if (item instanceof Goal) {
-            this.renderGoal(context, x, y, item);
+            let items = this.level.at(item.row, item.column, ['worker', 'box']);
+            if (items.length === 1) {
+                if (items[0] instanceof Worker) {
+                    this.renderGoalBehindWorker(context, x, y, item);
+                }
+                else {
+                    this.renderGoalBehindBox(context, x, y, item);
+                }
+            }
+            else {
+                this.renderGoal(context, x, y, item);
+            }
+        }
+        else if (item instanceof Worker) {
+            if (this.level.at(item.row, item.column, ['goal']).length === 1) {
+                this.renderWorkerOverGoal(context, x, y, item);
+            }
+            else {
+                this.renderWorker(context, x, y, item);
+            }
         }
         else if (item instanceof Box) {
-            this.renderBox(context, x, y, item);
+            if (this.level.at(item.row, item.column, ['goal']).length === 1) {
+                this.renderBoxOverGoal(context, x, y, item);
+            }
+            else {
+                this.renderBox(context, x, y, item);
+            }
         }
-    }
-
-    renderWorker(context, x, y, item) {
-    }
-
-    renderWall(context, x, y, item) {
-    }
-
-    renderGoal(context, x, y, item) {
-    }
-
-    renderBox(context, x, y, item) {
     }
 
     get container() {
@@ -125,16 +137,47 @@ class Renderer {
     }
 
     get itemWidth() {
-        throw new TypeError('Getter method for "itemWidth" is not implemented.');
+        throw new Error('Getter method for "itemWidth" is not implemented.');
     }
 
     get itemHeight() {
-        throw new TypeError('Getter method for "itemHeight" is not implemented.');
+        throw new Error('Getter method for "itemHeight" is not implemented.');
+    }
+
+    renderWorker(context, x, y, item) {
+        throw new Error('Method "renderWorker" is not implemented.');
+    }
+
+    renderWorkerOverGoal(context, x, y, item) {
+        throw new Error('Method "renderWorkerOverGoal" is not implemented.');
+    }
+
+    renderWall(context, x, y, item) {
+        throw new Error('Method "renderWall" is not implemented.');
+    }
+
+    renderGoal(context, x, y, item) {
+        throw new Error('Method "renderGoal" is not implemented.');
+    }
+
+    renderGoalBehindWorker(context, x, y, item) {
+        throw new Error('Method "renderGoalBehindWorker" is not implemented.');
+    }
+
+    renderGoalBehindBox(context, x, y, item) {
+        throw new Error('Method "renderGoalBehindBox" is not implemented.');
+    }
+
+    renderBox(context, x, y, item) {
+        throw new Error('Method "renderBox" is not implemented.');
+    }
+
+    renderBoxOverGoal(context, x, y, item) {
+        throw new Error('Method "renderBoxOverGoal" is not implemented.');
     }
 
     onWindowResize(event) {
-        this.canvas.width = this._$container.outerWidth(true);
-        this.canvas.height = this._$container.outerHeight(true);
+        this.adjustCanvasSize();
     }
 
     destroy() {

@@ -42,6 +42,27 @@ export default class LevelSet {
         // TODO: implement
     }
 
+    goToPrevious() {
+        if (this._index === null) {
+            return;
+        }
+
+        this._index--;
+        if (this._index < 0) {
+            this._index = this._levels.length - 1;
+        }
+    }
+
+    goToNext() {
+        if (this._index === null) {
+            return;
+        }
+        this._index++;
+        if (this._index >= this._levels.length) {
+            this._index = 0;
+        }
+    }
+
     get levelIndex() {
         return this._index;
     }
