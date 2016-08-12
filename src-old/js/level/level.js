@@ -170,30 +170,6 @@ Level.prototype.removeObjectsFromStage = function() {
     this._camera.removeAllChildren();
 };
 
-Level.prototype.getObjects = function(row, column) {
-    var objects = [];
-
-    if (this._worker.row === row && this._worker.column === column) {
-        objects.push(this._worker);
-    }
-
-    _.each([
-        this._walls,
-        this._goals,
-        this._boxes
-    ], function(objectsStack) {
-        _.each(objectsStack, function(object) {
-            if (object.row === row && object.column === column) {
-                objects.push(object);
-                return false;
-            }
-            return true;
-        });
-    });
-
-    return objects;
-};
-
 Level.prototype.update = function() {
     this._stage.update();
 };

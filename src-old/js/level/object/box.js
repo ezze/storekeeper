@@ -79,7 +79,7 @@ Box.prototype.onMove = function(params) {
     var isSourceGoal = false,
         isTargetGoal = false;
 
-    var sourceOjbects = this.getMoveTargetObjects(Direction.getCounterDirection(params.direction));
+    var sourceOjbects = this.getMoveTargetObjects(Direction.getOppositeDirection(params.direction));
     _.each(sourceOjbects, function(object) {
         if (object instanceof Goal) {
             // Box is moved from goal

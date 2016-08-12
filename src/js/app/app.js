@@ -4,10 +4,10 @@ import Backbone from 'backbone';
 import Marionette from 'backbone.marionette';
 import BackboneBabysitter from 'backbone.babysitter';
 
-import ApplicationController from './application-controller';
-import ApplicationRouter from './application-router';
+import AppController from './app-controller';
+import AppRouter from './app-router';
 
-var Application = Marionette.Application.extend({
+var App = Marionette.Application.extend({
     initialize: function(options) {
         this._isInitialized = false;
 
@@ -17,9 +17,9 @@ var Application = Marionette.Application.extend({
             'app': '.application'
         });
 
-        this.appRouter = new ApplicationRouter({
+        this.appRouter = new AppRouter({
             app: this,
-            controller: new ApplicationController({
+            controller: new AppController({
                 app: this
             })
         });
@@ -43,4 +43,4 @@ var Application = Marionette.Application.extend({
     }
 });
 
-export default Application;
+export default App;

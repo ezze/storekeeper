@@ -1,8 +1,6 @@
-'use strict';
+import _ from 'underscore';
 
-import _ from 'lodash';
-
-var Direction = {
+let Direction = {
     NONE: 'none',
     LEFT: 'left',
     RIGHT: 'right',
@@ -34,7 +32,7 @@ Direction.isValidVertical = function(direction) {
     ], direction);
 };
 
-Direction.getCounterDirection = function(direction) {
+Direction.getOppositeDirection = function(direction) {
     switch (direction) {
         case Direction.LEFT: return Direction.RIGHT;
         case Direction.RIGHT: return Direction.LEFT;

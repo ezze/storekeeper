@@ -121,12 +121,14 @@ export default class LevelMap {
             boxesCount = 0;
 
         this._items.forEach(function(item) {
-            switch (item) {
-                case '@': workersCount++; break;
-                case '+': workersCount++; goalsCount++; break;
-                case '.': goalsCount++; break;
-                case '$': boxesCount++; break;
-                case '*': goalsCount++; boxesCount++; break;
+            if (LevelMap.isWorkerItem(item)) {
+                workersCount++;
+            }
+            if (LevelMap.isGoalItem(item)) {
+                goalsCount++;
+            }
+            if (LevelMap.isBoxItem(item)) {
+                boxesCount++;
             }
         });
 
@@ -148,5 +150,25 @@ export default class LevelMap {
 
     static isItemValid(character) {
         return validCharacters.indexOf(character) >= 0;
+    }
+
+    static isWorkerItem(character) {
+        return character === '@' || character === '+';
+    }
+
+    static isWallItem(character) {
+        return character === '#';
+    }
+
+    static isGoalItem(character) {
+        return character === '.' || character === '+' || character === '*';
+    }
+
+    static isBoxItem(character) {
+        return character === '$' || character === '*';
+    }
+
+    static isSpaceItem(character) {
+        return character === ' ';
     }
 }

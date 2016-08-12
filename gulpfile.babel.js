@@ -110,10 +110,10 @@ gulp.task('rebuild', (callback) => {
 
 gulp.task('dev', ['build'], () => {
     watch([
-        'index.js',
-        'lib/**/*.js',
-        'lib/**/*.json',
-        'lib/**/*.mustache'
+        'src/js/**/*.js',
+        'src/js/**/*.json',
+        'src/js/**/*.mustache',
+        'src/levels/**/*.json'
     ], batch(function(events, callback) {
         gulp.start('js', callback);
     }));

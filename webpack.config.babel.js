@@ -11,7 +11,7 @@ var config = {
         __dirname: true,
         __filename: true
     },
-    context: __dirname,
+    context: __dirname + '/src/js',
     entry: {
         index: ['./index.js']
     },
@@ -24,25 +24,26 @@ var config = {
         preLoaders: [{
             test: /\.js$/,
             loader: 'jshint-loader',
-            include: path.resolve(__dirname, 'lib')
+            include: path.resolve(__dirname, 'src/js')
         }],
         loaders: [{
             test: /\.jsx?$/,
             loader: 'babel',
             include: [
-                path.resolve(__dirname, 'lib')
+                path.resolve(__dirname, 'src/js')
             ]
         }, {
             test: /\.json$/,
             loader: 'json',
             include: [
-                path.resolve(__dirname, 'lib')
+                path.resolve(__dirname, 'src/js'),
+                path.resolve(__dirname, 'src/levels')
             ]
         }, {
             test: /\.mustache$/,
             loader: 'mustache',
             include: [
-                path.resolve(__dirname, 'lib')
+                path.resolve(__dirname, 'src/js')
             ]
         }, {
             include: [
