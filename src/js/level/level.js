@@ -130,6 +130,14 @@ export default class Level {
     }
 
     detectCollision(shift) {
+        // Drop goal target flag for recenlty animated box
+        _.each(this._animatedItems, item => {
+            if (item instanceof Box) {
+                item.goalSource = item.goalTarget;
+                item.goalTarget = false;
+            }
+        });
+
         let targetRow = this.worker.row + shift.y,
             targetColumn = this.worker.column + shift.x;
 
@@ -141,6 +149,7 @@ export default class Level {
             animatedItems = [this.worker],
             isCollision = false;
 
+        let isGoalTarget = false;
         _.each(targetItems, targetItem => {
             if (targetItem instanceof Wall) {
                 isCollision = true;
@@ -159,20 +168,29 @@ export default class Level {
                     _.each(boxTargetItems, boxTargetItem => {
                         if (boxTargetItem instanceof Wall || boxTargetItem instanceof Box) {
                             isCollision = true;
-                            return false;
+                        }
+                        else {
+                            targetItem.goalTarget = boxTargetItem instanceof Goal;
                         }
                     });
                 }
 
-                if (isCollision) {
-                    return false;
-                }
-
                 animatedItems.push(targetItem);
+            }
+            else if (targetItem instanceof Goal) {
+                isGoalTarget = true;
             }
         });
 
         if (!isCollision) {
+            if (isGoalTarget) {
+                _.each(animatedItems, item => {
+                    if (item instanceof Box) {
+                        item.goalSource = true;
+                        return false;
+                    }
+                });
+            }
             this._animatedItems = animatedItems;
         }
 

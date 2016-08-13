@@ -91,7 +91,12 @@ class InvaderRenderer extends Renderer {
     }
 
     renderBox(context, x, y, item) {
-        this.renderSprite(context, x, y, 0);
+        if (item.goalSource && item.goalTarget) {
+            this.renderBoxOverGoal(context, x, y, item);
+        }
+        else {
+            this.renderSprite(context, x, y, 0);
+        }
     }
 
     renderBoxOverGoal(context, x, y, item) {
