@@ -19,7 +19,7 @@ class Game {
         this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
 
-    render() {
+    render(time) {
         let level = this.levelSet.level;
         if (level === null) {
             return;
@@ -29,15 +29,15 @@ class Game {
             this._renderer.level = level;
         }
 
-        this._renderer.render();
+        this._renderer.render(time);
     }
 
-    animationFrame() {
+    animationFrame(time) {
         let level = this.levelSet.level;
         if (level !== null) {
             level.move();
         }
-        this.render();
+        this.render(time);
         this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
 
