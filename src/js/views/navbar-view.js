@@ -4,9 +4,25 @@ import $ from 'jquery';
 import Marionette from 'backbone.marionette';
 
 import formatter from '../helpers/formatter';
-import isInteger from '../helpers/is-integer';
 
-var NavbarView = Marionette.LayoutView.extend({
+function formatLevelNumber(levelNumber) {
+    return formatter.formatInteger(levelNumber, 3);
+}
+
+function formatBoxesCount(boxesOverGoalsCount, boxesCount) {
+    return formatter.formatInteger(boxesOverGoalsCount, 3) + '/' +
+        formatter.formatInteger(boxesCount, 3);
+}
+
+function formatPushesCount(pushesCount) {
+    return formatter.formatInteger(pushesCount, 5);
+}
+
+function formatMovesCount(movesCount) {
+    return formatter.formatInteger(movesCount, 5);
+}
+
+let NavbarView = Marionette.ItemView.extend({
     template: require('../templates/navbar.mustache'),
     ui: {
         link: 'a',
@@ -22,25 +38,40 @@ var NavbarView = Marionette.LayoutView.extend({
         'click @ui.commandLink': 'onCommandLinkClick',
         'change @ui.levelSetFile': 'onLevelSetFileChange'
     },
-    initialize: function(options) {
+    initialize(options) {
         this._app = options.app;
 
+        this.listenTo(this._app.vent, 'game:level:number', this.render);
+        this.listenTo(this._app.vent, 'game:level:move:start', this.render);
+        this.listenTo(this._app.vent, 'game:level:move:end', this.render);
+
         this.listenTo(this._app.vent, 'level-set-load', this.onLevelSetLoad);
-        this.listenTo(this._app.vent, 'level-info-update', this.onLevelInfoUpdate);
         this._app.commands.setHandler('browse-level-set', this.browseLevelSet);
     },
-    serializeData: function() {
-        var data = NavbarView.__super__.serializeData.apply(this, arguments);
+    serializeData() {
+        let data = NavbarView.__super__.serializeData.apply(this, arguments);
+
+        let levelNumber = this._app.reqres.request('game:levelNumber');
+        if (levelNumber) {
+            data.levelNumber = formatLevelNumber(levelNumber);
+        }
+
+        let level = this._app.reqres.request('game:level');
+        if (level) {
+            data.boxesCount = formatBoxesCount(level.boxesOverGoalsCount, level.boxesCount);
+            data.pushesCount = formatPushesCount(level.pushesCount);
+            data.movesCount = formatMovesCount(level.movesCount);
+        }
 
         data.isFileApiSupported = (window.File && window.FileList) ? true : false;
         data.levels = this._app.getOption('levels');
 
         return data;
     },
-    browseLevelSet: function() {
+    browseLevelSet() {
         this.ui.levelSetFile.trigger('click');
     },
-    onLinkClick: function(event) {
+    onLinkClick(event) {
         var $link = $(event.currentTarget);
 
         if ($link.parent('li').hasClass('disabled')) {
@@ -56,7 +87,7 @@ var NavbarView = Marionette.LayoutView.extend({
             }
         }
     },
-    onCommandLinkClick: function(event) {
+    onCommandLinkClick(event) {
         event.preventDefault();
 
         var $link = $(event.currentTarget),
@@ -71,7 +102,7 @@ var NavbarView = Marionette.LayoutView.extend({
             link: $link.attr('href')
         });
     },
-    onLevelSetFileChange: function(event) {
+    onLevelSetFileChange(event) {
         var files = event.target.files;
         if (files.length === 0) {
             return;
@@ -83,7 +114,7 @@ var NavbarView = Marionette.LayoutView.extend({
             link: file
         });
     },
-    onLevelSetLoad: function(source) {
+    onLevelSetLoad(source) {
         var $levelSetLinks = this.ui.commandLink.filter('[data-command="load-level-set"]');
 
         $levelSetLinks.each(function() {
@@ -121,30 +152,6 @@ var NavbarView = Marionette.LayoutView.extend({
         else {
             $localLevelSetItem.prev('li').remove();
             $localLevelSetItem.remove();
-        }
-    },
-    onLevelInfoUpdate: function(info) {
-        if (isInteger(info.levelNumber)) {
-            this.ui.level.find('.name').text('Level');
-            this.ui.level.find('.value').text(formatter.formatInteger(info.levelNumber, 3));
-        }
-
-        if (isInteger(info.boxesOnGoalCount) && isInteger(info.boxesCount)) {
-            this.ui.boxesCount.find('.name').text('Boxes');
-            this.ui.boxesCount.find('.value').text(
-                formatter.formatInteger(info.boxesOnGoalCount, 3) + '/' +
-                formatter.formatInteger(info.boxesCount, 3)
-            );
-        }
-
-        if (isInteger(info.pushesCount)) {
-            this.ui.pushesCount.find('.name').text('Pushes');
-            this.ui.pushesCount.find('.value').text(formatter.formatInteger(info.pushesCount, 5));
-        }
-
-        if (isInteger(info.movesCount)) {
-            this.ui.movesCount.find('.name').text('Moves');
-            this.ui.movesCount.find('.value').text(formatter.formatInteger(info.movesCount, 5));
         }
     }
 });

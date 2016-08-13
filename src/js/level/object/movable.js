@@ -13,6 +13,7 @@ export default class Movable extends Item {
         this._lastVerticalDirection = Direction.DOWN;
 
         this._consecutiveStepsCount = 0;
+        this._movesCount = 0;
     }
 
     move(direction, stepSize) {
@@ -29,6 +30,8 @@ export default class Movable extends Item {
         else if (Direction.isValidVertical(direction)) {
             this._lastVerticalDirection = direction;
         }
+
+        this._movesCount++;
     }
 
     animate() {
@@ -73,5 +76,9 @@ export default class Movable extends Item {
 
     get consecutiveStepsCount() {
         return this._consecutiveStepsCount;
+    }
+
+    get movesCount() {
+        return this._movesCount;
     }
 }

@@ -112,8 +112,7 @@ gulp.task('dev', ['build'], () => {
     watch([
         'src/js/**/*.js',
         'src/js/**/*.json',
-        'src/js/**/*.mustache',
-        'src/levels/**/*.json'
+        'src/js/**/*.mustache'
     ], batch(function(events, callback) {
         gulp.start('js', callback);
     }));

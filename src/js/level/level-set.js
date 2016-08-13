@@ -1,10 +1,11 @@
 import _ from 'underscore';
+import Backbone from 'backbone';
 
 import isInteger from '../helpers/is-integer';
 import Level from './level';
-import levelSetSource from '../../levels/original.json';
+import levelSetSource from '../original.json';
 
-export default class LevelSet {
+class LevelSet {
     constructor() {
         this._levels = [];
         this._index = null;
@@ -27,7 +28,7 @@ export default class LevelSet {
         this._levels.push(level);
 
         if (this._index === null && this._levels.length === 1) {
-            this._index = 0;
+            this.level = 0;
         }
     }
 
@@ -43,28 +44,48 @@ export default class LevelSet {
     }
 
     goToPrevious() {
-        if (this._index === null) {
+        if (this.level === null) {
             return;
         }
 
-        this._index--;
-        if (this._index < 0) {
-            this._index = this._levels.length - 1;
+        let index = this._index - 1;
+        if (index < 0) {
+            index = this._levels.length - 1;
         }
+
+        this.level = index;
+        this.trigger('level:number', this.levelNumber);
     }
 
     goToNext() {
-        if (this._index === null) {
+        if (this.level === null) {
             return;
         }
-        this._index++;
-        if (this._index >= this._levels.length) {
-            this._index = 0;
+
+        let index = this._index + 1;
+        if (index >= this._levels.length) {
+            index = 0;
         }
+
+        this.level = index;
+        this.trigger('level:number', this.levelNumber);
+    }
+
+    restart() {
+        if (this.level === null) {
+            return;
+        }
+
+        this.level.reset();
+        this.trigger('level:number', this.levelNumber);
     }
 
     get levelIndex() {
         return this._index;
+    }
+
+    get levelNumber() {
+        return this._index + 1;
     }
 
     get level() {
@@ -72,6 +93,10 @@ export default class LevelSet {
     }
 
     set level(level) {
+        if (this.level !== null) {
+            this.stopListening(this.level);
+        }
+
         if (isInteger(level)) {
             level = this.get(level);
         }
@@ -83,6 +108,18 @@ export default class LevelSet {
         }
 
         this._index = index;
+
+        this.listenTo(level, 'move:start', stats => {
+            this.trigger('level:move:start', stats);
+        });
+
+        this.listenTo(level, 'move:end', stats => {
+            this.trigger('level:move:end', stats);
+        });
+
+        this.listenTo(level, 'completed', () => {
+            this.trigger('level:completed');
+        });
     }
 
     toString() {
@@ -95,4 +132,16 @@ export default class LevelSet {
         });
         return output;
     }
+
+    destroy() {
+        // TODO: implement (remove levels and listeners)
+
+        if (this.level !== null) {
+            this.stopListening(this.level);
+        }
+    }
 }
+
+_.extend(LevelSet.prototype, Backbone.Events);
+
+export default LevelSet;

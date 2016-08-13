@@ -1,6 +1,7 @@
 'use strict';
 
 import _ from 'underscore';
+import Backbone from 'backbone';
 
 import Direction from './direction';
 import LevelMap from './level-map';
@@ -10,7 +11,7 @@ import Wall from './object/wall';
 import Goal from './object/goal';
 import Box from './object/box';
 
-export default class Level {
+class Level {
     constructor(items, options) {
         if (items instanceof LevelMap) {
             this.map = items;
@@ -57,6 +58,9 @@ export default class Level {
 
         this._isAnimating = false;
         this._animatedItems = [];
+
+        this._boxesOverGoalsCount = null;
+        this._isCompletedTriggered = false;
     }
 
     at(row, column, filter) {
@@ -94,12 +98,41 @@ export default class Level {
         return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
     }
 
+    isCompleted() {
+        return this.boxesOverGoalsCount === this.boxesCount;
+    }
+
     move() {
+        let animatedBox = this.getAnimatedBox();
+
         if (this._isAnimating) {
             if (this.animate()) {
                 this._isAnimating = false;
+
+                if (animatedBox !== null) {
+                    this._boxesOverGoalsCount = null;
+                }
+
+                this.trigger('move:end', {
+                    boxesCount: this.boxesCount,
+                    boxesOverGoalsCount: this.boxesOverGoalsCount,
+                });
             }
             return false;
+        }
+
+        if (this.isCompleted()) {
+            if (!this._isCompletedTriggered) {
+                this._isCompletedTriggered = true;
+                this.trigger('completed');
+            }
+            return false;
+        }
+
+        // Drop goal target flag for recenlty animated box
+        if (animatedBox !== null) {
+            animatedBox.goalSource = animatedBox.goalTarget;
+            animatedBox.goalTarget = false;
         }
 
         let shift = Direction.getShift(this._direction);
@@ -122,6 +155,12 @@ export default class Level {
             item.move(this._direction, this.stepSize);
         });
 
+
+        this.trigger('move:start', {
+            movesCount: this.movesCount,
+            pushesCount: this.pushesCount
+        });
+
         if (this.animate()) {
             this._isAnimating = false;
         }
@@ -129,15 +168,14 @@ export default class Level {
         return true;
     }
 
-    detectCollision(shift) {
-        // Drop goal target flag for recenlty animated box
-        _.each(this._animatedItems, item => {
-            if (item instanceof Box) {
-                item.goalSource = item.goalTarget;
-                item.goalTarget = false;
-            }
+    getAnimatedBox() {
+        let box = _.find(this._animatedItems, item => {
+            return item instanceof Box;
         });
+        return box ? box : null;
+    }
 
+    detectCollision(shift) {
         let targetRow = this.worker.row + shift.y,
             targetColumn = this.worker.column + shift.x;
 
@@ -146,10 +184,10 @@ export default class Level {
         }
 
         let targetItems = this.at(targetRow, targetColumn),
-            animatedItems = [this.worker],
+            targetBox = null,
+            targetGoal = null,
             isCollision = false;
 
-        let isGoalTarget = false;
         _.each(targetItems, targetItem => {
             if (targetItem instanceof Wall) {
                 isCollision = true;
@@ -157,6 +195,8 @@ export default class Level {
             }
 
             if (targetItem instanceof Box) {
+                targetBox = targetItem;
+
                 let boxTargetRow = targetItem.row + shift.y,
                     boxTargetColumn = targetItem.column + shift.x;
 
@@ -170,28 +210,24 @@ export default class Level {
                             isCollision = true;
                         }
                         else {
-                            targetItem.goalTarget = boxTargetItem instanceof Goal;
+                            targetBox.goalTarget = boxTargetItem instanceof Goal;
                         }
                     });
                 }
-
-                animatedItems.push(targetItem);
             }
             else if (targetItem instanceof Goal) {
-                isGoalTarget = true;
+                targetGoal = targetItem;
             }
         });
 
         if (!isCollision) {
-            if (isGoalTarget) {
-                _.each(animatedItems, item => {
-                    if (item instanceof Box) {
-                        item.goalSource = true;
-                        return false;
-                    }
-                });
+            this._animatedItems = [this.worker];
+            if (targetBox !== null) {
+                this._animatedItems.push(targetBox);
+                if (targetGoal !== null) {
+                    targetBox.goalSource = true;
+                }
             }
-            this._animatedItems = animatedItems;
         }
 
         return isCollision;
@@ -272,7 +308,46 @@ export default class Level {
         return this._boxes;
     }
 
+    get boxesCount() {
+        return this._boxes.length;
+    }
+
+    get goalsCount() {
+        return this._goals.length;
+    }
+
+    get boxesOverGoalsCount() {
+        if (this._boxesOverGoalsCount !== null) {
+            return this._boxesOverGoalsCount;
+        }
+
+        this._boxesOverGoalsCount = 0;
+        _.each(this._boxes, box => {
+            let goals = this.at(box.row, box.column, ['goal']);
+            if (goals.length === 1) {
+                this._boxesOverGoalsCount++;
+            }
+        });
+        return this._boxesOverGoalsCount;
+    }
+
+    get movesCount() {
+        return this.worker.movesCount;
+    }
+
+    get pushesCount() {
+        let count = 0;
+        _.each(this.boxes, box => {
+            count += box.movesCount;
+        });
+        return count;
+    }
+
     toString() {
         return this.map.toString();
     }
 }
+
+_.extend(Level.prototype, Backbone.Events);
+
+export default Level;
