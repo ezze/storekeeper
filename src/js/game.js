@@ -50,7 +50,7 @@ class Game {
     }
 
     removeLevelSetListeners(levelSet) {
-        this.stopListeining(levelSet);
+        this.stopListening(levelSet);
     }
 
     render(time) {
@@ -137,8 +137,7 @@ class Game {
         }
 
         this._levelSet = levelSet;
-
-        this.addLevelSetListeners(this.levelSet);
+        this.addLevelSetListeners(levelSet);
     }
 
     get level() {
