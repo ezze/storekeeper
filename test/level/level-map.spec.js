@@ -1,7 +1,7 @@
 'use strict';
 
-import LevelMap from '../../lib/level/level-map';
-import levelSetJson from '../../levels/original.json';
+import LevelMap from '../../src/js/level/level-map';
+import levelSetJson from '../../src/levels/original.json';
 
 describe('Level map', () => {
     let items = [
