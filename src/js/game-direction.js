@@ -21,11 +21,10 @@ export default {
         }
     },
     byTouchPoint(target, x, y) {
-        var $target = $(target);
-        var targetWidth = $target.width();
-        var targetHeight = $target.height();
-
-        var targetRatio = targetHeight / targetWidth;
+        let $target = $(target),
+            targetWidth = $target.width(),
+            targetHeight = $target.height(),
+            targetRatio = targetHeight / targetWidth;
 
         if (y < targetRatio * x && y < targetHeight - targetRatio * x) {
             return Direction.UP;

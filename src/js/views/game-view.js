@@ -171,32 +171,29 @@ let GameView = Marionette.ItemView.extend({
         this._game.direction = direction;
     },
     onKeyUp(event) {
-
         let direction = GameDirection.byKeyCode(event.which);
         if (direction === this._game.direction) {
             this._game.direction = Direction.NONE;
         }
     },
     onTouchStart(event) {
-        /*
          if (!(event.target instanceof HTMLCanvasElement)) {
-         return;
+            return;
          }
 
-         var canvas = event.target;
-         var $canvas = $(canvas);
+         let canvas = event.target,
+            $canvas = $(canvas);
 
-         var originalEvent = event.originalEvent;
-         var touch = originalEvent.touches.item(0);
+         let originalEvent = event.originalEvent,
+             touch = originalEvent.touches.item(0);
 
-         var touchCanvasX = touch.clientX - $canvas.offset().left;
-         var touchCanvasY = touch.clientY - $canvas.offset().top;
+         let x = touch.clientX - $canvas.offset().left,
+             y = touch.clientY - $canvas.offset().top;
 
-         this._direction = GameDirection.byTouchPoint(canvas, touchCanvasX, touchCanvasY);
-         */
+         this._game.direction = GameDirection.byTouchPoint(canvas, x, y);
     },
     onTouchEnd(event) {
-        //this._direction = Direction.NONE;
+        this._game.direction = Direction.NONE;
     },
     onDestroy() {
         this.destroyGame();
