@@ -45,7 +45,8 @@ let GameView = Marionette.ItemView.extend({
 
         this.listenTo(this._game, 'level:completed', () => {
             app.vent.trigger('game:level:completed');
-            alert('level completed');
+            let levelNumber = this._game.levelSet.levelNumber;
+            alert('Level ' + levelNumber + ' is completed!');
         });
     },
     removeListeners() {
