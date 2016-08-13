@@ -2,29 +2,27 @@
 
 import Marionette from 'backbone.marionette';
 
-import ApplicationView from '../views/application-view';
+import AppView from '../views/app-view';
 import GameView from '../views/game-view';
 
 var ApplicationController = Marionette.Controller.extend({
-    initialize: function(options) {
+    initialize(options) {
         var app = options.app;
 
-        this._appView = new ApplicationView({
+        this._appView = new AppView({
             app: app
         });
         this._gameView = new GameView({
             app: app
         });
 
-        app.addView(this._appView, 'app');
-        app.addView(this._gameView, 'game');
-
         app.getRegion('app').show(this._appView);
     },
-    game: function() {
+    game() {
         this._appView.getRegion('content').show(this._gameView);
+
     },
-    editor: function() {
+    editor() {
         alert('Editor is not implemented yet!');
     }
 });

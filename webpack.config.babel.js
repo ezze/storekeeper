@@ -1,16 +1,24 @@
 'use strict';
 
-const NODE_ENV = process.env.NODE_ENV || 'dev';
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-var webpack = require('webpack'),
-    path = require('path');
+import webpack from 'webpack';
+import path from 'path';
 
-module.exports = {
-    entry: './src/js/init.js',
+var config = {
+    target: 'node',
+    node: {
+        __dirname: true,
+        __filename: true
+    },
+    context: __dirname + '/src/js',
+    entry: {
+        index: ['./index.js']
+    },
     output: {
         path: __dirname + '/assets/js',
-        publicPath: '/',
-        filename: 'storekeeper' + '.js'
+        publicPath: '/assets/js',
+        filename: '[name]' + '.js'
     },
     module: {
         preLoaders: [{
@@ -21,23 +29,21 @@ module.exports = {
         loaders: [{
             test: /\.jsx?$/,
             loader: 'babel',
-            exclude: [
-                path.resolve(__dirname, 'node_modules'),
-                path.resolve(__dirname, 'bower_components')
-            ],
-            query: {
-                presets: ['es2015'],
-                plugins: ['transform-runtime']
-            }
+            include: [
+                path.resolve(__dirname, 'src/js')
+            ]
         }, {
-            test: /\.js/,
-            loader: 'imports?define=>false'     // disabling AMD support
+            test: /\.json$/,
+            loader: 'json',
+            include: [
+                path.resolve(__dirname, 'src/js'),
+                path.resolve(__dirname, 'src/levels')
+            ]
         }, {
             test: /\.mustache$/,
             loader: 'mustache',
-            exclude: [
-                path.resolve(__dirname, 'node_modules'),
-                path.resolve(__dirname, 'bower_components')
+            include: [
+                path.resolve(__dirname, 'src/js')
             ]
         }, {
             include: [
@@ -76,15 +82,12 @@ module.exports = {
             jQuery: 'jquery',
             'Backbone.Wreqr': 'backbone.wreqr'
         }),
-        new webpack.ResolverPlugin(
-            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(".bower.json", ["main"])
-        ),
-        new webpack.NoErrorsPlugin()
+        new webpack.IgnorePlugin(/vertx/),
+        new webpack.NoErrorsPlugin(),
     ],
     jshint: {
         esversion: 6,
         node: true,
-        
         browser: true,
         camelcase: true,
         curly: true,
@@ -99,16 +102,14 @@ module.exports = {
         quotmark: "single",
         undef: true,
         unused: "vars",
-
         emitErrors: false,
         failOnHint: false
     },
-    devtool: NODE_ENV === 'dev' ? 'cheap-inline-module-source-map' : null,
-    watch: false
+    devtool: NODE_ENV === 'development' ? 'cheap-inline-module-source-map' : null
 };
 
 if (NODE_ENV === 'production') {
-    module.exports.plugins.push(new webpack.optimize.UglifyJsPlugin({
+    config.plugins.push(new webpack.optimize.UglifyJsPlugin({
         compress: {
             warnings: false,
             drop_console: true,
@@ -116,3 +117,5 @@ if (NODE_ENV === 'production') {
         }
     }));
 }
+
+export default config;

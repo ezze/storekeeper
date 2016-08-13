@@ -1,7 +1,7 @@
 import Marionette from 'backbone.marionette';
 
 var ApplicationRouter = Marionette.AppRouter.extend({
-    initialize: function(options) {
+    initialize(options) {
         options.appRoutes = {
             '': 'game',
             'game': 'game',

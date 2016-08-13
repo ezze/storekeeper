@@ -16,16 +16,19 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Levels <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
                         <li>
-                            <a href="#" class="navbar-command-link" data-command="browse-level-set">
+                            <a href="#" class="navbar-command-link" data-command="game:browseLevelSet">
                                 <span>Open... <small>Ctrl+O</small></span>
                             </a>
                             <input class="navbar-level-set-file" type="file" />
                         </li>
-
+                        {{#levelSetName}}
+                        <li class="divider"></li>
+                        <li class="active"><a>{{levelSetName}}</a></li>
+                        {{/levelSetName}}
                         {{#levels}}
                         <li class="divider"></li>
                         {{#levelSets}}
-                        <li><a href="{{url}}" class="navbar-command-link" data-command="load-level-set">{{name}}</a></li>
+                        <li{{#active}} class="active"{{/active}}><a href="{{url}}" class="navbar-command-link" data-command="game:loadLevelSet">{{name}}</a></li>
                         {{/levelSets}}
                         {{/levels}}
                     </ul>
@@ -34,17 +37,17 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Game <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
                         <li>
-                            <a href="#" class="navbar-command-link" data-command="next-level">
+                            <a href="#" class="navbar-command-link" data-command="game:nextLevel">
                                 <span>Go to next level <small>Alt+X</small></span>
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="navbar-command-link" data-command="previous-level">
+                            <a href="#" class="navbar-command-link" data-command="game:previousLevel">
                                 <span>Go to previous level <small>Alt+Z</small></span>
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="navbar-command-link" data-command="restart-level">
+                            <a href="#" class="navbar-command-link" data-command="game:restartLevel">
                                 <span><small>Ctrl+Alt+R</small>Restart level</span>
                             </a>
                         </li>
@@ -54,12 +57,12 @@
                     <a href="https://github.com/ezze/storekeeperjs" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Help <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
                         <li>
-                            <a href="https://github.com/ezze/storekeeperjs">
+                            <a href="https://github.com/ezze/storekeeper">
                                 <span>View source</span>
                             </a>
                         </li>
                         <li>
-                            <a href="https://github.com/ezze/storekeeperjs/issues">
+                            <a href="https://github.com/ezze/storekeeper/issues">
                                 <span>Report a bug</span>
                             </a>
                         </li>
@@ -68,18 +71,22 @@
             </ul>
 
             <p class="navbar-level navbar-text">
-                <strong class="name"></strong> <span class="value"></span>
+                <strong class="name">Level</strong>
+                <span class="value">{{levelNumber}}</span>
             </p>
 
             <div class="navbar-right hidden-md">
                 <p class="navbar-boxes-count navbar-text">
-                    <strong class="name"></strong> <span class="value"></span>
+                    <strong class="name">Boxes</strong>
+                    <span class="value">{{boxesCount}}</span>
                 </p>
                 <p class="navbar-pushes-count navbar-text">
-                    <strong class="name"></strong> <span class="value"></span>
+                    <strong class="name">Pushes</strong>
+                    <span class="value">{{pushesCount}}</span>
                 </p>
                 <p class="navbar-moves-count navbar-text">
-                    <strong class="name"></strong> <span class="value"></span>
+                    <strong class="name">Moves</strong>
+                    <span class="value">{{movesCount}}</span>
                 </p>
             </div>
         </div>

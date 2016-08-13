@@ -12,7 +12,5 @@ install:
 before_script:
   - npm install -g gulp-cli
   - npm install -g webpack
-  - npm install -g bower
-  - bower install
 script:
   - NODE_ENV=production npm run build
