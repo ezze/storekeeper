@@ -52,18 +52,18 @@ class Game {
         $(window).on('touchstart', this.onTouchStart);
         $(window).on('touchend', this.onTouchEnd);
 
-        let level = this.levelset.level;
+        let level = this.levelSet.level;
         if (level !== null) {
             level.direction = Direction.NONE;
         }
     }
 
     disableControls() {
-        let level = this.levelset.level;
+        let level = this.levelSet.level;
         if (level !== null) {
             level.direction = Direction.NONE;
         }
-        
+
         $(window).off('keydown', this.onKeyDown);
         $(window).off('keyup', this.onKeyUp);
         $(window).off('touchstart', this.onTouchStart);
