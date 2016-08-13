@@ -11,6 +11,24 @@ class LevelSet {
         this.load(levelSetSource);
     }
 
+    addLevelListeners(level) {
+        this.listenTo(level, 'move:start', stats => {
+            this.trigger('level:move:start', stats);
+        });
+
+        this.listenTo(level, 'move:end', stats => {
+            this.trigger('level:move:end', stats);
+        });
+
+        this.listenTo(level, 'completed', () => {
+            this.trigger('level:completed');
+        });
+    }
+
+    removeLevelListeners(level) {
+        this.stopListening(level);
+    }
+
     load(levelSetSource) {
         _.each(levelSetSource.levels, levelSource => {
             let level = new Level(levelSource.items);
@@ -92,7 +110,7 @@ class LevelSet {
 
     set level(level) {
         if (this.level !== null) {
-            this.stopListening(this.level);
+            this.removeLevelListeners(this.level);
         }
 
         if (isInteger(level)) {
@@ -107,17 +125,7 @@ class LevelSet {
 
         this._index = index;
 
-        this.listenTo(level, 'move:start', stats => {
-            this.trigger('level:move:start', stats);
-        });
-
-        this.listenTo(level, 'move:end', stats => {
-            this.trigger('level:move:end', stats);
-        });
-
-        this.listenTo(level, 'completed', () => {
-            this.trigger('level:completed');
-        });
+        this.addLevelListeners(level);
     }
 
     toString() {
@@ -135,7 +143,7 @@ class LevelSet {
         // TODO: implement (remove levels and listeners)
 
         if (this.level !== null) {
-            this.stopListening(this.level);
+            this.removeLevelListeners(this.level);
         }
     }
 }

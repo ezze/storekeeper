@@ -29,6 +29,30 @@ class Game {
         this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
 
+    addLevelSetListeners(levelSet) {
+        this.listenTo(levelSet, 'level:number', levelNumber => {
+            this.trigger('level:number', levelNumber);
+        });
+
+        this.listenTo(levelSet, 'level:move:start', stats => {
+            this.trigger('level:move:start', stats);
+        });
+
+        this.listenTo(levelSet, 'level:move:end', stats => {
+            this.trigger('level:move:end', stats);
+        });
+
+        this.listenTo(levelSet, 'level:completed', () => {
+            this.trigger('level:completed');
+            this.levelSet.level.reset();
+            this.goToNextLevel();
+        });
+    }
+
+    removeLevelSetListeners(levelSet) {
+        this.stopListeining(levelSet);
+    }
+
     render(time) {
         let level = this.levelSet.level;
         if (level === null) {
@@ -109,28 +133,12 @@ class Game {
 
     set levelSet(levelSet) {
         if (this.levelSet) {
-            this.stopListening(this.levelSet);
+            this.removeLevelSetListeners(this.levelSet);
         }
 
         this._levelSet = levelSet;
 
-        this.listenTo(levelSet, 'level:number', levelNumber => {
-            this.trigger('level:number', levelNumber);
-        });
-
-        this.listenTo(levelSet, 'level:move:start', stats => {
-            this.trigger('level:move:start', stats);
-        });
-
-        this.listenTo(levelSet, 'level:move:end', stats => {
-            this.trigger('level:move:end', stats);
-        });
-
-        this.listenTo(levelSet, 'level:completed', () => {
-            this.trigger('level:completed');
-            this.levelSet.level.reset();
-            this.goToNextLevel();
-        });
+        this.addLevelSetListeners(this.levelSet);
     }
 
     get level() {
@@ -151,7 +159,7 @@ class Game {
         cancelAnimationFrame(this._animationFrameId);
 
         if (this.levelSet) {
-            this.stopListeining(this.levelSet);
+            this.removeLevelSetListeners(this.levelSet);
         }
 
         this._renderer.destroy();
