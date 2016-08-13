@@ -5,7 +5,6 @@ import Direction from './level/direction';
 import GameDirection from './game-direction';
 
 import LevelSet from './level/level-set';
-import Ticker from './level/render/ticker';
 import Renderer from './level/render/renderer';
 
 class Game {
@@ -18,8 +17,9 @@ class Game {
         this.levelSet = options.levelSet instanceof LevelSet ? options.levelSet : new LevelSet();
 
         this.bindMethods();
-        this.initializeTicker();
         this.enableControls();
+
+        this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
 
     bindMethods() {
@@ -29,22 +29,8 @@ class Game {
             'onKeyUp',
             'onTouchStart',
             'onTouchEnd',
-            'onTick'
+            'animationFrame'
         );
-    }
-
-    initializeTicker() {
-        let ticker = this._ticker = new Ticker({
-            fps: 30
-        });
-        ticker.on('tick', this.onTick);
-        ticker.start();
-    }
-
-    destroyTicker() {
-        let ticker = this._ticker;
-        ticker.stop();
-        ticker.off('tick', this.onTick);
     }
 
     render() {
@@ -65,23 +51,32 @@ class Game {
         $(window).on('keyup', this.onKeyUp);
         $(window).on('touchstart', this.onTouchStart);
         $(window).on('touchend', this.onTouchEnd);
-        //this._direction = Direction.NONE;
+
+        let level = this.levelset.level;
+        if (level !== null) {
+            level.direction = Direction.NONE;
+        }
     }
 
     disableControls() {
-        //this._direction = Direction.NONE;
+        let level = this.levelset.level;
+        if (level !== null) {
+            level.direction = Direction.NONE;
+        }
+        
         $(window).off('keydown', this.onKeyDown);
         $(window).off('keyup', this.onKeyUp);
         $(window).off('touchstart', this.onTouchStart);
         $(window).off('touchend', this.onTouchEnd);
     }
 
-    onTick() {
+    animationFrame() {
         let level = this.levelSet.level;
         if (level !== null) {
             level.move();
         }
         this.render();
+        this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
 
     onKeyDown(event) {
@@ -171,6 +166,7 @@ class Game {
     }
 
     destroy() {
+        cancelAnimationFrame(this._animationFrameId);
         this._renderer.destroy();
     }
 }

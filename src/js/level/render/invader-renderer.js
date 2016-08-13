@@ -63,7 +63,8 @@ class InvaderRenderer extends Renderer {
         let spriteIndex = 4 + (item.lastHorizontalDirection === Direction.LEFT ? 0 : 9);
 
         if (item.consecutiveStepsCount > 0) {
-            spriteIndex += ((item.consecutiveStepsCount - 1) % 8) + 1;
+            let visualStepsCount = Math.ceil(item.consecutiveStepsCount / 2);
+            spriteIndex += ((visualStepsCount - 1) % 8) + 1;
         }
 
         this.renderSprite(context, x, y, spriteIndex);

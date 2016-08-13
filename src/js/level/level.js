@@ -24,7 +24,7 @@ export default class Level {
         }
 
         options = options || {};
-        this.stepsPerMove = options.stepsPerMove || 8;
+        this.stepsPerMove = options.stepsPerMove || 16;
 
         this.reset();
     }
