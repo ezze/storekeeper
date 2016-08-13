@@ -1,10 +1,8 @@
-'use strict';
-
 var levels = [{
-    name: 'Classic',
+    name: 'Original',
     levelSets: [{
-        name: 'Classic',
-        url: 'assets/levels/classic.json'
+        name: 'Original',
+        url: 'assets/levels/original.json'
     }]
 }];
 

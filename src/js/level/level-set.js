@@ -3,13 +3,11 @@ import Backbone from 'backbone';
 
 import isInteger from '../helpers/is-integer';
 import Level from './level';
-import levelSetSource from '../original.json';
 
 class LevelSet {
-    constructor() {
+    constructor(levelSetSource) {
         this._levels = [];
         this._index = null;
-
         this.load(levelSetSource);
     }
 

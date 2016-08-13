@@ -4,6 +4,7 @@ import Backbone from 'backbone';
 import Direction from './level/direction';
 import LevelSet from './level/level-set';
 import Renderer from './level/render/renderer';
+import LoaderFactory from './level/loader/loader-factory';
 
 class Game {
     constructor(options) {
@@ -14,7 +15,16 @@ class Game {
         _.bindAll(this, 'animationFrame');
 
         this.renderer = options.renderer;
-        this.levelSet = options.levelSet instanceof LevelSet ? options.levelSet : new LevelSet();
+
+        if (options.levelSet instanceof LevelSet) {
+            this.levelSet = options.levelSet;
+        }
+        else if (_.isString(options.levelSet) || options.levelSet instanceof File) {
+            this.loadLevelSet(options.levelSet);
+        }
+        else {
+            this._levelSet = null;
+        }
 
         this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
@@ -33,24 +43,56 @@ class Game {
     }
 
     animationFrame(time) {
+        if (!this.levelSet) {
+            this._animationFrameId = requestAnimationFrame(this.animationFrame);
+            return;
+        }
+
         let level = this.levelSet.level;
-        if (level !== null) {
+        if (level) {
             level.move();
         }
+
         this.render(time);
         this._animationFrameId = requestAnimationFrame(this.animationFrame);
     }
 
+    loadLevelSet(source) {
+        let name = source instanceof File ? source.name : source;
+
+        let loader = LoaderFactory.getLoaderByFileName(name);
+        if (loader === null) {
+            return;
+        }
+
+        let promise = loader.load(source);
+        promise.then(response => {
+            let levelSet = loader.parse(response.data);
+            if (levelSet instanceof LevelSet) {
+                this.levelSet = levelSet;
+            }
+            this.trigger('levelSet:load', levelSet, response.source);
+        }, () => {
+            alert('Unable to load level set');
+        });
+    }
+
     goToPreviousLevel() {
-        this.levelSet.goToPrevious();
+        if (this.levelSet) {
+            this.levelSet.goToPrevious();
+        }
     }
 
     goToNextLevel() {
-        this.levelSet.goToNext();
+        if (this.levelSet) {
+            this.levelSet.goToNext();
+        }
     }
 
     restartLevel() {
-        this.levelSet.restart();
+        if (this.levelSet) {
+            this.levelSet.restart();
+        }
     }
 
     get renderer() {
@@ -92,7 +134,7 @@ class Game {
     }
 
     get level() {
-        return this.levelSet.level;
+        return this.levelSet ? this.levelSet.level : null;
     }
 
     get direction() {

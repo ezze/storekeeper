@@ -27,6 +27,10 @@ let GameView = Marionette.ItemView.extend({
     initializeListeners() {
         let app = this._app;
 
+        this.listenTo(this._game, 'levelSet:load', (levelSet, source) => {
+            this._app.vent.trigger('game:levelSet:load', levelSet, source);
+        });
+
         this.listenTo(this._game, 'level:number', levelNumber => {
             app.vent.trigger('game:level:number', levelNumber);
         });
@@ -52,7 +56,8 @@ let GameView = Marionette.ItemView.extend({
             app: this._app,
             renderer: new InvaderRenderer({
                 container: this.ui.field.get(0)
-            })
+            }),
+            levelSet: 'assets/levels/original.json'
         });
 
         this.initializeListeners();
@@ -60,8 +65,6 @@ let GameView = Marionette.ItemView.extend({
         this.createCommands();
         this.createReqRes();
         this.enableControls();
-
-        this._app.vent.trigger('game:level:number', this._game.levelSet.levelNumber);
     },
     destroyGame() {
         this.removeListeners();
@@ -74,6 +77,12 @@ let GameView = Marionette.ItemView.extend({
     },
     createCommands() {
         let handlers = {
+            browseLevelSet: () => {
+                this.browseLevelSet();
+            },
+            loadLevelSet: source => {
+                this._game.loadLevelSet(source);
+            },
             previousLevel: () => {
                 this._game.goToPreviousLevel();
             },
@@ -94,6 +103,8 @@ let GameView = Marionette.ItemView.extend({
     },
     destroyCommands() {
         _.each([
+            'browseLevelSet',
+            'loadLevelSet',
             'previousLevel',
             'nextLevel',
             'restartLevel'
@@ -103,6 +114,9 @@ let GameView = Marionette.ItemView.extend({
     },
     createReqRes() {
         let handlers = {
+            levelSet: () => {
+                return this._game.levelSet;
+            },
             levelNumber: () => {
                 return this._game.levelSet.levelNumber;
             },
@@ -117,8 +131,9 @@ let GameView = Marionette.ItemView.extend({
     },
     destroyReqRes() {
         _.each([
+            'levelSet',
             'levelNumber',
-            'level'
+            'level',
         ], reqres => {
             this._app.reqres.removeHandler('game:' + reqres);
         });
@@ -138,6 +153,16 @@ let GameView = Marionette.ItemView.extend({
         $(window).off('keyup', this.onKeyUp);
         $(window).off('touchstart', this.onTouchStart);
         $(window).off('touchend', this.onTouchEnd);
+    },
+    browseLevelSet() {
+        let $fileInput = $('<input />').attr('type', 'file').attr('accept', '.json,.sok');
+        $fileInput.on('change', event => {
+            if (event.target.files.length === 0) {
+                return;
+            }
+            this._game.loadLevelSet(event.target.files[0]);
+        });
+        $fileInput.trigger('click');
     },
     onShow() {
         this.createGame();
