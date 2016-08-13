@@ -20,7 +20,6 @@ class Game {
         this.bindMethods();
         this.initializeTicker();
         this.enableControls();
-
     }
 
     bindMethods() {
@@ -66,11 +65,11 @@ class Game {
         $(window).on('keyup', this.onKeyUp);
         $(window).on('touchstart', this.onTouchStart);
         $(window).on('touchend', this.onTouchEnd);
-        //this._moveDirection = Direction.NONE;
+        //this._direction = Direction.NONE;
     }
 
     disableControls() {
-        //this._moveDirection = Direction.NONE;
+        //this._direction = Direction.NONE;
         $(window).off('keydown', this.onKeyDown);
         $(window).off('keyup', this.onKeyUp);
         $(window).off('touchstart', this.onTouchStart);
@@ -78,6 +77,10 @@ class Game {
     }
 
     onTick() {
+        let level = this.levelSet.level;
+        if (level !== null) {
+            level.move();
+        }
         this.render();
     }
 
@@ -109,19 +112,22 @@ class Game {
             return;
         }
 
-        var direction = GameDirection.byKeyCode(event.which);
-        if (direction === Direction.NONE) {
+        let level = this.levelSet.level,
+            direction = GameDirection.byKeyCode(event.which);
+
+        if (level === null || direction === Direction.NONE) {
             return;
         }
 
-        event.preventDefault();
-        //this._moveDirection = direction;
+        level.direction = direction;
     }
 
     onKeyUp(event) {
-        var direction = GameDirection.byKeyCode(event.which);
-        if (direction === this._moveDirection) {
-            //this._moveDirection = Direction.NONE;
+        let level = this.levelSet.level,
+            direction = GameDirection.byKeyCode(event.which);
+
+        if (level !== null && direction === level.direction) {
+            level.direction = Direction.NONE;
         }
     }
 
@@ -140,12 +146,12 @@ class Game {
         var touchCanvasX = touch.clientX - $canvas.offset().left;
         var touchCanvasY = touch.clientY - $canvas.offset().top;
 
-        this._moveDirection = GameDirection.byTouchPoint(canvas, touchCanvasX, touchCanvasY);
+        this._direction = GameDirection.byTouchPoint(canvas, touchCanvasX, touchCanvasY);
         */
     }
 
     onTouchEnd(event) {
-        //this._moveDirection = Direction.NONE;
+        //this._direction = Direction.NONE;
     }
 
     get renderer() {

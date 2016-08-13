@@ -2,6 +2,7 @@
 
 import _ from 'underscore';
 
+import Direction from './direction';
 import LevelMap from './level-map';
 
 import Worker from './object/worker';
@@ -25,10 +26,10 @@ export default class Level {
         options = options || {};
         this.stepsPerMove = options.stepsPerMove || 8;
 
-        this.initialize();
+        this.reset();
     }
 
-    initialize() {
+    reset() {
         this._worker = null;
         this._walls = [];
         this._goals = [];
@@ -52,7 +53,10 @@ export default class Level {
             }
         }
 
+        this._direction = Direction.NONE;
+
         this._isAnimating = false;
+        this._animatedItems = [];
     }
 
     at(row, column, filter) {
@@ -86,6 +90,130 @@ export default class Level {
         return items;
     }
 
+    isOutOfBounds(row, column) {
+        return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
+    }
+
+    move() {
+        if (this._isAnimating) {
+            if (this.animate()) {
+                this._isAnimating = false;
+            }
+            return false;
+        }
+
+        let shift = Level.getMoveShiftByDirection(this._direction);
+        if (shift.x === 0 && shift.y === 0) {
+            this.resetAnimatedItems();
+            return false;
+        }
+
+        let isCollision = this.detectCollision(shift);
+        if (isCollision) {
+            this.resetAnimatedItems();
+            return false;
+        }
+
+        this._isAnimating = true;
+        _.each(this._animatedItems, item => {
+            switch (this._direction) {
+                case Direction.LEFT: item.moveLeft(this.stepSize); break;
+                case Direction.RIGHT: item.moveRight(this.stepSize); break;
+                case Direction.UP: item.moveUp(this.stepSize); break;
+                case Direction.DOWN: item.moveDown(this.stepSize); break;
+            }
+        });
+
+        if (this.animate()) {
+            this._isAnimating = false;
+        }
+
+        return true;
+    }
+
+    detectCollision(shift) {
+        let targetRow = this.worker.row + shift.y,
+            targetColumn = this.worker.column + shift.x;
+
+        if (this.isOutOfBounds(targetRow, targetColumn)) {
+            return false;
+        }
+
+        let targetItems = this.at(targetRow, targetColumn),
+            animatedItems = [this.worker],
+            isCollision = false;
+
+        _.each(targetItems, targetItem => {
+            if (targetItem instanceof Wall) {
+                isCollision = true;
+                return false;
+            }
+
+            if (targetItem instanceof Box) {
+                let boxTargetRow = targetItem.row + shift.y,
+                    boxTargetColumn = targetItem.column + shift.x;
+
+                if (this.isOutOfBounds(boxTargetRow, boxTargetColumn)) {
+                    isCollision = true;
+                }
+                else {
+                    let boxTargetItems = this.at(boxTargetRow, boxTargetColumn);
+                    _.each(boxTargetItems, boxTargetItem => {
+                        if (boxTargetItem instanceof Wall || boxTargetItem instanceof Box) {
+                            isCollision = true;
+                            return false;
+                        }
+                    });
+                }
+
+                if (isCollision) {
+                    return false;
+                }
+
+                animatedItems.push(targetItem);
+            }
+        });
+
+        if (!isCollision) {
+            this._animatedItems = animatedItems;
+        }
+
+        return isCollision;
+    }
+
+    animate() {
+        let isAnimated = false;
+        _.each(this._animatedItems, item => {
+            isAnimated = item.animate();
+            console.log(item.consecutiveStepsCount);
+        });
+        return isAnimated;
+    }
+
+    resetAnimatedItems() {
+        _.each(this._animatedItems, item => {
+            item.reset();
+        });
+        this._animatedItems = [];
+    }
+
+    static getMoveShiftByDirection(direction) {
+        let x = 0,
+            y= 0;
+
+        switch (direction) {
+            case Direction.LEFT: x = -1; y = 0; break;
+            case Direction.RIGHT: x = 1; y = 0; break;
+            case Direction.UP: x = 0; y = -1; break;
+            case Direction.DOWN: x = 0; y = 1; break;
+        }
+
+        return {
+            x: x,
+            y: y
+        };
+    }
+
     /**
      * @returns {LevelMap}
      */
@@ -114,6 +242,20 @@ export default class Level {
 
     set stepsPerMove(stepsPerMove) {
         this._stepsPerMove = stepsPerMove;
+    }
+
+    get stepSize() {
+        return 1 / this._stepsPerMove;
+    }
+
+    get direction() {
+        return this._direction;
+    }
+
+    set direction(moveDirection) {
+        if (Direction.isValid(moveDirection)) {
+            this._direction = moveDirection;
+        }
     }
 
     get worker() {

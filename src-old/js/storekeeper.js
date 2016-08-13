@@ -189,7 +189,7 @@ Storekeeper.prototype.onAnimationFrame = function(event) {
     }
 
     var worker = level.worker;
-    worker.move(this._moveDirection);
+    worker.move(this._direction);
 };
 
 Storekeeper.prototype.onLevelChange = function(params) {

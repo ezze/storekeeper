@@ -8,7 +8,7 @@ var Movable = function (options) {
 
     this._name = 'Movable';
     this._movesCount = 0;
-    this._moveDirection = Direction.NONE;
+    this._direction = Direction.NONE;
     this._moveStep = 1 / 8;
     this._moveCollisionTarget = null;
 };
@@ -33,7 +33,7 @@ Movable.prototype.move = function(direction) {
     // Checking whether object's atomic move is in progress
     if (this.isMoving()) {
         // We can't affect a direction of currently animated atomic move
-        direction = this._moveDirection;
+        direction = this._direction;
     }
     else {
         // Forget affected object just before new atomic move
@@ -144,21 +144,21 @@ Movable.prototype.getMoveTargetObjects = function(direction) {
 };
 
 Movable.prototype.play = function(direction) {
-    if (this._moveDirection !== direction) {
+    if (this._direction !== direction) {
         this.startAnimation(direction);
     }
 
     this.updatePixels();
 
-    this._moveDirection = direction;
+    this._direction = direction;
 };
 
 Movable.prototype.stop = function(direction) {
-    if (this._moveDirection !== Direction.NONE || direction !== Direction.NONE) {
+    if (this._direction !== Direction.NONE || direction !== Direction.NONE) {
         this.stopAnimation();
     }
 
-    this._moveDirection = Direction.NONE;
+    this._direction = Direction.NONE;
 
     var stopParams = {
         object: this,

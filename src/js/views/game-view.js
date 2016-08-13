@@ -15,12 +15,15 @@ var GameView = Marionette.ItemView.extend({
         this._app = options.app;
     },
     onShow: function() {
-        new Game({
+        this._app.game = new Game({
             app: this._app,
             renderer: new BasicRenderer({
                 container: this.ui.field.get(0)
             })
         });
+    },
+    onDestroy: function() {
+        this._app.game.destroy();
     }
 });
 

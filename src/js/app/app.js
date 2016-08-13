@@ -30,7 +30,7 @@ var App = Marionette.Application.extend({
 
         this._isInitialized = true;
 
-        this.vent.trigger('initialize');
+        this.vent.trigger('reset');
     },
     isInitialized: function () {
         return this._isInitialized;
