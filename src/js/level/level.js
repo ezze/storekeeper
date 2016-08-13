@@ -102,7 +102,7 @@ export default class Level {
             return false;
         }
 
-        let shift = Level.getMoveShiftByDirection(this._direction);
+        let shift = Direction.getShift(this._direction);
         if (shift.x === 0 && shift.y === 0) {
             this.resetAnimatedItems();
             return false;
@@ -111,17 +111,15 @@ export default class Level {
         let isCollision = this.detectCollision(shift);
         if (isCollision) {
             this.resetAnimatedItems();
+            if (Direction.isValidHorizontal(this._direction)) {
+                this.worker.lastHorizontalDirection = this._direction;
+            }
             return false;
         }
 
         this._isAnimating = true;
         _.each(this._animatedItems, item => {
-            switch (this._direction) {
-                case Direction.LEFT: item.moveLeft(this.stepSize); break;
-                case Direction.RIGHT: item.moveRight(this.stepSize); break;
-                case Direction.UP: item.moveUp(this.stepSize); break;
-                case Direction.DOWN: item.moveDown(this.stepSize); break;
-            }
+            item.move(this._direction, this.stepSize);
         });
 
         if (this.animate()) {
@@ -185,7 +183,6 @@ export default class Level {
         let isAnimated = false;
         _.each(this._animatedItems, item => {
             isAnimated = item.animate();
-            console.log(item.consecutiveStepsCount);
         });
         return isAnimated;
     }
@@ -195,23 +192,6 @@ export default class Level {
             item.reset();
         });
         this._animatedItems = [];
-    }
-
-    static getMoveShiftByDirection(direction) {
-        let x = 0,
-            y= 0;
-
-        switch (direction) {
-            case Direction.LEFT: x = -1; y = 0; break;
-            case Direction.RIGHT: x = 1; y = 0; break;
-            case Direction.UP: x = 0; y = -1; break;
-            case Direction.DOWN: x = 0; y = 1; break;
-        }
-
-        return {
-            x: x,
-            y: y
-        };
     }
 
     /**

@@ -23,6 +23,7 @@
     "backbone.babysitter": "0.1.11",
     "backbone.marionette": "2.4.5",
     "bootstrap": "^3.3.6",
+    "es6-promise": "^3.2.1",
     "jquery": "^2.2.4",
     "underscore": "^1.8.3"
   },

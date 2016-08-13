@@ -3,7 +3,8 @@
 import Marionette from 'backbone.marionette';
 
 import Game from '../game';
-import BasicRenderer from '../level/render/basic-renderer';
+//import BasicRenderer from '../level/render/basic-renderer';
+import InvaderRenderer from '../level/render/invader-renderer';
 
 var GameView = Marionette.ItemView.extend({
     className: 'game',
@@ -17,7 +18,7 @@ var GameView = Marionette.ItemView.extend({
     onShow: function() {
         this._app.game = new Game({
             app: this._app,
-            renderer: new BasicRenderer({
+            renderer: new InvaderRenderer({
                 container: this.ui.field.get(0)
             })
         });

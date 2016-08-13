@@ -9,30 +9,26 @@ export default class Movable extends Item {
         this._targetColumn = column;
         this._stepSize = 0;
 
-        this._lastHorizontalMoveDirection = Direction.LEFT;
-        this._lastVerticalMoveDirection = Direction.DOWN;
+        this._lastHorizontalDirection = Direction.LEFT;
+        this._lastVerticalDirection = Direction.DOWN;
 
         this._consecutiveStepsCount = 0;
     }
 
-    moveLeft(stepSize) {
-        this._targetColumn = this.column - 1;
-        this.stepSize = stepSize;
-    }
+    move(direction, stepSize) {
+        let shift = Direction.getShift(direction);
 
-    moveRight(stepSize) {
-        this._targetColumn = this.column + 1;
-        this.stepSize = stepSize;
-    }
+        this._targetRow = this.row + shift.y;
+        this._targetColumn = this.column + shift.x;
 
-    moveUp(stepSize) {
-        this._targetRow = this.row - 1;
         this.stepSize = stepSize;
-    }
 
-    moveDown(stepSize) {
-        this._targetRow = this.row + 1;
-        this.stepSize = stepSize;
+        if (Direction.isValidHorizontal(direction)) {
+            this._lastHorizontalDirection = direction;
+        }
+        else if (Direction.isValidVertical(direction)) {
+            this._lastVerticalDirection = direction;
+        }
     }
 
     animate() {
@@ -57,6 +53,22 @@ export default class Movable extends Item {
 
     set stepSize(stepSize) {
         this._stepSize = stepSize;
+    }
+
+    get lastHorizontalDirection() {
+        return this._lastHorizontalDirection;
+    }
+
+    set lastHorizontalDirection(direction) {
+        this._lastHorizontalDirection = direction;
+    }
+
+    get lastVerticalDirection() {
+        return this._lastVerticalDirection;
+    }
+
+    set lastVerticalDirection(direction) {
+        this._lastVerticalDirection = direction;
     }
 
     get consecutiveStepsCount() {

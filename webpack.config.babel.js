@@ -82,10 +82,8 @@ var config = {
             jQuery: 'jquery',
             'Backbone.Wreqr': 'backbone.wreqr'
         }),
-        new webpack.ResolverPlugin(
-            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(".bower.json", ["main"])
-        ),
-        new webpack.NoErrorsPlugin()
+        new webpack.IgnorePlugin(/vertx/),
+        new webpack.NoErrorsPlugin(),
     ],
     jshint: {
         esversion: 6,

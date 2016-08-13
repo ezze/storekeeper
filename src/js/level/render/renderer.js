@@ -6,11 +6,28 @@ import Wall from '../object/wall';
 import Goal from '../object/goal';
 import Box from '../object/box';
 
+let abstractMethods = [
+    'renderWorker',
+    'renderWorkerOverGoal',
+    'renderWall',
+    'renderGoal',
+    'renderGoalBehindWorker',
+    'renderGoalBehindBox',
+    'renderBox',
+    'renderBoxOverGoal'
+];
+
 class Renderer {
     constructor(options) {
         if (this.constructor === Renderer) {
             throw new Error('Can\'t construct abstract renderer.');
         }
+
+        _.each(abstractMethods, abstractMethod => {
+            if (this[abstractMethod] === Renderer.prototype[abstractMethod]) {
+                throw new Error('Method "' + abstractMethod + '" is not implemented.');
+            }
+        });
 
         if (!(options.container instanceof HTMLElement)) {
             throw new TypeError('Container must be HTML element.');
@@ -67,7 +84,7 @@ class Renderer {
         let context = this._canvas.getContext('2d');
 
         let x = this._cameraOffsetX + item.column * this.itemWidth,
-            y = this._cameraOffsetY + (item.row + 1) * this.itemHeight;
+            y = this._cameraOffsetY + item.row * this.itemHeight;
 
         if (item instanceof Wall) {
             this.renderWall(context, x, y, item);
@@ -137,11 +154,11 @@ class Renderer {
     }
 
     get itemWidth() {
-        throw new Error('Getter method for "itemWidth" is not implemented.');
+        return 8;
     }
 
     get itemHeight() {
-        throw new Error('Getter method for "itemHeight" is not implemented.');
+        return 8;
     }
 
     renderWorker(context, x, y, item) {
@@ -176,7 +193,7 @@ class Renderer {
         throw new Error('Method "renderBoxOverGoal" is not implemented.');
     }
 
-    onWindowResize(event) {
+    onWindowResize() {
         this.adjustCanvasSize();
     }
 

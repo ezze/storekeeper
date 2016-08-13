@@ -169,6 +169,10 @@ class Game {
     set levelSet(levelSet) {
         this._levelSet = levelSet;
     }
+
+    destroy() {
+        this._renderer.destroy();
+    }
 }
 
 export default Game;

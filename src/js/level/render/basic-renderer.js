@@ -18,25 +18,25 @@ class BasicRenderer extends Renderer {
     renderWorker(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#fff';
-        context.fillText('@', x, y);
+        context.fillText('@', x, y + this.itemHeight);
     }
 
     renderWorkerOverGoal(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#ffd';
-        context.fillText('+', x, y);
+        context.fillText('+', x, y + this.itemHeight);
     }
 
     renderWall(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#c00';
-        context.fillText('#', x, y);
+        context.fillText('#', x, y + this.itemHeight);
     }
 
     renderGoal(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#ddd';
-        context.fillText('.', x, y);
+        context.fillText('.', x, y + this.itemHeight);
     }
 
     renderGoalBehindWorker(context, x, y, item) {
@@ -50,13 +50,13 @@ class BasicRenderer extends Renderer {
     renderBox(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#dd0';
-        context.fillText('$', x, y);
+        context.fillText('$', x, y + this.itemHeight);
     }
 
     renderBoxOverGoal(context, x, y, item) {
         context.font = font;
         context.fillStyle = '#0d0';
-        context.fillText('*', x, y);
+        context.fillText('*', x, y + this.itemHeight);
     }
 }
 
