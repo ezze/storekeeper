@@ -1,8 +1,7 @@
 # Storekeeper
 
+[![Build Status](https://travis-ci.org/ezze/storekeeper.svg?branch=dev)](https://travis-ci.org/ezze/storekeeper)
 [![Greenkeeper badge](https://badges.greenkeeper.io/ezze/storekeeper.svg)](https://greenkeeper.io/)
-
-[![Build Status](https://travis-ci.org/ezze/storekeeper.svg?branch=master)](https://travis-ci.org/ezze/storekeeper)
 
 This is JavaScript implementation of Sokoban game.
 
