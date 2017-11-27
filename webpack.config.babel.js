@@ -1,120 +1,160 @@
-'use strict';
-
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
-import webpack from 'webpack';
 import path from 'path';
+import webpack from 'webpack';
 
-var config = {
-    target: 'node',
-    node: {
-        __dirname: true,
-        __filename: true
-    },
-    context: __dirname + '/src/js',
+import htmlTemplate from 'html-webpack-template';
+import HtmlPlugin from 'html-webpack-plugin';
+import FaviconsPlugin from 'favicons-webpack-plugin';
+import ExtractTextPlugin from 'extract-text-webpack-plugin';
+
+const NODE_ENV = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+const PORT = process.env.PORT ? process.env.PORT : 55577;
+
+const lessLoader = [{
+    loader: 'css-loader',
+    options: {
+        discardComments: {
+            removeAll: true
+        }
+    }
+}, {
+    loader: 'postcss-loader',
+    options: {
+        sourceMap: 'inline'
+    }
+}, {
+    loader: 'resolve-url-loader',
+    options: {
+        keepQuery: true
+    }
+}, {
+    loader: 'less-loader',
+    options: {
+        sourceMap: true
+    }
+}];
+
+const config = {
+    context: path.resolve(__dirname, 'src/js'),
     entry: {
-        index: ['./index.js']
+        storekeeper: ['babel-polyfill', './index.js']
     },
     output: {
-        path: __dirname + '/assets/js',
-        publicPath: '/assets/js',
-        filename: '[name]' + '.js'
+        path: path.resolve(__dirname, 'assets'),
+        filename: 'js/[name].' + (NODE_ENV === 'development' ? '' : '[chunkhash:6].') + 'js'
+    },
+    devServer: {
+        contentBase: path.resolve(__dirname, 'assets'),
+        port: PORT
     },
     module: {
-        preLoaders: [{
-            test: /\.js$/,
-            loader: 'jshint-loader',
-            include: path.resolve(__dirname, 'src/js')
-        }],
-        loaders: [{
+        rules: [{
             test: /\.jsx?$/,
-            loader: 'babel',
+            use: 'babel-loader',
             include: [
                 path.resolve(__dirname, 'src/js')
             ]
         }, {
             test: /\.json$/,
-            loader: 'json',
+            use: 'json-loader',
             include: [
                 path.resolve(__dirname, 'src/js'),
                 path.resolve(__dirname, 'src/levels')
             ]
         }, {
             test: /\.mustache$/,
-            loader: 'mustache',
+            use: 'mustache-loader',
             include: [
                 path.resolve(__dirname, 'src/js')
             ]
         }, {
+            test: /\.less$/,
+            use: ExtractTextPlugin.extract({
+                use: lessLoader,
+                fallback: 'style-loader',
+                publicPath: '../'
+            }),
             include: [
-                path.resolve(__dirname, 'bower_components/EaselJS'),
-                path.resolve(__dirname, 'bower_components/TweenJS')
-            ],
-            loader: 'imports?this=>window'
+                path.resolve(__dirname, 'src/less')
+            ]
         }, {
+            test: /\.(svg|eot|ttf|woff2?)$/,
+            use: {
+                loader: 'file-loader',
+                options: {
+                    name: 'fonts/[name].[hash:6].[ext]'
+                }
+            },
             include: [
-                path.resolve(__dirname, 'bower_components/EaselJS'),
-                path.resolve(__dirname, 'bower_components/TweenJS')
-            ],
-            loader: 'exports?createjs'
+                path.resolve(__dirname, 'src/fonts'),
+                path.resolve(__dirname, 'node_modules/bootstrap/fonts')
+            ]
         }]
     },
     resolve: {
-        modulesDirectories: ['node_modules', 'bower_components'],
-        extensions: ['', '.js'],
-        alias: {
-            easel: 'EaselJS',
-            tween: 'TweenJS',
-            hgn: 'requirejs-hogan-plugin'
-        }
+        modules: ['node_modules'],
+        extensions: ['.js', '.jsx']
     },
     resolveLoader: {
-        modulesDirectories: ['node_modules'],
-        moduleTemplates: ['*-loader', '*'],
-        extensions: ['', '.js']
+        modules: ['node_modules'],
+        moduleExtensions: ['.js']
     },
     plugins: [
+        new webpack.NoEmitOnErrorsPlugin(),
         new webpack.DefinePlugin({
             NODE_ENV: JSON.stringify(NODE_ENV)
+        }),
+        new HtmlPlugin({
+            filename: path.resolve(__dirname, 'assets/index.html'),
+            inject: false,
+            template: htmlTemplate,
+            title: 'Storekeeper',
+            meta: [{
+                'http-equiv': 'Cache-Control',
+                content: 'no-cache, no-store, must-revalidate'
+            }, {
+                'http-equiv': 'Pragma',
+                content: 'no-cache'
+            }, {
+                'http-equiv': 'Expires',
+                content: '0'
+            }],
+            appMountId: 'application',
+            minify: {
+                collapseWhitespace: NODE_ENV === 'production'
+            }
+        }),
+        new FaviconsPlugin(path.resolve(__dirname, 'src/favicon/favicon.png')),
+        new ExtractTextPlugin('css/[name].css', {
+            allChunks: true
         }),
         new webpack.ProvidePlugin({
             $: 'jquery',
             jQuery: 'jquery',
             'Backbone.Wreqr': 'backbone.wreqr'
         }),
-        new webpack.IgnorePlugin(/vertx/),
-        new webpack.NoErrorsPlugin(),
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
+            minChunks: module => {
+                return module.context && module.context.indexOf('node_modules') !== -1;
+            }
+        }),
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'manifest',
+            minChunks: Infinity
+        })
     ],
-    jshint: {
-        esversion: 6,
-        node: true,
-        browser: true,
-        camelcase: true,
-        curly: true,
-        devel: true,
-        eqeqeq: true,
-        expr: false,
-        indent: 4,
-        maxdepth: 4,
-        maxlen: 120,
-        newcap: false,
-        noarg: true,
-        quotmark: "single",
-        undef: true,
-        unused: "vars",
-        emitErrors: false,
-        failOnHint: false
-    },
-    devtool: NODE_ENV === 'development' ? 'cheap-inline-module-source-map' : null
+    devtool: NODE_ENV === 'development' ? 'source-map' : false
 };
 
 if (NODE_ENV === 'production') {
     config.plugins.push(new webpack.optimize.UglifyJsPlugin({
+        comments: false,
         compress: {
             warnings: false,
-            drop_console: true,
-            unsafe: true
-        }
+            drop_console: false,
+            unsafe: false
+        },
+        sourceMap: false
     }));
 }
 

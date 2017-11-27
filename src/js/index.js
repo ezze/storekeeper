@@ -1,9 +1,11 @@
 import $ from 'jquery';
 
-import App from './app/app';
-import appConfig from './app/app-config';
+import App from './app/Application';
+import appConfig from './app/config';
+
+import '../less/storekeeper.less';
 
 $(function() {
-    var app = new App(appConfig);
+    const app = new App(appConfig);
     app.start();
 });
