@@ -1,20 +1,12 @@
 language: node_js
 node_js:
+  - "11"
+  - "10"
   - "9"
   - "8"
-  - "7"
-  - "6"
-  - "5"
-  - "4"
-branches:
-  only:
-    - master
-    - develop
-    - /^greenkeeper/.*$/
 install:
-  - npm install
+  - yarn
 before_script:
-  - npm install -g gulp-cli
-  - npm install -g webpack
+  - yarn lint
 script:
-  - NODE_ENV=production npm run build
+  - yarn dist

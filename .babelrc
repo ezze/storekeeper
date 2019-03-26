@@ -1,5 +1,10 @@
 {
   "presets": [
-    "env"
+    "@babel/env",
+    "@babel/react",
+    "mobx"
+  ],
+  "plugins": [
+    "@babel/plugin-syntax-dynamic-import"
   ]
 }
