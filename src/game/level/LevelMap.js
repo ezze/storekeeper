@@ -8,114 +8,114 @@ import {
 } from '../utils/level';
 
 export default class LevelMap {
-  items = [];
-  rowsCount = 0;
-  columnsCount = 0;
+  #items = [];
+  #rows = 0;
+  #columns = 0;
 
-  constructor(items) {
-    this.setItems(items);
+  constructor(items = []) {
+    this.items = items;
   }
 
-  getItems() {
+  get items() {
     const items = [];
-    for (let row = 0; row < this.rowsCount; row++) {
+    for (let row = 0; row < this.#rows; row++) {
       const begin = this.linearIndex(row, 0);
-      items.push(this.items.slice(begin, begin + this.columnsCount).join('').replace(/ +$/, ''));
+      items.push(this.#items.slice(begin, begin + this.#columns).join('').replace(/ +$/, ''));
     }
     return items;
   }
 
-  setItems(items = []) {
-    this.items = [];
-    const { rowsCount, columnsCount } = detectLevelMapSize(items);
-    this.rowsCount = rowsCount;
-    this.columnsCount = columnsCount;
-    for (let row = 0; row < this.rowsCount; row++) {
-      for (let column = 0; column < this.columnsCount; column++) {
-        this.items.push(column < items[row].length ? items[row][column] : LEVEL_MAP_ITEM_SPACE);
+  set items(items) {
+    this.#items = [];
+    const { rows, columns } = detectLevelMapSize(items);
+    this.#rows = rows;
+    this.#columns = columns;
+    for (let row = 0; row < this.#rows; row++) {
+      for (let column = 0; column < this.#columns; column++) {
+        this.#items.push(column < items[row].length ? items[row][column] : LEVEL_MAP_ITEM_SPACE);
       }
     }
   }
 
-  getRowsCount() {
-    return this.rowsCount;
+  get rows() {
+    return this.#rows;
   }
 
-  setRowsCount(count) {
-    if (count < this.rowsCount) {
-      this.items.splice(this.linearIndex(count, 0), (this.rowsCount - count) * this.columnsCount);
+  set rows(count) {
+    if (count < this.#rows) {
+      this.#items.splice(this.linearIndex(count, 0), (this.#rows - count) * this.#columns);
     }
-    else if (count > this.rowsCount) {
-      for (let row = count; row < this.rowsCount; row++) {
-        for (let column = 0; column < this.columnsCount; column++) {
-          this.items.push(LEVEL_MAP_ITEM_SPACE);
+    else if (count > this.#rows) {
+      for (let row = count; row < this.#rows; row++) {
+        for (let column = 0; column < this.#columns; column++) {
+          this.#items.push(LEVEL_MAP_ITEM_SPACE);
         }
       }
     }
-    this.rowsCount = count;
+    this.#rows = count;
   }
 
-  getColumnsCount() {
-    return this.columnsCount;
+  get columns() {
+    return this.#columns;
   }
 
-  setColumnsCount(count) {
-    if (count < this.columnsCount) {
-      for (let row = 0; row < this.rowsCount; row++) {
-        this.items.splice((row + 1) * count, this.columnsCount - count);
+  set columns(count) {
+    if (count < this.#columns) {
+      for (let row = 0; row < this.#rows; row++) {
+        this.#items.splice((row + 1) * count, this.#columns - count);
       }
     }
-    else if (count > this.columnsCount) {
-      for (let row = 0; row < this.rowsCount; row++) {
-        for (let column = this.columnsCount; column < count; column++) {
-          this.items.splice(row * count + column, 0, LEVEL_MAP_ITEM_SPACE);
+    else if (count > this.#columns) {
+      for (let row = 0; row < this.#rows; row++) {
+        for (let column = this.#columns; column < count; column++) {
+          this.#items.splice(row * count + column, 0, LEVEL_MAP_ITEM_SPACE);
         }
       }
     }
-    this.columnsCount = count;
+    this.#columns = count;
   }
 
   normalize() {
     let row = 0;
-    while (row < this.items.length) {
-      const line = this.items[row].trim();
+    while (row < this.#items.length) {
+      const line = this.#items[row].trim();
       if (line === '') {
-        this.items.splice(row, 1);
+        this.#items.splice(row, 1);
       }
       else {
-        this.items[row] = line;
+        this.#items[row] = line;
         row++;
       }
     }
-    const { rowsCount, columnsCount } = detectLevelMapSize(this.items);
-    this.rowsCount = rowsCount;
-    this.columnsCount = columnsCount;
+    const { rows, columns } = detectLevelMapSize(this.#items);
+    this.#rows = rows;
+    this.#columns = columns;
   }
 
   linearIndex(row, column) {
-    return row * this.columnsCount + column;
+    return row * this.#columns + column;
   }
 
   insert(row, column, item) {
     if (!isLevelMapItemValid(item)) {
       item = LEVEL_MAP_ITEM_SPACE;
     }
-    this.items[this.linearIndex(row, column)] = item;
+    this.#items[this.linearIndex(row, column)] = item;
   }
 
   at(row, column) {
-    return this.items[this.linearIndex(row, column)];
+    return this.#items[this.linearIndex(row, column)];
   }
 
   remove(row, column) {
-    this.items[this.linearIndex(row, column)] = ' ';
+    this.#items[this.linearIndex(row, column)] = ' ';
   }
 
   validate() {
     let workersCount = 0;
     let goalsCount = 0;
     let boxesCount = 0;
-    this.items.forEach(function(item) {
+    this.#items.forEach(function(item) {
       if (isLevelMapWorkerItem(item)) {
         workersCount++;
       }
@@ -130,13 +130,13 @@ export default class LevelMap {
   }
 
   toString() {
-    return this.items.join('\n');
+    return this.#items.join('\n');
   }
 }
 
 function detectLevelMapSize(items) {
   return {
-    rowsCount: items.length,
-    columnsCount: items.length === 0 ? 0 : Math.max.apply(null, items.map(row => row.length))
+    rows: items.length,
+    columns: items.length === 0 ? 0 : Math.max.apply(null, items.map(row => row.length))
   };
 }

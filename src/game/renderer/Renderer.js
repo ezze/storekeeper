@@ -13,13 +13,13 @@ import Goal from '../level/object/Goal';
 import Box from '../level/object/Box';
 
 class Renderer {
-  _container = null;
-  _canvas = null;
-  _level = null;
-  _camera = null;
+  #container = null;
+  #canvas = null;
+  #level = null;
+  #camera = null;
 
   constructor(options = {}) {
-    if (this.constructor === Renderer) {
+    if (new.target === Renderer) {
       throw new Error('Can\'t construct abstract renderer.');
     }
 
@@ -28,14 +28,14 @@ class Renderer {
       throw new TypeError('Container must be HTML element.');
     }
 
-    this._container = container;
-    this._canvas = document.createElement('canvas');
-    this._container.appendChild(this._canvas);
+    this.#container = container;
+    this.#canvas = document.createElement('canvas');
+    this.#container.appendChild(this.#canvas);
 
     this.onWindowResize = this.onWindowResize.bind(this);
     this.onMoveEnd = this.onMoveEnd.bind(this);
 
-    this._camera = {
+    this.#camera = {
       tween: null,
       offset: { x: 0, y: 0 }
     };
@@ -69,14 +69,14 @@ class Renderer {
   }
 
   render(time) {
-    const context = this._canvas.getContext('2d');
+    const context = this.#canvas.getContext('2d');
     context.clearRect(0, 0, this.width, this.height);
 
-    if (this.level === null) {
+    if (this.#level === null) {
       return;
     }
 
-    const { walls, goals, boxes, worker } = this.level;
+    const { walls, goals, boxes, worker } = this.#level;
     walls.forEach(wall => this.renderItem(wall));
     goals.forEach(goal => this.renderItem(goal));
     boxes.forEach(box => this.renderItem(box));
@@ -86,14 +86,14 @@ class Renderer {
   }
 
   renderItem(item) {
-    const context = this._canvas.getContext('2d');
+    const context = this.#canvas.getContext('2d');
 
     const x = this.getItemOffsetX(item);
     const y = this.getItemOffsetY(item);
 
     switch (item.constructor) {
       case Worker: {
-        if (this.level.at(item.row, item.column, [LEVEL_MAP_ITEM_GOAL]).length === 1) {
+        if (this.#level.at(item.row, item.column, [LEVEL_MAP_ITEM_GOAL]).length === 1) {
           this.renderWorkerOverGoal(context, x, y, item);
         }
         else {
@@ -136,53 +136,53 @@ class Renderer {
   }
 
   getItemOffsetX(item) {
-    return this._camera.offset.x + item.column * this.itemWidth;
+    return this.#camera.offset.x + item.column * this.itemWidth;
   }
 
   getItemOffsetY(item) {
-    return this._camera.offset.y + item.row * this.itemHeight;
+    return this.#camera.offset.y + item.row * this.itemHeight;
   }
 
   adjustCanvasSize() {
-    this._canvas.width = this._container.offsetWidth;
-    this._canvas.height = this._container.offsetHeight;
+    this.#canvas.width = this.#container.offsetWidth;
+    this.#canvas.height = this.#container.offsetHeight;
   }
 
   adjustCamera(options = {}) {
     const { interrupt = false } = options;
-    if (this._camera.tween) {
+    if (this.#camera.tween) {
       if (!interrupt) {
         return;
       }
-      this._camera.tween.stop();
-      this._camera.tween = null;
+      this.#camera.tween.stop();
+      this.#camera.tween = null;
     }
 
     // If the whole level can't be placed within the canvas
     // we will move the camera to grant worker is visible at each moment of time
-    const offsetX = this.calculateCameraOffsetX(),
-      offsetY = this.calculateCameraOffsetY();
+    const offsetX = this.calculateCameraOffsetX();
+    const offsetY = this.calculateCameraOffsetY();
 
     // Checking whether camera's calculated position differs from the current one
-    if (this._camera.offset.x === offsetX && this._camera.offset.y === offsetY) {
+    if (this.#camera.offset.x === offsetX && this.#camera.offset.y === offsetY) {
       return;
     }
 
     const { smooth = false } = options;
     if (!smooth) {
-      this._camera.offset.x = offsetX;
-      this._camera.offset.y = offsetY;
+      this.#camera.offset.x = offsetX;
+      this.#camera.offset.y = offsetY;
       return;
     }
 
     const { delay = 500, duration = 300 } = options;
 
-    const tween = this._camera.tween = new Tween.Tween(this._camera.offset);
+    const tween = this.#camera.tween = new Tween.Tween(this.#camera.offset);
     tween.delay(delay).easing(Tween.Easing.Quadratic.In).to({
       x: offsetX,
       y: offsetY
     }, duration).onComplete(() => {
-      this._camera.tween = null;
+      this.#camera.tween = null;
     }).start();
   }
 
@@ -199,10 +199,10 @@ class Renderer {
       let visibleRectLeft = Math.round(this.width * 3 / 16);
       let visibleRectRight = this.width - Math.round(this.width * 3 / 16);
 
-      if (this._camera.offset.x === this.width - this.levelWidth) {
+      if (this.#camera.offset.x === this.width - this.levelWidth) {
         visibleRectRight = this.width;
       }
-      else if (this._camera.offset.x === 0) {
+      else if (this.#camera.offset.x === 0) {
         visibleRectLeft = 0;
       }
 
@@ -211,10 +211,10 @@ class Renderer {
       if (!isVisibleX) {
         // We have to recalculate camera's left position to place the worker in the center
         const workerCanvasCenterX = Math.round((this.width - this.itemWidth) / 2);
-        offsetX = this._camera.offset.x + workerCanvasCenterX - x;
+        offsetX = this.#camera.offset.x + workerCanvasCenterX - x;
       }
       else {
-        offsetX = this._camera.offset.x;
+        offsetX = this.#camera.offset.x;
       }
 
       if (offsetX > 0) {
@@ -241,10 +241,10 @@ class Renderer {
       let visibleRectTop = Math.round(this.height * 3 / 16);
       let visibleRectBottom = this.height - Math.round(this.height * 3 / 16);
 
-      if (this._camera.offset.y === this.height - this.levelHeight) {
+      if (this.#camera.offset.y === this.height - this.levelHeight) {
         visibleRectBottom = this.height;
       }
-      else if (this._camera.offset.y === 0) {
+      else if (this.#camera.offset.y === 0) {
         visibleRectTop = 0;
       }
 
@@ -253,10 +253,10 @@ class Renderer {
       if (!isVisibleY) {
         // We have to recalculate camera's top position to place the worker in the center
         const workerCanvasCenterY = Math.round((this.height - this.itemHeight) / 2);
-        offsetY = this._camera.offset.y + workerCanvasCenterY - y;
+        offsetY = this.#camera.offset.y + workerCanvasCenterY - y;
       }
       else {
-        offsetY = this._camera.offset.y;
+        offsetY = this.#camera.offset.y;
       }
 
       if (offsetY > 0) {
@@ -271,34 +271,34 @@ class Renderer {
   }
 
   get level() {
-    return this._level;
+    return this.#level;
   }
 
   set level(level) {
-    if (this._level) {
-      this.removeLevelListeners(this._level);
+    if (this.#level) {
+      this.removeLevelListeners(this.#level);
     }
 
-    this._level = level;
+    this.#level = level;
     this.addLevelListeners(level);
 
     this.adjustCamera({ smooth: false, interrupt: true });
   }
 
   get width() {
-    return this._canvas.width;
+    return this.#canvas.width;
   }
 
   get height() {
-    return this._canvas.height;
+    return this.#canvas.height;
   }
 
   get levelWidth() {
-    return this.level ? this.level.columnsCount * this.itemWidth : 0;
+    return this.level ? this.level.columns * this.itemWidth : 0;
   }
 
   get levelHeight() {
-    return this.level ? this.level.rowsCount * this.itemHeight : 0;
+    return this.level ? this.level.rows * this.itemHeight : 0;
   }
 
   get itemWidth() {

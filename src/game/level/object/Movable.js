@@ -9,66 +9,77 @@ import {
 import Item from './Item';
 
 export default class Movable extends Item {
-  _targetRow = null;
-  _targetColumn = null;
+  #targetRow = null;
+  #targetColumn = null;
 
-  _stepSize = 0;
+  #stepSize = 0;
 
-  _lastHorizontalDirection = DIRECTION_LEFT;
-  _lastVerticalDirection = DIRECTION_DOWN;
+  #lastHorizontalDirection = DIRECTION_LEFT;
+  #lastVerticalDirection = DIRECTION_DOWN;
 
-  _consecutiveStepsCount = 0;
-  _movesCount = 0;
+  #consecutiveStepsCount = 0;
+  #movesCount = 0;
 
   constructor(row, column) {
     super(row, column);
-    this._targetRow = row;
-    this._targetColumn = column;
+    this.#targetRow = row;
+    this.#targetColumn = column;
   }
 
   get lastHorizontalDirection() {
-    return this._lastHorizontalDirection;
+    return this.#lastHorizontalDirection;
+  }
+
+  set lastHorizontalDirection(direction) {
+    this.#lastHorizontalDirection = direction;
   }
 
   get lastVerticalDirection() {
-    return this._lastVerticalDirection;
+    return this.#lastVerticalDirection;
+  }
+
+  set lastVerticalDirection(direction) {
+    this.#lastVerticalDirection = direction;
   }
 
   get consecutiveStepsCount() {
-    return this._consecutiveStepsCount;
+    return this.#consecutiveStepsCount;
+  }
+
+  get movesCount() {
+    return this.#movesCount;
   }
 
   move(direction, stepSize) {
     const shift = getDirectionShift(direction);
 
-    this._targetRow = this.row + shift.y;
-    this._targetColumn = this.column + shift.x;
-
-    this._stepSize = stepSize;
+    this.#targetRow = this.row + shift.y;
+    this.#targetColumn = this.column + shift.x;
+    this.#stepSize = stepSize;
 
     if (isDirectionValidHorizontal(direction)) {
-      this._lastHorizontalDirection = direction;
+      this.#lastHorizontalDirection = direction;
     }
     else if (isDirectionValidVertical(direction)) {
-      this._lastVerticalDirection = direction;
+      this.#lastVerticalDirection = direction;
     }
 
-    this._movesCount++;
+    this.#movesCount++;
   }
 
   animate() {
-    const stepX = Math.sign(this._targetColumn - this.column) * this._stepSize;
-    const stepY = Math.sign(this._targetRow - this.row) * this._stepSize;
+    const stepX = Math.sign(this.#targetColumn - this.column) * this.#stepSize;
+    const stepY = Math.sign(this.#targetRow - this.row) * this.#stepSize;
 
     this.column = this.column + stepX;
     this.row = this.row + stepY;
 
-    this._consecutiveStepsCount += 1;
+    this.#consecutiveStepsCount += 1;
 
-    return this.row === this._targetRow && this.column === this._targetColumn;
+    return this.row === this.#targetRow && this.column === this.#targetColumn;
   }
 
   reset() {
-    this._consecutiveStepsCount = 0;
+    this.#consecutiveStepsCount = 0;
   }
 }

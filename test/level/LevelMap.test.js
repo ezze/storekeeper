@@ -1,5 +1,3 @@
-'use strict';
-
 import LevelMap from '../../src/game/level/LevelMap';
 import levelSetJson from '../../src/levels/original.json';
 

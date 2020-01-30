@@ -6,7 +6,7 @@ export const DIRECTION_DOWN = 'DOWN';
 
 export const directionsHorizontal = [DIRECTION_LEFT, DIRECTION_RIGHT];
 export const directionsVertical = [DIRECTION_UP, DIRECTION_DOWN];
-export const directions = [].concat(directionsHorizontal, directionsVertical);
+export const directions = [].concat(DIRECTION_NONE, directionsHorizontal, directionsVertical);
 
 export const LEVEL_MAP_ITEM_WORKER = '@';
 export const LEVEL_MAP_ITEM_WORKER_ON_GOAL = '+';

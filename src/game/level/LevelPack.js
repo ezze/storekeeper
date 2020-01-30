@@ -5,16 +5,8 @@ import { EVENT_LEVEL_CHANGE } from '../../constants';
 import Level from './Level';
 
 class LevelPack {
-  _levels = [];
-  _levelIndex = null;
-
-  get levelNumber() {
-    return typeof this._levelIndex === 'number' ? this._levelIndex + 1 : null;
-  }
-
-  get level() {
-    return typeof this._levelIndex === 'number' ? this.getLevel(this._levelIndex) : null;
-  }
+  #levels = [];
+  #index = -1;
 
   constructor(source) {
     this.load(source);
@@ -31,30 +23,32 @@ class LevelPack {
     source.levels.forEach(({ items }) => this.add(new Level(items)));
   }
 
-  getLevel(index) {
-    if (index < 0 || index >= this._levels.length) {
-      throw new RangeError('Level index is out of bounds.');
-    }
-    return this._levels[index];
+  get levelNumber() {
+    return this.#index + 1;
   }
 
-  setLevel(level) {
+  get level() {
+    return this.#index >= 0 ? this.getLevel(this.#index) : null;
+  }
+
+  getLevel(index) {
+    if (index < 0 || index >= this.#levels.length) {
+      throw new RangeError('Level index is out of bounds.');
+    }
+    return this.#levels[index];
+  }
+
+  setLevel(index) {
     if (this.level !== null) {
       this.removeLevelListeners(this.level);
     }
 
-    if (typeof level === 'number') {
-      level = this.getLevel(level);
+    if (index < 0 || index >= this.#levels.length) {
+      throw new RangeError('Level index is out of bounds.');
     }
 
-    // Checking whether specified level exists in level pack
-    const index = this._levels.indexOf(level);
-    if (index === -1) {
-      throw new Error('Level doesn\'t exist in level pack.');
-    }
-
-    this._levelIndex = index;
-    this.addLevelListeners(level);
+    this.#index = index;
+    this.addLevelListeners(index);
   }
 
   addLevelListeners(level) {
@@ -83,8 +77,8 @@ class LevelPack {
     if (Array.isArray(level)) {
       level = new Level(level);
     }
-    this._levels.push(level);
-    if (this._levelIndex === null && this._levels.length === 1) {
+    this.#levels.push(level);
+    if (this.#index === -1 && this.#levels.length === 1) {
       this.setLevel(0);
     }
   }
@@ -97,9 +91,9 @@ class LevelPack {
     if (this.level === null) {
       return;
     }
-    let index = this._levelIndex - 1;
+    let index = this.#index - 1;
     if (index < 0) {
-      index = this._levels.length - 1;
+      index = this.#levels.length - 1;
     }
     this.setLevel(index);
     this.fire(EVENT_LEVEL_CHANGE, this.levelNumber);
@@ -109,8 +103,8 @@ class LevelPack {
     if (this.level === null) {
       return;
     }
-    let index = this._levelIndex + 1;
-    if (index >= this._levels.length) {
+    let index = this.#index + 1;
+    if (index >= this.#levels.length) {
       index = 0;
     }
     this.setLevel(index);
@@ -127,7 +121,7 @@ class LevelPack {
 
   toString() {
     let output = '';
-    this._levels.forEach((level, index) => {
+    this.#levels.forEach((level, index) => {
       if (output) {
         output += '\n\n';
       }
