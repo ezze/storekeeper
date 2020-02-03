@@ -2,8 +2,3 @@
 *.log
 dist
 node_modules
-
-/assets
-/cordova/platforms
-/cordova/plugins
-/cordova/www
