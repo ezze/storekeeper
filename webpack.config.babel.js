@@ -6,6 +6,7 @@ import HtmlPlugin from 'html-webpack-plugin';
 import htmlTemplate from 'html-webpack-template';
 import FaviconsPlugin from 'favicons-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import CopyPlugin from 'copy-webpack-plugin';
 
 const port = process.env.PORT || 55577;
 
@@ -103,7 +104,11 @@ export default (env, argv) => {
       new MiniCssExtractPlugin({
         filename: `css/${mode === 'development' ? '[name].css' : '[name].[hash:6].css'}`,
         chunkFilename: `css/${mode === 'development' ? '[name].css' : '[name].[hash:6].css'}`
-      })
+      }),
+      new CopyPlugin([{
+        from: path.resolve(__dirname, 'src/levels'),
+        to: path.resolve(__dirname, 'dist/levels')
+      }])
     ]
   };
 };
