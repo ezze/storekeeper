@@ -1,15 +1,20 @@
-import { EventMixin } from 'dissemination';
+import {
+  DIRECTION_NONE
+} from '../../constants/direction';
 
 import {
-  DIRECTION_NONE,
+  EVENT_LEVEL_RESET,
+  EVENT_LEVEL_COMPLETED,
+  EVENT_MOVE_START,
+  EVENT_MOVE_END
+} from '../../constants/event';
+
+import {
   LEVEL_MAP_ITEM_WORKER,
   LEVEL_MAP_ITEM_WALL,
   LEVEL_MAP_ITEM_GOAL,
-  LEVEL_MAP_ITEM_BOX,
-  EVENT_LEVEL_MOVE_START,
-  EVENT_LEVEL_MOVE_END,
-  EVENT_LEVEL_COMPLETED
-} from '../../constants';
+  LEVEL_MAP_ITEM_BOX
+} from '../../constants/level';
 
 import {
   getDirectionShift,
@@ -32,22 +37,28 @@ import Goal from './object/Goal';
 import Box from './object/Box';
 
 class Level {
-  #worker = null;
-  #walls = [];
-  #goals = [];
-  #boxes = [];
+  _worker = null;
+  _walls = [];
+  _goals = [];
+  _boxes = [];
 
-  #stepsPerMove;
+  _retractedBoxesCountCached = null;
 
-  #direction = DIRECTION_NONE;
+  _stepsPerMove;
 
-  #animating = false;
-  #animatedItems = [];
+  _direction = DIRECTION_NONE;
 
-  #boxesOverGoalsCount;
-  #completedTriggered = false;
+  _animating = false;
+  _animatedItems = [];
+
+  _completed = false;
+
+  _eventBus = null;
 
   constructor(items, options = {}) {
+    const { eventBus = null } = options;
+    this._eventBus = eventBus;
+
     if (items instanceof LevelMap) {
       this.map = items;
     }
@@ -60,36 +71,47 @@ class Level {
     }
 
     const { stepsPerMove = 16 } = options;
-    this.#stepsPerMove = stepsPerMove;
-    this.reset();
+    this._stepsPerMove = stepsPerMove;
+    this.reset(false);
   }
 
-  reset() {
+  reset(fireEvent = true) {
+    this._worker = null;
+    this._walls = [];
+    this._goals = [];
+    this._boxes = [];
+
+    this._retractedBoxesCountCached = null;
+
     for (let row = 0; row < this.map.rows; row++) {
       for (let column = 0; column < this.map.columns; column++) {
         const item = this.map.at(row, column);
         if (isLevelMapWorkerItem(item)) {
-          this.#worker = new Worker(row, column);
+          this._worker = new Worker(row, column);
         }
         if (isLevelMapWallItem(item)) {
-          this.#walls.push(new Wall(row, column));
+          this._walls.push(new Wall(row, column));
         }
         if (isLevelMapGoalItem(item)) {
-          this.#goals.push(new Goal(row, column));
+          this._goals.push(new Goal(row, column));
         }
         if (isLevelMapBoxItem(item)) {
-          this.#boxes.push(new Box(row, column));
+          this._boxes.push(new Box(row, column));
         }
       }
     }
 
-    this.#direction = DIRECTION_NONE;
+    this._direction = DIRECTION_NONE;
 
-    this.#animating = false;
-    this.#animatedItems = [];
+    this._animating = false;
+    this._animatedItems = [];
 
-    this.#boxesOverGoalsCount = undefined;
-    this.#completedTriggered = false;
+    this._completed = false;
+
+    if (fireEvent && this._eventBus) {
+      const { movesCount, pushesCount, boxesCount, retractedBoxesCount } = this;
+      this._eventBus.fire(EVENT_LEVEL_RESET, { movesCount, pushesCount, boxesCount, retractedBoxesCount });
+    }
   }
 
   at(row, column, filter) {
@@ -106,17 +128,17 @@ class Level {
 
     filter.forEach(type => {
       if (type === LEVEL_MAP_ITEM_WORKER) {
-        if (this.#worker.row === row && this.#worker.column === column) {
-          items.push(this.#worker);
+        if (this._worker.row === row && this._worker.column === column) {
+          items.push(this._worker);
         }
         return;
       }
 
       let typedItems;
       switch (type) {
-        case LEVEL_MAP_ITEM_WALL: typedItems = this.#walls; break;
-        case LEVEL_MAP_ITEM_GOAL: typedItems = this.#goals; break;
-        case LEVEL_MAP_ITEM_BOX: typedItems = this.#boxes; break;
+        case LEVEL_MAP_ITEM_WALL: typedItems = this._walls; break;
+        case LEVEL_MAP_ITEM_GOAL: typedItems = this._goals; break;
+        case LEVEL_MAP_ITEM_BOX: typedItems = this._boxes; break;
         default: throw new TypeError(`Filter type "${type}" is not supported.`);
       }
 
@@ -132,68 +154,77 @@ class Level {
   move() {
     const animatedBox = this.getAnimatedBox();
 
-    if (this.#animating) {
-      if (this.animate()) {
-        this.#animating = false;
-
-        if (animatedBox !== null) {
-          this.#boxesOverGoalsCount = undefined;
-        }
-
-        this.fire(EVENT_LEVEL_MOVE_END, {
-          boxesCount: this.boxesCount,
-          boxesOverGoalsCount: this.boxesOverGoalsCount
-        });
+    if (this._animating) {
+      if (!this.animate()) {
+        // Items are animated but the animation is not over yet
+        return false;
       }
+
+      // Current animation is over
+      this._animating = false;
+
+      // If box was moved (animated) then we have to clear cached value
+      // of retracted boxes' count in order to recalculate it for upcoming move end event
+      if (animatedBox) {
+        this._retractedBoxesCountCached = null;
+      }
+
+      if (this._eventBus) {
+        const { boxesCount, retractedBoxesCount } = this;
+        this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
+      }
+
       return false;
     }
 
-    if (this.completed) {
-      if (!this.#completedTriggered) {
-        this.#completedTriggered = true;
-        this.fire(EVENT_LEVEL_COMPLETED);
+    if (this._completed || this.completed) {
+      if (!this._completed) {
+        if (this._eventBus) {
+          this._eventBus.fire(EVENT_LEVEL_COMPLETED);
+        }
+        this._completed = true;
       }
       return false;
     }
 
     // Drop goal target flag for recenlty animated box
-    if (animatedBox !== null) {
+    if (animatedBox) {
       animatedBox.goalSource = animatedBox.goalTarget;
       animatedBox.goalTarget = false;
     }
 
-    const shift = getDirectionShift(this.#direction);
+    const shift = getDirectionShift(this._direction);
     if (shift.x === 0 && shift.y === 0) {
       this.resetAnimatedItems();
       return false;
     }
 
-    const isCollision = this.detectCollision(shift);
-    if (isCollision) {
+    const collided = this.detectCollision(shift);
+    if (collided) {
       this.resetAnimatedItems();
-      if (isDirectionValidHorizontal(this.#direction)) {
-        this.#worker.lastHorizontalDirection = this.#direction;
+      if (isDirectionValidHorizontal(this._direction)) {
+        this._worker.lastHorizontalDirection = this._direction;
       }
       return false;
     }
 
-    this.#animating = true;
-    this.#animatedItems.forEach(item => item.move(this.#direction, this.stepSize));
+    this._animating = true;
+    this._animatedItems.forEach(item => item.move(this._direction, this.stepSize));
 
-    this.fire(EVENT_LEVEL_MOVE_START, {
-      movesCount: this.movesCount,
-      pushesCount: this.pushesCount
-    });
+    if (this._eventBus) {
+      const { movesCount, pushesCount } = this;
+      this._eventBus.fire(EVENT_MOVE_START, { movesCount, pushesCount });
+    }
 
     if (this.animate()) {
-      this.#animating = false;
+      this._animating = false;
     }
 
     return true;
   }
 
   getAnimatedBox() {
-    return this.#animatedItems.find(item => item instanceof Box) || null;
+    return this._animatedItems.find(item => item instanceof Box) || null;
   }
 
   outOfBounds(row, column) {
@@ -201,8 +232,8 @@ class Level {
   }
 
   detectCollision(shift) {
-    const targetRow = this.#worker.row + shift.y;
-    const targetColumn = this.#worker.column + shift.x;
+    const targetRow = this._worker.row + shift.y;
+    const targetColumn = this._worker.column + shift.x;
     if (this.outOfBounds(targetRow, targetColumn)) {
       return false;
     }
@@ -246,9 +277,9 @@ class Level {
     }
 
     if (!isCollision) {
-      this.#animatedItems = [this.#worker];
+      this._animatedItems = [this._worker];
       if (targetBox !== null) {
-        this.#animatedItems.push(targetBox);
+        this._animatedItems.push(targetBox);
         if (targetGoal !== null) {
           targetBox.goalSource = true;
         }
@@ -260,7 +291,7 @@ class Level {
 
   animate() {
     let isAnimated = false;
-    this.#animatedItems.forEach(item => {
+    this._animatedItems.forEach(item => {
       if (item.animate()) {
         isAnimated = true;
       }
@@ -269,34 +300,8 @@ class Level {
   }
 
   resetAnimatedItems() {
-    this.#animatedItems.forEach(item => item.reset());
-    this.#animatedItems = [];
-  }
-
-  get worker() {
-    return this.#worker;
-  }
-
-  get walls() {
-    return this.#walls;
-  }
-
-  get goals() {
-    return this.#goals;
-  }
-
-  get boxes() {
-    return this.#boxes;
-  }
-
-  get direction() {
-    return this.#direction;
-  }
-
-  set direction(direction) {
-    if (isDirectionValid(direction)) {
-      this.#direction = direction;
-    }
+    this._animatedItems.forEach(item => item.reset());
+    this._animatedItems = [];
   }
 
   get rows() {
@@ -308,48 +313,79 @@ class Level {
   }
 
   get stepSize() {
-    return 1 / this.#stepsPerMove;
+    return 1 / this._stepsPerMove;
   }
 
-  get boxesCount() {
-    return this.#boxes.length;
+  get worker() {
+    return this._worker;
   }
 
-  get boxesOverGoalsCount() {
-    if (typeof this.#boxesOverGoalsCount === 'number') {
-      return this.#boxesOverGoalsCount;
-    }
-    this.#boxesOverGoalsCount = 0;
-    this.#boxes.forEach(box => {
-      const goals = this.at(box.row, box.column, [LEVEL_MAP_ITEM_GOAL]);
-      if (goals.length === 1) {
-        this.#boxesOverGoalsCount++;
-      }
-    });
-    return this.#boxesOverGoalsCount;
+  get walls() {
+    return this._walls;
+  }
+
+  get goals() {
+    return this._goals;
+  }
+
+  get boxes() {
+    return this._boxes;
   }
 
   get movesCount() {
-    return this.#worker.movesCount;
+    if (!this.worker) {
+      return 0;
+    }
+    const { movesCount } = this.worker;
+    return movesCount;
   }
 
   get pushesCount() {
     let count = 0;
-    this.#boxes.forEach(box => {
+    this._boxes.forEach(box => {
       count += box.movesCount;
     });
     return count;
   }
 
+  get boxesCount() {
+    return this._boxes.length;
+  }
+
+  get retractedBoxesCount() {
+    if (typeof this._retractedBoxesCountCached === 'number') {
+      return this._retractedBoxesCountCached;
+    }
+
+    let retractedBoxesCount = 0;
+    this._boxes.forEach(box => {
+      const goals = this.at(box.row, box.column, [LEVEL_MAP_ITEM_GOAL]);
+      if (goals.length === 1) {
+        retractedBoxesCount++;
+      }
+    });
+
+    this._retractedBoxesCountCached = retractedBoxesCount;
+    return retractedBoxesCount;
+  }
+
   get completed() {
-    return this.boxesOverGoalsCount === this.boxesCount;
+    return this.boxesCount > 0 && this.retractedBoxesCount === this.boxesCount;
+  }
+
+  get direction() {
+    return this._direction;
+  }
+
+  set direction(direction) {
+    if (isDirectionValid(direction)) {
+      this._direction = direction;
+    }
   }
 
   toString() {
     return this.map.toString();
   }
 }
-
-Object.assign(Level.prototype, EventMixin);
 
 export default Level;

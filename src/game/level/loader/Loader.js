@@ -1,67 +1,54 @@
-import _ from 'underscore';
-import $ from 'jquery';
+import LevelPack from '../LevelPack';
 
 export default class Loader {
-  constructor() {
-    if (this.constructor === Loader) {
+  constructor(options = {}) {
+    if (new.target === Loader) {
       throw new Error('Loader must be implemented.');
     }
+    const { eventBus = null } = options;
+    this.eventBus = eventBus;
   }
 
-  load(source, options) {
+  async load(source, options) {
+    let parsedSource;
     if (source instanceof File) {
-      return this.loadFromFile(source, options);
+      parsedSource = await this.loadFromFile(source, options);
     }
     else {
-      return this.loadFromUrl(source, options);
+      parsedSource = await this.loadFromUrl(source, options);
     }
+    return this.createLevelPack(parsedSource);
   }
 
-  loadFromFile(file) {
+  async loadFromFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-
-      reader.onload = (event) => {
-        resolve({
-          source: file,
-          data: event.target.result
-        });
+      reader.onload = event => resolve(event.target.result);
+      reader.onerror = () => {
+        reader.abort();
+        reject('Unexpected loading error has occurred.');
       };
-
-      reader.onerror = (event) => {
-        reject({
-          source: file
-        });
-      };
-
       const blob = file.slice(0, file.size);
       reader.readAsBinaryString(blob);
     });
   }
 
-  loadFromUrl(url, options) {
-    options = options || {};
-    return new Promise((resolve, reject) => {
-      options = _.extend({}, {
-        url: url
-      }, options);
-
-      const deferred = $.ajax(options);
-      deferred.done((data) => {
-        resolve({
-          source: url,
-          data: data
-        });
-      });
-      deferred.fail(() => {
-        reject({
-          source: url
-        });
-      });
-    });
+  async loadFromUrl(url, options) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        return Promise.reject(`Unable to load levels from "${url}".`);
+      }
+      return response;
+    }
+    catch (e) {
+      return Promise.reject('Unexpected loading error has occurred.');
+    }
   }
 
-  parse(data) {
-    throw new Error('Method "parse" is not implemented.');
+  createLevelPack(source) { // eslint-disable-line no-unused-vars
+    return new LevelPack(source, {
+      eventBus: this.eventBus
+    });
   }
 }

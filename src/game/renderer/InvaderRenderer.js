@@ -1,12 +1,12 @@
-import { DIRECTION_LEFT } from '../../constants';
+import { DIRECTION_LEFT } from '../../constants/direction';
 
 import Renderer from './Renderer';
 
 import spritesUrl from './invader.png';
 
 class InvaderRenderer extends Renderer {
-  #spritesLoaded = false;
-  #sprites = null;
+  _spritesLoaded = false;
+  _sprites = null;
 
   constructor(options) {
     super(options);
@@ -14,12 +14,12 @@ class InvaderRenderer extends Renderer {
   }
 
   async loadSprites() {
-    this.#spritesLoaded = false;
+    this._spritesLoaded = false;
     return new Promise((resolve, reject) => {
-      const sprites = this.#sprites = new Image();
+      const sprites = this._sprites = new Image();
       sprites.src = spritesUrl;
       sprites.onload = () => {
-        this.#spritesLoaded = true;
+        this._spritesLoaded = true;
         resolve();
       };
       sprites.onerror = e => reject(e);
@@ -27,16 +27,16 @@ class InvaderRenderer extends Renderer {
   }
 
   renderSprite(context, x, y, index) {
-    if (!this.#spritesLoaded) {
+    if (!this._spritesLoaded) {
       return;
     }
     const { pointX, pointY } = this.clipSprite(index);
     const { itemWidth, itemHeight } = this;
-    context.drawImage(this.#sprites, pointX, pointY, itemWidth, itemHeight, x, y, itemWidth, itemHeight);
+    context.drawImage(this._sprites, pointX, pointY, itemWidth, itemHeight, x, y, itemWidth, itemHeight);
   }
 
   clipSprite(index) {
-    const columns = Math.floor(this.#sprites.width / this.itemWidth);
+    const columns = Math.floor(this._sprites.width / this.itemWidth);
     const row = Math.floor(index / columns);
     const column = index - row * columns;
     return { pointX: column * this.itemWidth, pointY: row * this.itemHeight };

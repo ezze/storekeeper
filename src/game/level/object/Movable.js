@@ -1,4 +1,4 @@
-import { DIRECTION_LEFT, DIRECTION_DOWN } from '../../../constants';
+import { DIRECTION_LEFT, DIRECTION_DOWN } from '../../../constants/direction';
 
 import {
   isDirectionValidHorizontal,
@@ -9,77 +9,60 @@ import {
 import Item from './Item';
 
 export default class Movable extends Item {
-  #targetRow = null;
-  #targetColumn = null;
+  _targetRow = null;
+  _targetColumn = null;
 
-  #stepSize = 0;
+  _stepSize = 0;
+  _consecutiveStepsCount = 0;
+  _movesCount = 0;
 
-  #lastHorizontalDirection = DIRECTION_LEFT;
-  #lastVerticalDirection = DIRECTION_DOWN;
-
-  #consecutiveStepsCount = 0;
-  #movesCount = 0;
+  lastHorizontalDirection = DIRECTION_LEFT;
+  lastVerticalDirection = DIRECTION_DOWN;
 
   constructor(row, column) {
     super(row, column);
-    this.#targetRow = row;
-    this.#targetColumn = column;
-  }
-
-  get lastHorizontalDirection() {
-    return this.#lastHorizontalDirection;
-  }
-
-  set lastHorizontalDirection(direction) {
-    this.#lastHorizontalDirection = direction;
-  }
-
-  get lastVerticalDirection() {
-    return this.#lastVerticalDirection;
-  }
-
-  set lastVerticalDirection(direction) {
-    this.#lastVerticalDirection = direction;
+    this._targetRow = row;
+    this._targetColumn = column;
   }
 
   get consecutiveStepsCount() {
-    return this.#consecutiveStepsCount;
+    return this._consecutiveStepsCount;
   }
 
   get movesCount() {
-    return this.#movesCount;
+    return this._movesCount;
   }
 
   move(direction, stepSize) {
     const shift = getDirectionShift(direction);
 
-    this.#targetRow = this.row + shift.y;
-    this.#targetColumn = this.column + shift.x;
-    this.#stepSize = stepSize;
+    this._targetRow = this.row + shift.y;
+    this._targetColumn = this.column + shift.x;
+    this._stepSize = stepSize;
 
     if (isDirectionValidHorizontal(direction)) {
-      this.#lastHorizontalDirection = direction;
+      this.lastHorizontalDirection = direction;
     }
     else if (isDirectionValidVertical(direction)) {
-      this.#lastVerticalDirection = direction;
+      this.lastVerticalDirection = direction;
     }
 
-    this.#movesCount++;
+    this._movesCount++;
   }
 
   animate() {
-    const stepX = Math.sign(this.#targetColumn - this.column) * this.#stepSize;
-    const stepY = Math.sign(this.#targetRow - this.row) * this.#stepSize;
+    const stepX = Math.sign(this._targetColumn - this.column) * this._stepSize;
+    const stepY = Math.sign(this._targetRow - this.row) * this._stepSize;
 
     this.column = this.column + stepX;
     this.row = this.row + stepY;
 
-    this.#consecutiveStepsCount += 1;
+    this._consecutiveStepsCount += 1;
 
-    return this.row === this.#targetRow && this.column === this.#targetColumn;
+    return this.row === this._targetRow && this.column === this._targetColumn;
   }
 
   reset() {
-    this.#consecutiveStepsCount = 0;
+    this._consecutiveStepsCount = 0;
   }
 }

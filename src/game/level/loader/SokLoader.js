@@ -1,33 +1,23 @@
-import _ from 'underscore';
-
-import LevelPack from '../LevelPack';
 import Loader from './Loader';
 
-const commentRegExp = /^::/,
-  rowRegExp = /^[@+#.$* ]+$/;
+const commentRegExp = /^::/;
+const rowRegExp = /^[@+#.$* ]+$/;
 
 export default class LoaderSok extends Loader {
-  constructor() {
-    super();
-  }
-
-  loadFromUrl(url, options) {
-    options = options || {};
-    options.dataType = 'text';
-    return super.loadFromUrl(url, options);
-  }
-
-  parse(data) {
-    const lines = data.split('\n');
-
-    data = {
-      levels: []
-    };
+  async loadFromUrl(url, options = {}) {
+    const response = await super.loadFromUrl(url, options);
+    if (response.headers.get('Content-Type').indexOf('text/plain') !== 0) {
+      return Promise.reject(`Response from "${url}" is not of text content type.`);
+    }
+    const text = await response.text();
+    const lines = text.split('\n');
 
     // TODO: implement reading metadata (titles, descriptions, etc.)
 
+    const levels = [];
     let level = null;
-    _.each(lines, (line, i) => {
+
+    lines.forEach(line => {
       line = line.replace(/\r$/, '');
 
       if (commentRegExp.test(line)) {
@@ -36,22 +26,20 @@ export default class LoaderSok extends Loader {
 
       if (rowRegExp.test(line)) {
         if (level === null) {
-          level = {
-            name: '',
-            description: '',
-            items: []
-          };
+          level = { name: '', description: '', items: [] };
         }
         level.items.push(line);
       }
       else {
         if (level !== null) {
-          data.levels.push(level);
+          levels.push(level);
         }
         level = null;
       }
     });
 
-    return new LevelPack(data);
+    return {
+      levels
+    };
   }
 }

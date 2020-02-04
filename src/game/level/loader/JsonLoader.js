@@ -1,23 +1,11 @@
-import _ from 'underscore';
-
-import LevelPack from '../LevelPack';
 import Loader from './Loader';
 
 export default class LoaderJson extends Loader {
-  constructor() {
-    super();
-  }
-
-  loadFromUrl(url, options) {
-    options = options || {};
-    options.dataType = 'json';
-    return super.loadFromUrl(url, options);
-  }
-
-  parse(data) {
-    if (_.isString(data)) {
-      data = JSON.parse(data);
+  async loadFromUrl(url, options = {}) {
+    const response = await super.loadFromUrl(url, options);
+    if (response.headers.get('Content-Type').indexOf('application/json') !== 0) {
+      return Promise.reject(`Response from "${url}" is not of JSON content type.`);
     }
-    return new LevelPack(data);
+    return response.json();
   }
 }

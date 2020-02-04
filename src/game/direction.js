@@ -4,7 +4,7 @@ import {
   DIRECTION_UP,
   DIRECTION_RIGHT,
   DIRECTION_DOWN
-} from '../constants';
+} from '../constants/direction';
 
 export function getDirectionByKeyCode(code) {
   switch (code) {

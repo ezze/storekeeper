@@ -3,14 +3,11 @@ import {
   DIRECTION_LEFT,
   DIRECTION_RIGHT,
   DIRECTION_UP,
-  DIRECTION_DOWN
-} from '../../constants';
-
-import {
+  DIRECTION_DOWN,
   directions,
   directionsHorizontal,
   directionsVertical
-} from '../../constants';
+} from '../../constants/direction';
 
 export function isDirectionValid(direction) {
   return directions.includes(direction);

@@ -6,7 +6,7 @@ import {
   LEVEL_MAP_ITEM_BOX,
   LEVEL_MAP_ITEM_BOX_ON_GOAL,
   levelMapItems
-} from '../../constants';
+} from '../../constants/level';
 
 export function isLevelMapItemValid(item) {
   return levelMapItems.includes(item);

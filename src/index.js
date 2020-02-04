@@ -5,16 +5,12 @@ import { Provider } from 'mobx-react';
 
 import './index.sass';
 
-import { createStore } from './store';
+import { createStores } from './store';
 
 import App from './components/App';
 
 document.addEventListener('DOMContentLoaded', async() => {
-  const store = await createStore();
-
-  const {
-    generalStore
-  } = store;
+  const { generalStore } = await createStores();
 
   const content = (
     <Provider generalStore={generalStore}>

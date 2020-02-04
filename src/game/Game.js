@@ -1,55 +1,60 @@
-import { EventMixin } from 'dissemination';
-
-import { DIRECTION_NONE } from '../constants';
+import { DIRECTION_NONE } from '../constants/direction';
+import { EVENT_LEVEL_COMPLETED } from '../constants/event';
 
 import LevelPack from './level/LevelPack';
 import Renderer from './renderer/Renderer';
-import LoaderFactory from './level/loader/LoaderFactory';
+import { getLoaderByFileName } from './level/loader/factory';
 import { getDirectionByKeyCode } from './direction';
 
 class Game {
-  #renderer;
-  #levelPack;
-  #animationFrameId;
+  _eventBus;
+  _renderer;
+  _levelPack;
+
+  _animationFrameId;
+  _fps = 0;
 
   constructor(options = {}) {
-    const { renderer, levelPack } = options;
+    const { eventBus, renderer, levelPack } = options;
+
+    if (!eventBus) {
+      throw new TypeError('Event bus is not specified.');
+    }
+    this._eventBus = eventBus;
 
     if (!(renderer instanceof Renderer)) {
-      throw new Error('Renderer is not provided or invalid.');
+      throw new Error('Renderer is not specified or invalid.');
     }
-    this.#renderer = renderer;
+    this._renderer = renderer;
 
     if (levelPack instanceof LevelPack) {
-      this.#levelPack = levelPack;
+      this._levelPack = levelPack;
     }
     else if (typeof levelPack === 'string' || levelPack instanceof File) {
       this.loadLevelPack(levelPack).catch(e => console.error(e));
     }
     else {
-      this.#levelPack = null;
+      this._levelPack = null;
     }
 
     this.animationFrame = this.animationFrame.bind(this);
-    this.#animationFrameId = requestAnimationFrame(this.animationFrame);
+    this._animationFrameId = requestAnimationFrame(this.animationFrame);
 
+    this.onLevelCompleted = this.onLevelCompleted.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
     this.onTouchStart = this.onTouchStart.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
+
+    eventBus.on(EVENT_LEVEL_COMPLETED, this.onLevelCompleted);
+
     this.enableControls();
   }
 
   destroy() {
     this.disableControls();
-
-    cancelAnimationFrame(this.#animationFrameId);
-
-    if (this.#levelPack) {
-      this.removeLevelPackListeners(this.#levelPack);
-    }
-
-    this.#renderer.destroy();
+    cancelAnimationFrame(this._animationFrameId);
+    this._renderer.destroy();
   }
 
   enableControls() {
@@ -66,29 +71,35 @@ class Game {
     window.removeEventListener('touchend', this.onTouchEnd);
   }
 
+  onLevelCompleted() {
+    // TODO: show some congratulations
+    this._levelPack.level.reset();
+    this._levelPack.next();
+  }
+
   onKeyDown(event) {
-    if (!this.#levelPack || !this.#levelPack.level) {
+    if (!this._levelPack || !this._levelPack.level) {
       return;
     }
 
     if (event.ctrlKey && event.which === 79) { // Ctrl + O
-      event.preventDefault(); // preventing a browser from showing open file dialog
+      event.preventDefault();
       // this.browseLevelSet();
       return;
     }
 
     if (event.altKey && event.which === 90) { // Alt + Z
-      this.executeCommand('previousLevel');
+      this._levelPack.previous();
       return;
     }
 
     if (event.altKey && event.which === 88) { // Alt + X
-      this.executeCommand('nextLevel');
+      this._levelPack.next();
       return;
     }
 
-    if (event.ctrlKey && event.altKey && event.which === 82) { // Ctrl + Alt + R
-      this.executeCommand('restartLevel');
+    if (event.altKey && event.which === 82) { // Alt + R
+      this._levelPack.restart();
       return;
     }
 
@@ -97,16 +108,16 @@ class Game {
       return;
     }
 
-    this.#levelPack.level.direction = direction;
+    this._levelPack.level.direction = direction;
   }
 
   onKeyUp(event) {
-    if (!this.#levelPack || !this.#levelPack.level) {
+    if (!this._levelPack || !this._levelPack.level) {
       return;
     }
     const direction = getDirectionByKeyCode(event.which);
-    if (direction === this.#levelPack.level.direction) {
-      this.#levelPack.level.direction = DIRECTION_NONE;
+    if (direction === this._levelPack.level.direction) {
+      this._levelPack.level.direction = DIRECTION_NONE;
     }
   }
 
@@ -119,16 +130,13 @@ class Game {
 
   async loadLevelPack(source) {
     const name = source instanceof File ? source.name : source;
-
-    const loader = LoaderFactory.getLoaderByFileName(name);
+    const loader = getLoaderByFileName(name);
     if (loader === null) {
-      return;
+      return Promise.reject(`Unable to find loader for level pack "${name}".`);
     }
 
     try {
-      const response = await loader.load(source);
-      const levelPack = this.#levelPack = loader.parse(response.data);
-      this.fire('level:pack:load', levelPack, response.source);
+      this._levelPack = await loader.load(source);
     }
     catch (e) {
       console.error(e);
@@ -136,86 +144,44 @@ class Game {
     }
   }
 
-  addLevelPackListeners(levelPack) {
-    /*
-    this.listenTo(levelSet, 'level:number', levelNumber => {
-      this.trigger('level:number', levelNumber);
-    });
-
-    this.listenTo(levelSet, 'level:move:start', stats => {
-      this.trigger('level:move:start', stats);
-    });
-
-    this.listenTo(levelSet, 'level:move:end', stats => {
-      this.trigger('level:move:end', stats);
-    });
-
-    this.listenTo(levelSet, 'level:completed', () => {
-      this.trigger('level:completed');
-      this.levelPack.level.reset();
-      this.goToNextLevel();
-    });
-     */
-  }
-
-  removeLevelPackListeners(levelPack) {
-    // this.stopListening(levelPack);
-  }
-
   render(time) {
-    const { level } = this.#levelPack;
-    if (level === null) {
+    const { level } = this._levelPack;
+    if (!level) {
       return;
     }
-    if (this.#renderer.level !== level) {
-      this.#renderer.level = level;
+    if (this._renderer.level !== level) {
+      this._renderer.level = level;
     }
-    this.#renderer.render(time);
+    this._renderer.render(time);
   }
 
   animationFrame(time) {
-    if (!this.#levelPack) {
-      this.#animationFrameId = requestAnimationFrame(this.animationFrame);
+    if (this._previousAnimationTime) {
+      const diff = (time - this._previousAnimationTime) / 1000;
+      this._fps = Math.floor(1 / diff);
+    }
+    else {
+      this._fps = 0;
+    }
+    this._previousAnimationTime = time;
+
+    if (this._fps <= 40) {
+      console.log(this._fps);
+    }
+
+    if (!this._levelPack) {
+      this._animationFrameId = requestAnimationFrame(this.animationFrame);
       return;
     }
 
-    const { level } = this.#levelPack;
+    const { level } = this._levelPack;
     if (level) {
       level.move();
     }
 
     this.render(time);
-    this.#animationFrameId = requestAnimationFrame(this.animationFrame);
-  }
-
-  goToPreviousLevel() {
-    if (this.#levelPack) {
-      this.#levelPack.goToPrevious();
-    }
-  }
-
-  goToNextLevel() {
-    if (this.#levelPack) {
-      this.#levelPack.goToNext();
-    }
-  }
-
-  restartLevel() {
-    if (this.#levelPack) {
-      this.#levelPack.restart();
-    }
-  }
-
-  setLevelPack(levelSet) {
-    if (this.#levelPack) {
-      this.removeLevelPackListeners(this.#levelPack);
-    }
-
-    this.#levelPack = levelSet;
-    this.addLevelPackListeners(levelSet);
+    this._animationFrameId = requestAnimationFrame(this.animationFrame);
   }
 }
-
-Object.assign(Game.prototype, EventMixin);
 
 export default Game;

@@ -1,13 +1,23 @@
 import React, { Component } from 'react';
+import { inject, observer } from 'mobx-react';
+import PropTypes from 'prop-types';
 import 'bootstrap';
 
+@inject('generalStore') @observer
 class Navbar extends Component {
+  static propTypes = {
+    generalStore: PropTypes.any.isRequired
+  };
+
   constructor() {
     super();
     this._id = Math.round(Math.random() * 10000);
   }
 
   render() {
+    const { generalStore } = this.props;
+    const { levelNumber, movesCount, pushesCount, boxesCount, retractedBoxesCount } = generalStore;
+
     return (
       <nav id={`navbar-${this._id}`} className="navbar navbar-expand-lg navbar-dark bg-primary">
         <a className="navbar-brand" href="/">Storekeeper</a>
@@ -39,13 +49,16 @@ class Navbar extends Component {
           </ul>
           <ul className="navbar-nav">
             <li className="nav-item">
-              <span className="navbar-text"><strong>Boxes</strong> 0</span>
+              <span className="navbar-text"><strong>Level</strong> {levelNumber}</span>
             </li>
             <li className="nav-item">
-              <span className="navbar-text"><strong>Pushes</strong> 0</span>
+              <span className="navbar-text"><strong>Moves</strong> {movesCount}</span>
             </li>
             <li className="nav-item">
-              <span className="navbar-text"><strong>Moves</strong> 0</span>
+              <span className="navbar-text"><strong>Pushes</strong> {pushesCount}</span>
+            </li>
+            <li className="nav-item">
+              <span className="navbar-text"><strong>Boxes</strong> {retractedBoxesCount} / {boxesCount}</span>
             </li>
           </ul>
         </div>
