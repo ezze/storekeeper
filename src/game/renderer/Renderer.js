@@ -1,6 +1,10 @@
 import Tween from '@tweenjs/tween.js';
 
 import {
+  EVENT_MOVE_END
+} from '../../constants/event';
+
+import {
   LEVEL_MAP_ITEM_WORKER,
   LEVEL_MAP_ITEM_GOAL,
   LEVEL_MAP_ITEM_BOX
@@ -12,6 +16,7 @@ import Goal from '../level/object/Goal';
 import Box from '../level/object/Box';
 
 class Renderer {
+  _eventBus = null;
   _container = null;
   _canvas = null;
   _level = null;
@@ -22,7 +27,8 @@ class Renderer {
       throw new Error('Can\'t construct abstract renderer.');
     }
 
-    const { container } = options;
+    const { eventBus = null, container } = options;
+    this._eventBus = eventBus;
     if (!(container instanceof HTMLElement)) {
       throw new TypeError('Container must be HTML element.');
     }
@@ -31,31 +37,27 @@ class Renderer {
     this._canvas = document.createElement('canvas');
     this._container.appendChild(this._canvas);
 
-    this.onWindowResize = this.onWindowResize.bind(this);
-    this.onMoveEnd = this.onMoveEnd.bind(this);
-
     this._camera = {
       tween: null,
       offset: { x: 0, y: 0 }
     };
 
+    this.onWindowResize = this.onWindowResize.bind(this);
+    this.onMoveEnd = this.onMoveEnd.bind(this);
+
+    if (this._eventBus) {
+      this._eventBus.on(EVENT_MOVE_END, this.onMoveEnd);
+    }
     window.addEventListener('resize', this.onWindowResize);
+
     this.adjustCanvasSize();
   }
 
   destroy() {
-    window.removeEventListener('resize', this.onWindowResize);
-    if (this.level) {
-      this.removeLevelListeners(this.level);
+    if (this._eventBus) {
+      this._eventBus.off(EVENT_MOVE_END, this.onMoveEnd);
     }
-  }
-
-  addLevelListeners(level) {
-    // level.on(EVENT_LEVEL_MOVE_END, this.onMoveEnd);
-  }
-
-  removeLevelListeners(level) {
-    // level.off(EVENT_LEVEL_MOVE_END, this.onMoveEnd);
+    window.removeEventListener('resize', this.onWindowResize);
   }
 
   onWindowResize() {
@@ -273,13 +275,7 @@ class Renderer {
   }
 
   set level(level) {
-    if (this._level) {
-      this.removeLevelListeners(this._level);
-    }
-
     this._level = level;
-    this.addLevelListeners(level);
-
     this.adjustCamera({ smooth: false, interrupt: true });
   }
 

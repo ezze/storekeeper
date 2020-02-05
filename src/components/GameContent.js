@@ -19,6 +19,7 @@ class GameContent extends Component {
     generalStore.game = new Game({
       eventBus,
       renderer: new InvaderRenderer({
+        eventBus,
         container: this.contentRef.current
       }),
       levelPack: 'levels/original.json'
