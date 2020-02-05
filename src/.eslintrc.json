@@ -1,0 +1,7 @@
+{
+  "extends": "ezze-react",
+  "parser": "babel-eslint",
+  "env": {
+    "node": false
+  }
+}
