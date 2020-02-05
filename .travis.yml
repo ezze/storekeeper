@@ -8,5 +8,6 @@ install:
   - yarn
 before_script:
   - yarn lint
+  - yarn test:coveralls
 script:
   - yarn dist
