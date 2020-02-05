@@ -113,6 +113,14 @@ class Level {
     }
   }
 
+  hasAt(row, column, type) {
+    if (type === LEVEL_MAP_ITEM_WORKER) {
+      return this._worker.row === row && this._worker.column === column;
+    }
+    const typedItems = this.getTypedItems(type);
+    return typedItems.findIndex(item => item.row === row && item.column === column) >= 0;
+  }
+
   at(row, column, filter) {
     const items = [];
 
@@ -133,14 +141,7 @@ class Level {
         return;
       }
 
-      let typedItems;
-      switch (type) {
-        case LEVEL_MAP_ITEM_WALL: typedItems = this._walls; break;
-        case LEVEL_MAP_ITEM_GOAL: typedItems = this._goals; break;
-        case LEVEL_MAP_ITEM_BOX: typedItems = this._boxes; break;
-        default: throw new TypeError(`Filter type "${type}" is not supported.`);
-      }
-
+      const typedItems = this.getTypedItems(type);
       const item = typedItems.find(item => item.row === row && item.column === column);
       if (item) {
         items.push(item);
@@ -148,6 +149,15 @@ class Level {
     });
 
     return items;
+  }
+
+  getTypedItems(type) {
+    switch (type) {
+      case LEVEL_MAP_ITEM_WALL: return this._walls;
+      case LEVEL_MAP_ITEM_GOAL: return this._goals;
+      case LEVEL_MAP_ITEM_BOX: return this._boxes;
+      default: throw new TypeError(`Filter type "${type}" is not supported.`);
+    }
   }
 
   move() {

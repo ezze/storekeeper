@@ -71,7 +71,7 @@ class Renderer {
     const context = this._canvas.getContext('2d');
     context.clearRect(0, 0, this.width, this.height);
 
-    if (this._level === null) {
+    if (!this._level) {
       return;
     }
 
@@ -92,7 +92,7 @@ class Renderer {
 
     switch (item.constructor) {
       case Worker: {
-        if (this._level.at(item.row, item.column, [LEVEL_MAP_ITEM_GOAL]).length === 1) {
+        if (this._level.hasAt(item.row, item.column, LEVEL_MAP_ITEM_GOAL)) {
           this.renderWorkerOverGoal(context, x, y, item);
         }
         else {
@@ -107,23 +107,22 @@ class Renderer {
       }
 
       case Goal: {
-        const items = this.level.at(item.row, item.column, [LEVEL_MAP_ITEM_WORKER, LEVEL_MAP_ITEM_BOX]);
-        if (items.length === 1) {
-          if (items[0] instanceof Worker) {
-            this.renderGoalBehindWorker(context, x, y, item);
-          }
-          else {
-            this.renderGoalBehindBox(context, x, y, item);
-          }
+        if (this._level.hasAt(item.row, item.column, LEVEL_MAP_ITEM_BOX)) {
+          this.renderGoalBehindBox(context, x, y, item);
+          return;
         }
-        else {
-          this.renderGoal(context, x, y, item);
+
+        if (this._level.hasAt(item.row, item.column, LEVEL_MAP_ITEM_WORKER)) {
+          this.renderGoalBehindWorker(context, x, y, item);
+          return;
         }
+
+        this.renderGoal(context, x, y, item);
         break;
       }
 
       case Box: {
-        if (this.level.at(item.row, item.column, [LEVEL_MAP_ITEM_GOAL]).length === 1) {
+        if (this._level.hasAt(item.row, item.column, LEVEL_MAP_ITEM_GOAL)) {
           this.renderBoxOverGoal(context, x, y, item);
         }
         else {
@@ -269,10 +268,6 @@ class Renderer {
     return offsetY;
   }
 
-  get level() {
-    return this._level;
-  }
-
   set level(level) {
     if (this._level) {
       this.removeLevelListeners(this._level);
@@ -293,11 +288,11 @@ class Renderer {
   }
 
   get levelWidth() {
-    return this.level ? this.level.columns * this.itemWidth : 0;
+    return this._level ? this._level.columns * this.itemWidth : 0;
   }
 
   get levelHeight() {
-    return this.level ? this.level.rows * this.itemHeight : 0;
+    return this._level ? this._level.rows * this.itemHeight : 0;
   }
 
   get itemWidth() {
