@@ -50,10 +50,6 @@ class Navbar extends Component {
               </a>
               <div className="dropdown-menu">
                 <a className="dropdown-item" onClick={this.onOpenClick}>Open... <small>Ctrl+O</small></a>
-                <div className="dropdown-divider"></div>
-                <a className="dropdown-item" href="#">Level 1</a>
-                <a className="dropdown-item" href="#">Level 2</a>
-                <a className="dropdown-item" href="#">Level 3</a>
               </div>
             </li>
           </ul>
