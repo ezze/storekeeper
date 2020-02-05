@@ -76,20 +76,8 @@ export default class LevelMap {
   }
 
   normalize() {
-    let row = 0;
-    while (row < this._items.length) {
-      const line = this._items[row].trim();
-      if (line === '') {
-        this._items.splice(row, 1);
-      }
-      else {
-        this._items[row] = line;
-        row++;
-      }
-    }
-    const { rows, columns } = detectLevelMapSize(this._items);
-    this._rows = rows;
-    this._columns = columns;
+    const { items } = this;
+    this.items = items.map(line => line.trim()).filter(line => !!line);
   }
 
   linearIndex(row, column) {
@@ -134,7 +122,7 @@ export default class LevelMap {
   }
 }
 
-function detectLevelMapSize(items) {
+export function detectLevelMapSize(items) {
   return {
     rows: items.length,
     columns: items.length === 0 ? 0 : Math.max.apply(null, items.map(row => row.length))
