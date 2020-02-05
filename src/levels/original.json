@@ -2,13 +2,6 @@
     "name": "Original",
     "description": "A set of original Sokoban levels",
     "levels": [{
-        "name": "Test",
-        "items": [
-            "#####",
-            "#.$@#",
-            "#####"
-        ]
-    }, {
         "name": "Level 1",
         "items": [
             "    #####",

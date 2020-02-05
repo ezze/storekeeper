@@ -190,7 +190,7 @@ class Renderer {
 
     if (this.levelWidth > this.width) {
       // Calculating left point of the worker relative to the canvas
-      const x = this.getItemOffsetX(this.level.worker);
+      const x = this.getItemOffsetX(this._level.worker);
 
       // Checking whether worker is within visible rectangle
       // that is 5/8 of the canvas and placed in the center of the canvas
@@ -232,7 +232,7 @@ class Renderer {
 
     if (this.levelHeight > this.height) {
       // Calculating top point of the worker relative to the canvas
-      const y = this.getItemOffsetY(this.level.worker);
+      const y = this.getItemOffsetY(this._level.worker);
 
       // Checking whether worker is within visible rectangle
       // that is 5/8 of the canvas and placed in the center of the canvas
