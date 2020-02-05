@@ -49,7 +49,7 @@ class Level {
   _direction = DIRECTION_NONE;
 
   _animating = false;
-  _animatedItems = [];
+  _animatedBox = null;
 
   _completed = false;
 
@@ -104,7 +104,6 @@ class Level {
     this._direction = DIRECTION_NONE;
 
     this._animating = false;
-    this._animatedItems = [];
 
     this._completed = false;
 
@@ -152,8 +151,6 @@ class Level {
   }
 
   move() {
-    const animatedBox = this.getAnimatedBox();
-
     if (this._animating) {
       if (!this.animate()) {
         // Items are animated but the animation is not over yet
@@ -165,7 +162,7 @@ class Level {
 
       // If box was moved (animated) then we have to clear cached value
       // of retracted boxes' count in order to recalculate it for upcoming move end event
-      if (animatedBox) {
+      if (this._animatedBox) {
         this._retractedBoxesCountCached = null;
       }
 
@@ -188,9 +185,9 @@ class Level {
     }
 
     // Drop goal target flag for recenlty animated box
-    if (animatedBox) {
-      animatedBox.goalSource = animatedBox.goalTarget;
-      animatedBox.goalTarget = false;
+    if (this._animatedBox) {
+      this._animatedBox.goalSource = this._animatedBox.goalTarget;
+      this._animatedBox.goalTarget = false;
     }
 
     const shift = getDirectionShift(this._direction);
@@ -209,7 +206,10 @@ class Level {
     }
 
     this._animating = true;
-    this._animatedItems.forEach(item => item.move(this._direction, this.stepSize));
+    this._worker.move(this._direction, this.stepSize);
+    if (this._animatedBox) {
+      this._animatedBox.move(this._direction, this.stepSize);
+    }
 
     if (this._eventBus) {
       const { movesCount, pushesCount } = this;
@@ -221,10 +221,6 @@ class Level {
     }
 
     return true;
-  }
-
-  getAnimatedBox() {
-    return this._animatedItems.find(item => item instanceof Box) || null;
   }
 
   outOfBounds(row, column) {
@@ -241,12 +237,12 @@ class Level {
     const targetItems = this.at(targetRow, targetColumn);
     let targetBox = null;
     let targetGoal = null;
-    let isCollision = false;
+    let collided = false;
 
     for (let i = 0; i < targetItems.length; i++) {
       const targetItem = targetItems[i];
       if (targetItem instanceof Wall) {
-        isCollision = true;
+        collided = true;
         break;
       }
 
@@ -256,14 +252,14 @@ class Level {
         const boxTargetRow = targetItem.row + shift.y;
         const boxTargetColumn = targetItem.column + shift.x;
         if (this.outOfBounds(boxTargetRow, boxTargetColumn)) {
-          isCollision = true;
+          collided = true;
           continue;
         }
 
         const boxTargetItems = this.at(boxTargetRow, boxTargetColumn);
         boxTargetItems.forEach(boxTargetItem => {
           if (boxTargetItem instanceof Wall || boxTargetItem instanceof Box) {
-            isCollision = true;
+            collided = true;
           }
           else {
             targetBox.goalTarget = boxTargetItem instanceof Goal;
@@ -276,32 +272,33 @@ class Level {
       }
     }
 
-    if (!isCollision) {
-      this._animatedItems = [this._worker];
-      if (targetBox !== null) {
-        this._animatedItems.push(targetBox);
-        if (targetGoal !== null) {
+    if (!collided) {
+      if (targetBox) {
+        this._animatedBox = targetBox;
+        if (targetGoal) {
           targetBox.goalSource = true;
         }
       }
+      else {
+        this._animatedBox = false;
+      }
     }
 
-    return isCollision;
+    return collided;
   }
 
   animate() {
-    let isAnimated = false;
-    this._animatedItems.forEach(item => {
-      if (item.animate()) {
-        isAnimated = true;
-      }
-    });
-    return isAnimated;
+    const workerAnimated = this._worker.animate();
+    const boxAnimated = this._animatedBox && this._animatedBox.animate();
+    return workerAnimated || boxAnimated;
   }
 
   resetAnimatedItems() {
-    this._animatedItems.forEach(item => item.reset());
-    this._animatedItems = [];
+    this._worker.reset();
+    if (this._animatedBox) {
+      this._animatedBox.reset();
+    }
+    this._animating = false;
   }
 
   get rows() {
