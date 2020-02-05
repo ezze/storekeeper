@@ -15,7 +15,7 @@ export default (env, argv) => {
   return {
     context: path.resolve(__dirname, 'src'),
     entry: {
-      yellowberry: ['@babel/polyfill', './index.js']
+      index: ['core-js/stable', 'regenerator-runtime/runtime', './index.js']
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
