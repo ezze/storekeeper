@@ -4,7 +4,7 @@ import { EVENT_LEVEL_COMPLETED } from '../constants/event';
 import LevelPack from './level/LevelPack';
 import Renderer from './renderer/Renderer';
 import { getLoaderByFileName } from './level/loader/factory';
-import { getDirectionByKeyCode } from './direction';
+import { getDirectionByKeyCode, getDirectionByTouchPoint } from './direction';
 
 class Game {
   _eventBus;
@@ -122,10 +122,29 @@ class Game {
   }
 
   onTouchStart(event) {
+    if (!this._levelPack || !this._levelPack.level) {
+      return;
+    }
+
+    const { target } = event;
+    if (!(target instanceof HTMLCanvasElement)) {
+      return;
+    }
+
+    const { touches } = event;
+    const touch = touches.item(0);
+    const canvasRectangle = target.getBoundingClientRect();
+    const x = touch.clientX - canvasRectangle.left;
+    const y = touch.clientY - canvasRectangle.top;
+
+    this._levelPack.level.direction = getDirectionByTouchPoint(target, x, y);
   }
 
-  onTouchEnd(event) {
-
+  onTouchEnd() {
+    if (!this._levelPack || !this._levelPack.level) {
+      return;
+    }
+    this._levelPack.level.direction = DIRECTION_NONE;
   }
 
   async loadLevelPack(source) {
