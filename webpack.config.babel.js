@@ -86,6 +86,9 @@ export default (env, argv) => {
         template: htmlTemplate,
         title: 'Storekeeper',
         meta: [{
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1'
+        }, {
           'http-equiv': 'Cache-Control',
           content: 'no-cache, no-store, must-revalidate'
         }, {

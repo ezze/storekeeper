@@ -268,6 +268,10 @@ class Renderer {
     return offsetY;
   }
 
+  get level() {
+    return this._level;
+  }
+
   set level(level) {
     if (this._level) {
       this.removeLevelListeners(this._level);
