@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import PropTypes from 'prop-types';
 
-import eventBus from '../game/eventBus';
+import eventBus from '../eventBus';
 import Game from '../game/Game';
 import InvaderRenderer from '../game/renderer/InvaderRenderer';
 

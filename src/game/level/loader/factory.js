@@ -1,4 +1,4 @@
-import eventBus from '../../eventBus';
+import eventBus from '../../../eventBus';
 
 import JsonLoader from './JsonLoader';
 import SokLoader from './SokLoader';

@@ -3,15 +3,25 @@ import { inject, observer } from 'mobx-react';
 import PropTypes from 'prop-types';
 import 'bootstrap';
 
+import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
+import { withEventBus } from '../context/eventBus';
+
 @inject('generalStore') @observer
 class Navbar extends Component {
   static propTypes = {
-    generalStore: PropTypes.any.isRequired
+    generalStore: PropTypes.any.isRequired,
+    eventBus: PropTypes.object.isRequired
   };
 
   constructor() {
     super();
     this._id = Math.round(Math.random() * 10000);
+    this.onOpenClick = this.onOpenClick.bind(this);
+  }
+
+  onOpenClick() {
+    const { eventBus } = this.props;
+    eventBus.request(REQUEST_BROWSE_LEVEL_PACK);
   }
 
   render() {
@@ -35,11 +45,11 @@ class Navbar extends Component {
               <a className="nav-link" href="/">Home</a>
             </li>
             <li className="nav-item dropdown">
-              <a className="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+              <a className="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
                 Levels
               </a>
               <div className="dropdown-menu">
-                <a className="dropdown-item" href="#">Open... <small>Ctrl+O</small></a>
+                <a className="dropdown-item" onClick={this.onOpenClick}>Open... <small>Ctrl+O</small></a>
                 <div className="dropdown-divider"></div>
                 <a className="dropdown-item" href="#">Level 1</a>
                 <a className="dropdown-item" href="#">Level 2</a>
@@ -67,4 +77,4 @@ class Navbar extends Component {
   }
 }
 
-export default Navbar;
+export default withEventBus(Navbar);

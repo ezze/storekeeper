@@ -1,4 +1,4 @@
-import eventBus from '../game/eventBus';
+import eventBus from '../eventBus';
 
 import GeneralStore from './GeneralStore';
 

@@ -5,6 +5,7 @@ import LevelPack from './level/LevelPack';
 import Renderer from './renderer/Renderer';
 import { getLoaderByFileName } from './level/loader/factory';
 import { getDirectionByKeyCode, getDirectionByTouchPoint } from './direction';
+import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
 
 class Game {
   _eventBus;
@@ -40,18 +41,21 @@ class Game {
     this.animationFrame = this.animationFrame.bind(this);
     this._animationFrameId = requestAnimationFrame(this.animationFrame);
 
+    this.browseLevelPack = this.browseLevelPack.bind(this);
     this.onLevelCompleted = this.onLevelCompleted.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
     this.onTouchStart = this.onTouchStart.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
 
+    eventBus.handle(REQUEST_BROWSE_LEVEL_PACK, this.browseLevelPack);
     eventBus.on(EVENT_LEVEL_COMPLETED, this.onLevelCompleted);
-
     this.enableControls();
   }
 
   destroy() {
+    this._eventBus.unhandle(REQUEST_BROWSE_LEVEL_PACK);
+    this._eventBus.off(EVENT_LEVEL_COMPLETED, this.onLevelCompleted);
     this.disableControls();
     cancelAnimationFrame(this._animationFrameId);
     this._renderer.destroy();
@@ -71,6 +75,20 @@ class Game {
     window.removeEventListener('touchend', this.onTouchEnd);
   }
 
+  browseLevelPack() {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', '.json,.sok');
+    input.onchange = event => {
+      const { files } = event.target;
+      if (files.length === 0) {
+        return;
+      }
+      this.loadLevelPack(files[0]).catch(e => console.error(e));
+    };
+    input.click();
+  }
+
   onLevelCompleted() {
     // TODO: show some congratulations
     this._levelPack.level.reset();
@@ -84,18 +102,7 @@ class Game {
 
     if (event.ctrlKey && event.which === 79) { // Ctrl + O
       event.preventDefault();
-      const input = document.createElement('input');
-      input.setAttribute('type', 'file');
-      input.setAttribute('accept', '.json,.sok');
-      input.onchange = event => {
-        const { files } = event.target;
-        if (files.length === 0) {
-          return;
-        }
-        this.loadLevelPack(files[0]).catch(e => console.error(e));
-      };
-      input.click();
-
+      this.browseLevelPack();
       return;
     }
 
