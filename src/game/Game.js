@@ -84,7 +84,18 @@ class Game {
 
     if (event.ctrlKey && event.which === 79) { // Ctrl + O
       event.preventDefault();
-      // this.browseLevelSet();
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', '.json,.sok');
+      input.onchange = event => {
+        const { files } = event.target;
+        if (files.length === 0) {
+          return;
+        }
+        this.loadLevelPack(files[0]).catch(e => console.error(e));
+      };
+      input.click();
+
       return;
     }
 

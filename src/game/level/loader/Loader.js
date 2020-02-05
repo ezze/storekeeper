@@ -28,8 +28,7 @@ export default class Loader {
         reader.abort();
         reject('Unexpected loading error has occurred.');
       };
-      const blob = file.slice(0, file.size);
-      reader.readAsBinaryString(blob);
+      reader.readAsBinaryString(file.slice(0, file.size));
     });
   }
 
