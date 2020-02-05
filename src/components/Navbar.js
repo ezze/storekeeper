@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import PropTypes from 'prop-types';
-import 'bootstrap';
 
 import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
 import { withEventBus } from '../context/eventBus';
+
+import { Collapse, Dropdown } from 'bootstrap.native';
 
 @inject('generalStore') @observer
 class Navbar extends Component {
@@ -13,10 +14,18 @@ class Navbar extends Component {
     eventBus: PropTypes.object.isRequired
   };
 
-  constructor() {
-    super();
+  collapseRef = React.createRef();
+  levelsDropdownRef = React.createRef();
+
+  constructor(props) {
+    super(props);
     this._id = Math.round(Math.random() * 10000);
     this.onOpenClick = this.onOpenClick.bind(this);
+  }
+
+  componentDidMount() {
+    new Collapse(this.collapseRef.current);
+    new Dropdown(this.levelsDropdownRef.current);
   }
 
   onOpenClick() {
@@ -32,6 +41,7 @@ class Navbar extends Component {
       <nav id={`navbar-${this._id}`} className="navbar navbar-expand-lg navbar-dark bg-primary">
         <a className="navbar-brand" href="/">Storekeeper</a>
         <button
+          ref={this.collapseRef}
           className="navbar-toggler"
           type="button"
           data-toggle="collapse"
@@ -42,7 +52,7 @@ class Navbar extends Component {
         <div className="collapse navbar-collapse">
           <ul className="navbar-nav mr-auto">
             <li className="nav-item dropdown">
-              <a className="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
+              <a ref={this.levelsDropdownRef} className="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
                 Levels
               </a>
               <div className="dropdown-menu">
