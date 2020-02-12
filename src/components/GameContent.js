@@ -6,21 +6,24 @@ import eventBus from '../eventBus';
 import Game from '../game/Game';
 import InvaderRenderer from '../game/renderer/InvaderRenderer';
 
-@inject('generalStore') @observer
+import LevelInfo from './LevelInfo';
+import LevelStats from './LevelStats';
+
+@inject('gameStore') @observer
 class GameContent extends Component {
   static propTypes = {
-    generalStore: PropTypes.any.isRequired
+    gameStore: PropTypes.any.isRequired
   };
 
-  contentRef = React.createRef();
+  gameContainerRef = React.createRef();
 
   componentDidMount() {
-    const { generalStore } = this.props;
-    generalStore.game = new Game({
+    const { gameStore } = this.props;
+    gameStore.game = new Game({
       eventBus,
       renderer: new InvaderRenderer({
         eventBus,
-        container: this.contentRef.current
+        container: this.gameContainerRef.current
       }),
       levelPack: 'levels/original.json'
     });
@@ -28,7 +31,11 @@ class GameContent extends Component {
 
   render() {
     return (
-      <div ref={this.contentRef} className="content"></div>
+      <div className="game">
+        <div className="game-container" ref={this.gameContainerRef}></div>
+        <LevelInfo />
+        <LevelStats />
+      </div>
     );
   }
 }

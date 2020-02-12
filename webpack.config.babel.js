@@ -39,11 +39,6 @@ export default (env, argv) => {
     },
     module: {
       rules: [{
-        test: /bootstrap\.native/,
-        use: {
-          loader: 'bootstrap.native-loader'
-        }
-      }, {
         test: /\.jsx?$/,
         use: 'babel-loader',
         include: path.resolve(__dirname, 'src')

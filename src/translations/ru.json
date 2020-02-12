@@ -1,0 +1,11 @@
+{
+  "navbar": {
+    "language": "Язык"
+  },
+  "level": {
+    "number": "Уровень: {{number}}",
+    "moves": "Ходы: {{count}}",
+    "pushes": "Толчки: {{count}}",
+    "boxes": "Ящики: {{retractedCount}}/{{count}}"
+  }
+}

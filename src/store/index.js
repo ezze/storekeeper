@@ -1,15 +1,15 @@
 import eventBus from '../eventBus';
 
-import GeneralStore from './GeneralStore';
+import GameStore from './GameStore';
 
 export const stores = {};
 
 export async function createStores() {
-  const generalStore = new GeneralStore({ eventBus });
-  await generalStore.ready();
+  const gameStore = new GameStore({ eventBus });
+  await gameStore.ready();
 
   Object.assign(stores, {
-    generalStore
+    gameStore
   });
 
   return stores;

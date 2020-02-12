@@ -1,0 +1,11 @@
+{
+  "navbar": {
+    "language": "Language"
+  },
+  "level": {
+    "number": "Level: {{number}}",
+    "moves": "Moves: {{count}}",
+    "pushes": "Pushes: {{count}}",
+    "boxes": "Boxes: {{retractedCount}}/{{count}}"
+  }
+}

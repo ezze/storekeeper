@@ -1,6 +1,8 @@
-import { observable } from 'mobx';
+import { observable, action } from 'mobx';
 
 import BasicStore from './BasicStore';
+
+import languages from '../translations/languages';
 
 import {
   EVENT_LEVEL_CHANGE,
@@ -9,8 +11,8 @@ import {
   EVENT_MOVE_END
 } from '../constants/event';
 
-class GeneralStore extends BasicStore {
-  @observable language;
+class GameStore extends BasicStore {
+  @observable languageId = languages[0].id;
   @observable levelNumber = 0;
   @observable movesCount = 0;
   @observable pushesCount = 0;
@@ -20,8 +22,8 @@ class GeneralStore extends BasicStore {
   constructor(options = {}) {
     super({
       ...options,
-      key: 'general',
-      include: ['language']
+      key: 'game',
+      include: ['languageId']
     });
   }
 
@@ -46,6 +48,13 @@ class GeneralStore extends BasicStore {
   destroy() {
     this.eventBus.off(EVENT_LEVEL_CHANGE, this.onLevelChange);
     return super.destroy();
+  }
+
+  @action setLanguageId(id) {
+    const language = languages.find(language => language.id === id);
+    if (language) {
+      this.languageId = id;
+    }
   }
 
   updateLevelProperties(properties = {}) {
@@ -95,4 +104,4 @@ class GeneralStore extends BasicStore {
   }
 }
 
-export default GeneralStore;
+export default GameStore;
