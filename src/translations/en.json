@@ -1,5 +1,7 @@
 {
   "navbar": {
+    "levels": "Levels",
+    "open": "Open...",
     "language": "Language"
   },
   "level": {

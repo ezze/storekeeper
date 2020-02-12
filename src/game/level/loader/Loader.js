@@ -6,18 +6,22 @@ export default class Loader {
       throw new Error('Loader must be implemented.');
     }
     const { eventBus = null } = options;
-    this.eventBus = eventBus;
+    this._eventBus = eventBus;
   }
 
   async load(source, options) {
+    let fileName;
     let parsedSource;
     if (source instanceof File) {
+      fileName = source.name;
       parsedSource = await this.loadFromFile(source, options);
     }
     else {
+      fileName = source;
       parsedSource = await this.loadFromUrl(source, options);
     }
-    return this.createLevelPack(parsedSource);
+    fileName = fileName.split('/').pop();
+    return this.createLevelPack({ fileName, ...parsedSource });
   }
 
   async loadFromFile(file) {
@@ -47,7 +51,7 @@ export default class Loader {
 
   createLevelPack(source) { // eslint-disable-line no-unused-vars
     return new LevelPack(source, {
-      eventBus: this.eventBus
+      eventBus: this._eventBus
     });
   }
 }

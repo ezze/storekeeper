@@ -4,11 +4,11 @@ import PropTypes from 'prop-types';
 import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
 import { withEventBus } from '../context/eventBus';
 
+import NavbarLevelsDropdown from './NavbarLevelsDropdown';
 import NavbarLanguageDropdown from './NavbarLanguageDropdown';
 
 class Navbar extends Component {
   static propTypes = {
-    gameStore: PropTypes.any.isRequired,
     eventBus: PropTypes.object.isRequired
   };
 
@@ -39,10 +39,8 @@ class Navbar extends Component {
           <div className="navbar-start">
           </div>
           <div className="navbar-end">
+            <NavbarLevelsDropdown />
             <NavbarLanguageDropdown />
-            <a className="navbar-item">
-
-            </a>
           </div>
         </div>
       </nav>

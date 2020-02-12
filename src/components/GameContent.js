@@ -19,13 +19,15 @@ class GameContent extends Component {
 
   componentDidMount() {
     const { gameStore } = this.props;
+    const { levelPackFileName } = gameStore;
+
     gameStore.game = new Game({
       eventBus,
       renderer: new InvaderRenderer({
         eventBus,
         container: this.gameContainerRef.current
       }),
-      levelPack: 'levels/original.json'
+      levelPack: `levels/${levelPackFileName}`
     });
   }
 

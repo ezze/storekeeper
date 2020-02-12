@@ -14,20 +14,9 @@ class NavbarLanguageDropdownItem extends Component {
   constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
   }
 
   onClick() {
-    this.changeLanguage();
-  }
-
-  onKeyDown(event) {
-    if (event.keyCode === 13) {
-      this.changeLanguage();
-    }
-  }
-
-  changeLanguage() {
     const { gameStore, id } = this.props;
     gameStore.setLanguageId(id);
   }

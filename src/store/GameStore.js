@@ -5,14 +5,21 @@ import BasicStore from './BasicStore';
 import languages from '../translations/languages';
 
 import {
+  EVENT_LEVEL_PACK_CHANGE,
   EVENT_LEVEL_CHANGE,
   EVENT_LEVEL_RESET,
   EVENT_MOVE_START,
   EVENT_MOVE_END
 } from '../constants/event';
 
+import { levelPacks } from '../constants/level';
+
 class GameStore extends BasicStore {
+  game;
+
   @observable languageId = languages[0].id;
+  @observable levelPackFileName = levelPacks[0].fileName;
+
   @observable levelNumber = 0;
   @observable movesCount = 0;
   @observable pushesCount = 0;
@@ -23,7 +30,7 @@ class GameStore extends BasicStore {
     super({
       ...options,
       key: 'game',
-      include: ['languageId']
+      include: ['languageId', 'levelPackFileName']
     });
   }
 
@@ -34,11 +41,13 @@ class GameStore extends BasicStore {
     }
     this.eventBus = eventBus;
 
+    this.onLevelPackChange = this.onLevelPackChange.bind(this);
     this.onLevelChange = this.onLevelChange.bind(this);
     this.onLevelReset = this.onLevelReset.bind(this);
     this.onMoveStart = this.onMoveStart.bind(this);
     this.onMoveEnd = this.onMoveEnd.bind(this);
 
+    this.eventBus.on(EVENT_LEVEL_PACK_CHANGE, this.onLevelPackChange);
     this.eventBus.on(EVENT_LEVEL_CHANGE, this.onLevelChange);
     this.eventBus.on(EVENT_LEVEL_RESET, this.onLevelReset);
     this.eventBus.on(EVENT_MOVE_START, this.onMoveStart);
@@ -54,6 +63,20 @@ class GameStore extends BasicStore {
     const language = languages.find(language => language.id === id);
     if (language) {
       this.languageId = id;
+    }
+  }
+
+  @action setLevelPackFileName(fileName) {
+    if (fileName === this.levelPackFileName) {
+      return;
+    }
+    const levelPack = levelPacks.find(levelPack => levelPack.fileName === fileName);
+    if (!levelPack) {
+      return;
+    }
+    this.levelPackFileName = fileName;
+    if (this.game && (!this.game.levelPack || this.game.levelPack.fileName !== fileName)) {
+      this.game.loadLevelPack(`levels/${fileName}`).catch(e => console.error(e));
     }
   }
 
@@ -85,6 +108,18 @@ class GameStore extends BasicStore {
     if (typeof retractedBoxesCount === 'number') {
       this.retractedBoxesCount = retractedBoxesCount;
     }
+  }
+
+  onLevelPackChange(source) {
+    let fileName;
+    if (source instanceof File) {
+      fileName = source.name;
+    }
+    else {
+      fileName = source;
+    }
+    fileName = fileName.split('/').pop();
+    this.setLevelPackFileName(fileName);
   }
 
   onLevelChange(params) {

@@ -1,5 +1,5 @@
 import LevelMap, { detectLevelMapSize } from '../../../src/game/level/LevelMap';
-import levelPackJson from '../../../src/levels/original.json';
+import levelPackJson from '../../../src/levels/classic.json';
 
 const { levels } = levelPackJson;
 

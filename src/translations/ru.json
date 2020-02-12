@@ -1,5 +1,7 @@
 {
   "navbar": {
+    "levels": "Уровни",
+    "open": "Открыть...",
     "language": "Язык"
   },
   "level": {

@@ -1,5 +1,5 @@
 import { DIRECTION_NONE } from '../constants/direction';
-import { EVENT_LEVEL_COMPLETED } from '../constants/event';
+import { EVENT_LEVEL_PACK_CHANGE, EVENT_LEVEL_COMPLETED } from '../constants/event';
 
 import LevelPack from './level/LevelPack';
 import Renderer from './renderer/Renderer';
@@ -59,6 +59,10 @@ class Game {
     this.disableControls();
     cancelAnimationFrame(this._animationFrameId);
     this._renderer.destroy();
+  }
+
+  get levelPack() {
+    return this._levelPack;
   }
 
   enableControls() {
@@ -174,10 +178,11 @@ class Game {
 
     try {
       this._levelPack = await loader.load(source);
+      this._eventBus.fire(EVENT_LEVEL_PACK_CHANGE, source);
     }
     catch (e) {
+      console.error('Unable to load level pack.');
       console.error(e);
-      alert('Unable to load level pack.');
     }
   }
 

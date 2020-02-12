@@ -10,9 +10,10 @@ class LevelPack {
   _index = -1;
 
   constructor(source, options = {}) {
-    const { name = '', description = '', levels = [] } = source;
-    this.name = name;
-    this.description = description;
+    const { fileName, name = '', description = '', levels = [] } = source;
+    this._fileName = fileName;
+    this._name = name;
+    this._description = description;
 
     const { eventBus = null } = options;
     this._eventBus = eventBus;
@@ -30,6 +31,18 @@ class LevelPack {
       levelOptions.eventBus = this._eventBus;
     }
     levels.forEach(({ items }) => this.add(new Level(items, levelOptions)));
+  }
+
+  get fileName() {
+    return this._fileName;
+  }
+
+  get name() {
+    return this._name;
+  }
+
+  get description() {
+    return this._description;
   }
 
   get levelNumber() {
