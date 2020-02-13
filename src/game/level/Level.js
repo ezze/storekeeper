@@ -169,76 +169,80 @@ class Level {
   }
 
   move() {
-    if (this._animating) {
-      if (!this.animate()) {
-        // Items are animated but the animation is not over yet
+    if (!this._animating) {
+      // // Reset goal states of just animated box
+      if (this._animatedBox) {
+        this._animatedBox.goalSource = false;
+        this._animatedBox.goalTarget = false;
+        this._animatedBox = null;
+      }
+
+      // Checking whether level is completed first (don't allow to move if it's true)
+      if (this._completed || this.completed) {
+        if (!this._completed) {
+          if (this._eventBus) {
+            this._eventBus.fire(EVENT_LEVEL_COMPLETED);
+          }
+          this._completed = true;
+        }
         return false;
       }
 
-      // Current animation is over
-      this._animating = false;
+      // If a direction is set then it's a moment to start a new move
+      const shift = getDirectionShift(this._direction);
+      if (shift.x === 0 && shift.y === 0) {
+        this.resetAnimatedItems();
+        return false;
+      }
 
-      // If box was moved (animated) then we have to clear cached value
-      // of retracted boxes' count in order to recalculate it for upcoming move end event
+      const collided = this.detectCollision(shift);
+      if (collided) {
+        this.resetAnimatedItems();
+        if (isDirectionValidHorizontal(this._direction)) {
+          this._worker.lastHorizontalDirection = this._direction;
+        }
+        return false;
+      }
+
+      this._animating = true;
+      this._worker.move(this._direction, this.stepSize);
       if (this._animatedBox) {
-        this._retractedBoxesCountCached = null;
+        this._animatedBox.move(this._direction, this.stepSize);
       }
 
       if (this._eventBus) {
-        const { boxesCount, retractedBoxesCount } = this;
-        this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
+        const { movesCount, pushesCount } = this;
+        this._eventBus.fire(EVENT_MOVE_START, { movesCount, pushesCount });
       }
 
+      if (this.animate()) {
+        this._animating = false;
+      }
+
+      return true;
+    }
+
+    // Move animation occurs here
+    if (!this.animate()) {
+      // Items are animated but the animation is not over yet
       return false;
     }
 
-    if (this._completed || this.completed) {
-      if (!this._completed) {
-        if (this._eventBus) {
-          this._eventBus.fire(EVENT_LEVEL_COMPLETED);
-        }
-        this._completed = true;
-      }
-      return false;
-    }
+    // Current animation is over
+    this._animating = false;
 
-    // Drop goal target flag for recenlty animated box
+    // If box was moved (animated) then we have to clear cached value
+    // of retracted boxes' count in order to recalculate it for upcoming move end event
     if (this._animatedBox) {
-      this._animatedBox.goalSource = this._animatedBox.goalTarget;
-      this._animatedBox.goalTarget = false;
-    }
-
-    const shift = getDirectionShift(this._direction);
-    if (shift.x === 0 && shift.y === 0) {
-      this.resetAnimatedItems();
-      return false;
-    }
-
-    const collided = this.detectCollision(shift);
-    if (collided) {
-      this.resetAnimatedItems();
-      if (isDirectionValidHorizontal(this._direction)) {
-        this._worker.lastHorizontalDirection = this._direction;
-      }
-      return false;
-    }
-
-    this._animating = true;
-    this._worker.move(this._direction, this.stepSize);
-    if (this._animatedBox) {
-      this._animatedBox.move(this._direction, this.stepSize);
+      this._retractedBoxesCountCached = null;
     }
 
     if (this._eventBus) {
-      const { movesCount, pushesCount } = this;
-      this._eventBus.fire(EVENT_MOVE_START, { movesCount, pushesCount });
+      const { boxesCount, retractedBoxesCount } = this;
+      this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
     }
 
-    if (this.animate()) {
-      this._animating = false;
-    }
-
-    return true;
+    return false;
   }
 
   detectCollision(shift) {

@@ -70,7 +70,7 @@ class Renderer {
   }
 
   render(time) {
-    const context = this._canvas.getContext('2d');
+    const context = this._canvas.getContext('2d', { alpha: false });
     context.clearRect(0, 0, this.width, this.height);
 
     if (!this._level) {
@@ -87,7 +87,7 @@ class Renderer {
   }
 
   renderItem(item) {
-    const context = this._canvas.getContext('2d');
+    const context = this._canvas.getContext('2d', { alpha: false });
 
     const x = this.getItemOffsetX(item);
     const y = this.getItemOffsetY(item);
