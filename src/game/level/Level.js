@@ -122,41 +122,7 @@ class Level {
   }
 
   hasAt(row, column, type) {
-    if (type === LEVEL_MAP_ITEM_WORKER) {
-      return this._worker.row === row && this._worker.column === column;
-    }
-    const typedItems = this.getTypedItems(type);
-    return typedItems.findIndex(item => item.row === row && item.column === column) >= 0;
-  }
-
-  at(row, column, filter) {
-    const items = [];
-
-    if (!filter) {
-      filter = [
-        LEVEL_MAP_ITEM_WORKER,
-        LEVEL_MAP_ITEM_WALL,
-        LEVEL_MAP_ITEM_GOAL,
-        LEVEL_MAP_ITEM_BOX
-      ];
-    }
-
-    filter.forEach(type => {
-      if (type === LEVEL_MAP_ITEM_WORKER) {
-        if (this._worker.row === row && this._worker.column === column) {
-          items.push(this._worker);
-        }
-        return;
-      }
-
-      const typedItems = this.getTypedItems(type);
-      const item = typedItems.find(item => item.row === row && item.column === column);
-      if (item) {
-        items.push(item);
-      }
-    });
-
-    return items;
+    return !!this.getAt(row, column, type);
   }
 
   getTypedItems(type) {
@@ -237,24 +203,10 @@ class Level {
     }
 
     if (this._eventBus) {
-      // Signalling that the move has been ended
+      // Signaling that the move has been ended
       const { boxesCount, retractedBoxesCount } = this;
       this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
     }
-  }
-
-  animate() {
-    const workerAnimated = this._worker.animate();
-    const boxAnimated = this._animatedBox && this._animatedBox.animate();
-    return workerAnimated || boxAnimated;
-  }
-
-  resetAnimatedItems() {
-    this._worker.reset();
-    if (this._animatedBox) {
-      this._animatedBox.reset();
-    }
-    this._animating = false;
   }
 
   analyzeMove(shift) {
@@ -289,6 +241,20 @@ class Level {
 
   outOfBounds(row, column) {
     return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
+  }
+
+  animate() {
+    const workerAnimated = this._worker.animate();
+    const boxAnimated = this._animatedBox && this._animatedBox.animate();
+    return workerAnimated || boxAnimated;
+  }
+
+  resetAnimatedItems() {
+    this._worker.reset();
+    if (this._animatedBox) {
+      this._animatedBox.reset();
+    }
+    this._animating = false;
   }
 
   get rows() {
@@ -346,8 +312,7 @@ class Level {
 
     let retractedBoxesCount = 0;
     this._boxes.forEach(box => {
-      const goals = this.at(box.row, box.column, [LEVEL_MAP_ITEM_GOAL]);
-      if (goals.length === 1) {
+      if (this._goals.find(goal => goal.row === box.row && goal.column === box.column)) {
         retractedBoxesCount++;
       }
     });
