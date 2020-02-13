@@ -16,6 +16,7 @@ import Goal from '../level/object/Goal';
 import Box from '../level/object/Box';
 
 class Renderer {
+  _ready = false;
   _eventBus = null;
   _container = null;
   _canvas = null;
@@ -51,6 +52,12 @@ class Renderer {
     window.addEventListener('resize', this.onWindowResize);
 
     this.adjustCanvasSize();
+
+    this.init().then(() => this._ready = true).catch(e => console.error(e));
+  }
+
+  async init() {
+
   }
 
   destroy() {
@@ -70,6 +77,10 @@ class Renderer {
   }
 
   render(time) {
+    if (!this._ready) {
+      return;
+    }
+
     const context = this._canvas.getContext('2d', { alpha: false });
     context.clearRect(0, 0, this.width, this.height);
 
@@ -303,35 +314,35 @@ class Renderer {
     return 8;
   }
 
-  renderWorker(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderWorker(context, x, y, worker) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderWorker" is not implemented.');
   }
 
-  renderWorkerOverGoal(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderWorkerOverGoal(context, x, y, worker) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderWorkerOverGoal" is not implemented.');
   }
 
-  renderWall(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderWall(context, x, y, wall) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderWall" is not implemented.');
   }
 
-  renderGoal(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderGoal(context, x, y, goal) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderGoal" is not implemented.');
   }
 
-  renderGoalBehindWorker(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderGoalBehindWorker(context, x, y, goal) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderGoalBehindWorker" is not implemented.');
   }
 
-  renderGoalBehindBox(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderGoalBehindBox(context, x, y, goal) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderGoalBehindBox" is not implemented.');
   }
 
-  renderBox(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderBox(context, x, y, box) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderBox" is not implemented.');
   }
 
-  renderBoxOverGoal(context, x, y, item) { // eslint-disable-line no-unused-vars
+  renderBoxOverGoal(context, x, y, box) { // eslint-disable-line no-unused-vars
     throw new Error('Method "renderBoxOverGoal" is not implemented.');
   }
 }

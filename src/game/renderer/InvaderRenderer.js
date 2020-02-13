@@ -5,41 +5,35 @@ import Renderer from './Renderer';
 import spritesUrl from './invader.png';
 
 class InvaderRenderer extends Renderer {
-  _spritesLoaded = false;
-  _sprites = null;
+  _box;
+  _boxOverGoal;
+  _wall;
+  _goal;
+  _worker = [];
 
-  constructor(options) {
-    super(options);
-    this.loadSprites().catch(e => console.error(e));
-  }
-
-  async loadSprites() {
-    this._spritesLoaded = false;
+  async init() {
     return new Promise((resolve, reject) => {
-      const sprites = this._sprites = new Image();
+      const sprites = new Image();
       sprites.src = spritesUrl;
       sprites.onload = () => {
-        this._spritesLoaded = true;
-        resolve();
+        try {
+          const { itemWidth: width, itemHeight: height } = this;
+          this._box = cropSprite(sprites, width, height, 0);
+          this._boxOverGoal = cropSprite(sprites, width, height, 1);
+          this._wall = cropSprite(sprites, width, height, 2);
+          this._goal = cropSprite(sprites, width, height, 3);
+          for (let i = 0; i < 18; i++) {
+            this._worker.push(cropSprite(sprites, width, height, 4 + i));
+          }
+          this._ready = true;
+          resolve();
+        }
+        catch (e) {
+          reject(e);
+        }
       };
       sprites.onerror = e => reject(e);
     });
-  }
-
-  renderSprite(context, x, y, index) {
-    if (!this._spritesLoaded) {
-      return;
-    }
-    const { pointX, pointY } = this.clipSprite(index);
-    const { itemWidth, itemHeight } = this;
-    context.drawImage(this._sprites, pointX, pointY, itemWidth, itemHeight, x, y, itemWidth, itemHeight);
-  }
-
-  clipSprite(index) {
-    const columns = Math.floor(this._sprites.width / this.itemWidth);
-    const row = Math.floor(index / columns);
-    const column = index - row * columns;
-    return { pointX: column * this.itemWidth, pointY: row * this.itemHeight };
   }
 
   get itemWidth() {
@@ -50,49 +44,63 @@ class InvaderRenderer extends Renderer {
     return 32;
   }
 
-  renderWorker(context, x, y, item) {
-    let spriteIndex = 4 + (item.lastHorizontalDirection === DIRECTION_LEFT ? 0 : 9);
-
-    if (item.consecutiveStepsCount > 0) {
-      const visualStepsCount = Math.ceil(item.consecutiveStepsCount / 2);
-      spriteIndex += ((visualStepsCount - 1) % 8) + 1;
+  renderWorker(context, x, y, worker) {
+    let index = worker.lastHorizontalDirection === DIRECTION_LEFT ? 0 : 9;
+    if (worker.consecutiveStepsCount > 0) {
+      const visualStepsCount = Math.ceil(worker.consecutiveStepsCount / 2);
+      index += ((visualStepsCount - 1) % 8) + 1;
     }
-
-    this.renderSprite(context, x, y, spriteIndex);
+    context.drawImage(this._worker[index], x, y);
   }
 
-  renderWorkerOverGoal(context, x, y, item) {
-    this.renderWorker(context, x, y, item);
+  renderWorkerOverGoal(context, x, y, worker) {
+    this.renderWorker(context, x, y, worker);
   }
 
-  renderWall(context, x, y, item) { // eslint-disable-line no-unused-vars
-    this.renderSprite(context, x, y, 2);
+  renderWall(context, x, y) {
+    context.drawImage(this._wall, x, y);
   }
 
-  renderGoal(context, x, y, item) { // eslint-disable-line no-unused-vars
-    this.renderSprite(context, x, y, 3);
+  renderGoal(context, x, y) {
+    context.drawImage(this._goal, x, y);
   }
 
-  renderGoalBehindWorker(context, x, y, item) { // eslint-disable-line no-unused-vars
-    this.renderGoal(context, x, y, item);
+  renderGoalBehindWorker(context, x, y) {
+    context.drawImage(this._goal, x, y);
   }
 
-  renderGoalBehindBox(context, x, y, item) { // eslint-disable-line no-unused-vars
-    this.renderGoal(context, x, y, item);
+  renderGoalBehindBox(context, x, y) {
+    context.drawImage(this._goal, x, y);
   }
 
-  renderBox(context, x, y, item) {
-    if (item.goalSource && item.goalTarget) {
-      this.renderBoxOverGoal(context, x, y, item);
+  renderBox(context, x, y, box) {
+    if (box.goalSource && box.goalTarget) {
+      context.drawImage(this._boxOverGoal, x, y);
     }
     else {
-      this.renderSprite(context, x, y, 0);
+      context.drawImage(this._box, x, y);
     }
   }
 
-  renderBoxOverGoal(context, x, y, item) { // eslint-disable-line no-unused-vars
-    this.renderSprite(context, x, y, 1);
+  renderBoxOverGoal(context, x, y) {
+    context.drawImage(this._boxOverGoal, x, y);
   }
+}
+
+function cropSprite(sprites, width, height, index) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const columns = Math.floor(sprites.width / width);
+  const row = Math.floor(index / columns);
+  const column = index - row * columns;
+  const x = column * width;
+  const y = row * height;
+
+  const context = canvas.getContext('2d');
+  context.drawImage(sprites, x, y, width, height, 0, 0, width, height);
+  return canvas;
 }
 
 export default InvaderRenderer;
