@@ -82,7 +82,7 @@ class InvaderRenderer extends Renderer {
   }
 
   renderBox(context, x, y, item) {
-    if (item.goalTarget) {
+    if (item.goalSource && item.goalTarget) {
       this.renderBoxOverGoal(context, x, y, item);
     }
     else {

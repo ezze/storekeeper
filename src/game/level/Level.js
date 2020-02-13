@@ -153,7 +153,7 @@ class Level {
       }
 
       // Checking whether the worker and a box being pushed are not collided and the move is possible
-      const { collided, box, boxGoalTarget } = this.analyzeMove(shift);
+      const { collided, box, boxGoalSource, boxGoalTarget } = this.analyzeMove(shift);
       if (collided) {
         this.resetAnimatedItems();
         if (isDirectionValidHorizontal(this._direction)) {
@@ -166,6 +166,7 @@ class Level {
 
       if (box) {
         // The worker starts to push the box so we have to remember it for move animation
+        box.goalSource = boxGoalSource;
         box.goalTarget = boxGoalTarget;
         this._animatedBox = box;
       }
@@ -196,6 +197,7 @@ class Level {
       // If the box has been moved (animated) then we have to clear cached value
       // of retracted boxes' count in order to recalculate it for upcoming move end event
       this._retractedBoxesCountCached = null;
+      this._animatedBox.goalSource = false;
       this._animatedBox.goalTarget = false;
       this._animatedBox = null;
     }
@@ -230,8 +232,9 @@ class Level {
         return { collided: true };
       }
 
+      const boxGoalSource = this.hasAt(targetRow, targetColumn, LEVEL_MAP_ITEM_GOAL);
       const boxGoalTarget = this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_GOAL);
-      return { collided: false, box, boxGoalTarget };
+      return { collided: false, box, boxGoalSource, boxGoalTarget };
     }
 
     return { collided: false };
