@@ -113,6 +113,14 @@ class Level {
     }
   }
 
+  getAt(row, column, type) {
+    if (type === LEVEL_MAP_ITEM_WORKER) {
+      return this._worker.row === row && this._worker.column === column ? this._worker : null;
+    }
+    const typedItems = this.getTypedItems(type);
+    return typedItems.find(item => item.row === row && item.column === column) || null;
+  }
+
   hasAt(row, column, type) {
     if (type === LEVEL_MAP_ITEM_WORKER) {
       return this._worker.row === row && this._worker.column === column;
@@ -236,52 +244,32 @@ class Level {
   detectCollision(shift) {
     const targetRow = this._worker.row + shift.y;
     const targetColumn = this._worker.column + shift.x;
-    if (this.outOfBounds(targetRow, targetColumn)) {
+
+    if (this.outOfBounds(targetRow, targetColumn) || this.hasAt(targetRow, targetColumn, LEVEL_MAP_ITEM_WALL)) {
       return true;
     }
 
-    let targetBox = null;
-    let targetGoal = null;
+    const box = this.getAt(targetRow, targetColumn, LEVEL_MAP_ITEM_BOX);
+    if (box) {
+      const boxTargetRow = box.row + shift.y;
+      const boxTargetColumn = box.column + shift.x;
 
-    const targetItems = this.at(targetRow, targetColumn);
-    for (let i = 0; i < targetItems.length; i++) {
-      const targetItem = targetItems[i];
-
-      if (targetItem instanceof Wall) {
+      if (
+        this.outOfBounds(boxTargetRow, boxTargetColumn) ||
+        this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_WALL) ||
+        this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_BOX)
+      ) {
+        // Box collision is detected here, resetting goal target flag
+        box.goalTarget = false;
         return true;
       }
 
-      if (targetItem instanceof Box) {
-        targetBox = targetItem;
-        const boxTargetRow = targetItem.row + shift.y;
-        const boxTargetColumn = targetItem.column + shift.x;
-        if (this.outOfBounds(boxTargetRow, boxTargetColumn)) {
-          return true;
-        }
-        const boxTargetItems = this.at(boxTargetRow, boxTargetColumn);
-        for (let j = 0; j < boxTargetItems.length; j++) {
-          const boxTargetItem = boxTargetItems[j];
-          if (boxTargetItem instanceof Wall || boxTargetItem instanceof Box) {
-            targetBox.goalTarget = false;
-            return true;
-          }
-          targetBox.goalTarget = boxTargetItem instanceof Goal;
-        }
-      }
-
-      if (targetItem instanceof Goal) {
-        targetGoal = targetItem;
-      }
-    }
-
-    if (targetBox) {
-      this._animatedBox = targetBox;
-      if (targetGoal) {
-        targetBox.goalSource = true;
-      }
+      box.goalSource = this.hasAt(targetRow, boxTargetColumn, LEVEL_MAP_ITEM_GOAL);
+      box.goalTarget = this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_GOAL);
+      this._animatedBox = box;
     }
     else {
-      this._animatedBox = false;
+      this._animatedBox = null;
     }
 
     return false;
