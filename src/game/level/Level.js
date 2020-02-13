@@ -240,37 +240,33 @@ class Level {
       return true;
     }
 
-    const targetItems = this.at(targetRow, targetColumn);
     let targetBox = null;
     let targetGoal = null;
-    let collided = false;
 
+    const targetItems = this.at(targetRow, targetColumn);
     for (let i = 0; i < targetItems.length; i++) {
       const targetItem = targetItems[i];
+
       if (targetItem instanceof Wall) {
-        collided = true;
-        break;
+        return true;
       }
 
       if (targetItem instanceof Box) {
         targetBox = targetItem;
-
         const boxTargetRow = targetItem.row + shift.y;
         const boxTargetColumn = targetItem.column + shift.x;
         if (this.outOfBounds(boxTargetRow, boxTargetColumn)) {
-          collided = true;
-          continue;
+          return true;
         }
-
         const boxTargetItems = this.at(boxTargetRow, boxTargetColumn);
-        boxTargetItems.forEach(boxTargetItem => {
+        for (let j = 0; j < boxTargetItems.length; j++) {
+          const boxTargetItem = boxTargetItems[j];
           if (boxTargetItem instanceof Wall || boxTargetItem instanceof Box) {
-            collided = true;
+            targetBox.goalTarget = false;
+            return true;
           }
-          else {
-            targetBox.goalTarget = boxTargetItem instanceof Goal;
-          }
-        });
+          targetBox.goalTarget = boxTargetItem instanceof Goal;
+        }
       }
 
       if (targetItem instanceof Goal) {
@@ -278,19 +274,17 @@ class Level {
       }
     }
 
-    if (!collided) {
-      if (targetBox) {
-        this._animatedBox = targetBox;
-        if (targetGoal) {
-          targetBox.goalSource = true;
-        }
-      }
-      else {
-        this._animatedBox = false;
+    if (targetBox) {
+      this._animatedBox = targetBox;
+      if (targetGoal) {
+        targetBox.goalSource = true;
       }
     }
+    else {
+      this._animatedBox = false;
+    }
 
-    return collided;
+    return false;
   }
 
   outOfBounds(row, column) {
