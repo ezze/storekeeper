@@ -233,15 +233,11 @@ class Level {
     return true;
   }
 
-  outOfBounds(row, column) {
-    return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
-  }
-
   detectCollision(shift) {
     const targetRow = this._worker.row + shift.y;
     const targetColumn = this._worker.column + shift.x;
     if (this.outOfBounds(targetRow, targetColumn)) {
-      return false;
+      return true;
     }
 
     const targetItems = this.at(targetRow, targetColumn);
@@ -295,6 +291,10 @@ class Level {
     }
 
     return collided;
+  }
+
+  outOfBounds(row, column) {
+    return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
   }
 
   animate() {
