@@ -12,9 +12,18 @@ class Navbar extends Component {
     eventBus: PropTypes.object.isRequired
   };
 
+  state = {
+    dropdownId: null
+  };
+
   constructor(props) {
     super(props);
+    this.setDropdownId = this.setDropdownId.bind(this);
     this.onOpenClick = this.onOpenClick.bind(this);
+  }
+
+  setDropdownId(dropdownId) {
+    this.setState({ dropdownId: this.state.dropdownId === dropdownId ? null : dropdownId });
   }
 
   onOpenClick() {
@@ -23,6 +32,7 @@ class Navbar extends Component {
   }
 
   render() {
+    const { dropdownId } = this.state;
     return (
       <nav className="navbar is-danger" role="navigation">
         <div className="navbar-brand">
@@ -39,8 +49,8 @@ class Navbar extends Component {
           <div className="navbar-start">
           </div>
           <div className="navbar-end">
-            <NavbarLevelsDropdown />
-            <NavbarLanguageDropdown />
+            <NavbarLevelsDropdown dropdownId={dropdownId} setDropdownId={this.setDropdownId} />
+            <NavbarLanguageDropdown dropdownId={dropdownId} setDropdownId={this.setDropdownId} />
           </div>
         </div>
       </nav>

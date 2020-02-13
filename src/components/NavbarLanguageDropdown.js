@@ -1,14 +1,16 @@
 import React, { Component } from 'react';
 import { withTranslation } from 'react-i18next';
 import classNames from 'classnames';
+import PropTypes from 'prop-types';
 
 import NavbarLanguageDropdownItem from './NavbarLanguageDropdownItem';
 
 import languages from '../translations/languages';
 
 class NavbarLanguageDropdown extends Component {
-  state = {
-    open: false
+  static propTypes = {
+    dropdownId: PropTypes.string,
+    setDropdownId: PropTypes.func.isRequired
   };
 
   constructor(props) {
@@ -17,19 +19,13 @@ class NavbarLanguageDropdown extends Component {
   }
 
   onClick() {
-    this.toggle();
-  }
-
-  toggle() {
-    const { open } = this.state;
-    this.setState({ open: !open });
+    this.props.setDropdownId('language');
   }
 
   render() {
-    const { t } = this.props;
-    const { open } = this.state;
+    const { t, dropdownId } = this.props;
     const className = classNames('navbar-item', 'has-dropdown', {
-      'is-active': open
+      'is-active': dropdownId === 'language'
     });
     return (
       <div className={className} role="menu" onClick={this.onClick}>

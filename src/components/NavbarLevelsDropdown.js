@@ -11,11 +11,9 @@ import NavbarLevelsDropdownItem from './NavbarLevelsDropdownItem';
 @inject('gameStore') @observer
 class NavbarLevelsDropdown extends Component {
   static propTypes = {
-    gameStore: PropTypes.any.isRequired
-  };
-
-  state = {
-    open: false
+    gameStore: PropTypes.any.isRequired,
+    dropdownId: PropTypes.string,
+    setDropdownId: PropTypes.func.isRequired
   };
 
   constructor(props) {
@@ -25,7 +23,7 @@ class NavbarLevelsDropdown extends Component {
   }
 
   onClick() {
-    const { open } = this.state;
+    this.props.setDropdownId('levels');
     this.setState({ open: !open });
   }
 
@@ -35,10 +33,9 @@ class NavbarLevelsDropdown extends Component {
   }
 
   render() {
-    const { t } = this.props;
-    const { open } = this.state;
+    const { t, dropdownId } = this.props;
     const className = classNames('navbar-item', 'has-dropdown', {
-      'is-active': open
+      'is-active': dropdownId === 'levels'
     });
     return (
       <div className={className} role="menu" onClick={this.onClick}>

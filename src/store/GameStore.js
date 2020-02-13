@@ -16,6 +16,7 @@ import { levelPacks } from '../constants/level';
 
 class GameStore extends BasicStore {
   game;
+  eventBus;
 
   @observable languageId = languages[0].id;
   @observable levelPackFileName = levelPacks[0].fileName;
