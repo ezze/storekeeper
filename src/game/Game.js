@@ -198,19 +198,6 @@ class Game {
   }
 
   animationFrame(time) {
-    if (this._previousAnimationTime) {
-      const diff = (time - this._previousAnimationTime) / 1000;
-      this._fps = Math.floor(1 / diff);
-    }
-    else {
-      this._fps = 0;
-    }
-    this._previousAnimationTime = time;
-
-    if (this._fps <= 40) {
-      console.log(this._fps);
-    }
-
     if (!this._levelPack) {
       this._animationFrameId = requestAnimationFrame(this.animationFrame);
       return;
