@@ -170,14 +170,7 @@ class Level {
 
   move() {
     if (!this._animating) {
-      // // Reset goal states of just animated box
-      if (this._animatedBox) {
-        this._animatedBox.goalSource = false;
-        this._animatedBox.goalTarget = false;
-        this._animatedBox = null;
-      }
-
-      // Checking whether level is completed first (don't allow to move if it's true)
+      // Checking whether level is completed (don't allow to move if it's true)
       if (this._completed || this.completed) {
         if (!this._completed) {
           if (this._eventBus) {
@@ -185,102 +178,69 @@ class Level {
           }
           this._completed = true;
         }
-        return false;
+        return;
       }
 
       // If a direction is set then it's a moment to start a new move
       const shift = getDirectionShift(this._direction);
       if (shift.x === 0 && shift.y === 0) {
         this.resetAnimatedItems();
-        return false;
+        return;
       }
 
-      const collided = this.detectCollision(shift);
+      // Checking whether the worker and a box being pushed are not collided and the move is possible
+      const { collided, box, boxGoalTarget } = this.analyzeMove(shift);
       if (collided) {
         this.resetAnimatedItems();
         if (isDirectionValidHorizontal(this._direction)) {
           this._worker.lastHorizontalDirection = this._direction;
         }
-        return false;
+        return;
       }
 
       this._animating = true;
+
+      if (box) {
+        // The worker starts to push the box so we have to remember it for move animation
+        box.goalTarget = boxGoalTarget;
+        this._animatedBox = box;
+      }
+
+      // Letting the worker and the box to know where and how fast to go
       this._worker.move(this._direction, this.stepSize);
       if (this._animatedBox) {
         this._animatedBox.move(this._direction, this.stepSize);
       }
 
       if (this._eventBus) {
+        // Signaling that the move has been started
         const { movesCount, pushesCount } = this;
         this._eventBus.fire(EVENT_MOVE_START, { movesCount, pushesCount });
       }
-
-      if (this.animate()) {
-        this._animating = false;
-      }
-
-      return true;
     }
 
-    // Move animation occurs here
-    if (!this.animate()) {
-      // Items are animated but the animation is not over yet
-      return false;
+    // Frame animation of the move happens here
+    const animationFinished = this.animate();
+    if (!animationFinished) {
+      return;
     }
 
-    // Current animation is over
+    // Move animation is finished, cleaning up the things
     this._animating = false;
 
-    // If box was moved (animated) then we have to clear cached value
-    // of retracted boxes' count in order to recalculate it for upcoming move end event
     if (this._animatedBox) {
+      // If the box has been moved (animated) then we have to clear cached value
+      // of retracted boxes' count in order to recalculate it for upcoming move end event
       this._retractedBoxesCountCached = null;
-    }
-
-    if (this._eventBus) {
-      const { boxesCount, retractedBoxesCount } = this;
-      this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
-    }
-
-    return false;
-  }
-
-  detectCollision(shift) {
-    const targetRow = this._worker.row + shift.y;
-    const targetColumn = this._worker.column + shift.x;
-
-    if (this.outOfBounds(targetRow, targetColumn) || this.hasAt(targetRow, targetColumn, LEVEL_MAP_ITEM_WALL)) {
-      return true;
-    }
-
-    const box = this.getAt(targetRow, targetColumn, LEVEL_MAP_ITEM_BOX);
-    if (box) {
-      const boxTargetRow = box.row + shift.y;
-      const boxTargetColumn = box.column + shift.x;
-
-      if (
-        this.outOfBounds(boxTargetRow, boxTargetColumn) ||
-        this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_WALL) ||
-        this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_BOX)
-      ) {
-        // Box collision is detected here, resetting goal target flag
-        box.goalTarget = false;
-        return true;
-      }
-
-      box.goalSource = this.hasAt(targetRow, boxTargetColumn, LEVEL_MAP_ITEM_GOAL);
-      box.goalTarget = this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_GOAL);
-      this._animatedBox = box;
-    }
-    else {
+      this._animatedBox.goalTarget = false;
       this._animatedBox = null;
     }
 
-    return false;
-  }
-
-  outOfBounds(row, column) {
-    return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
+    if (this._eventBus) {
+      // Signalling that the move has been ended
+      const { boxesCount, retractedBoxesCount } = this;
+      this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
+    }
   }
 
   animate() {
@@ -295,6 +255,40 @@ class Level {
       this._animatedBox.reset();
     }
     this._animating = false;
+  }
+
+  analyzeMove(shift) {
+    const targetRow = this._worker.row + shift.y;
+    const targetColumn = this._worker.column + shift.x;
+
+    if (this.outOfBounds(targetRow, targetColumn) || this.hasAt(targetRow, targetColumn, LEVEL_MAP_ITEM_WALL)) {
+      // Worker is out of level bounds or has been collided with a wall
+      return { collided: true };
+    }
+
+    const box = this.getAt(targetRow, targetColumn, LEVEL_MAP_ITEM_BOX);
+    if (box) {
+      const boxTargetRow = box.row + shift.y;
+      const boxTargetColumn = box.column + shift.x;
+
+      if (
+        this.outOfBounds(boxTargetRow, boxTargetColumn) ||
+        this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_WALL) ||
+        this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_BOX)
+      ) {
+        // Box is out of level bounds or has been collided with a wall or another box
+        return { collided: true };
+      }
+
+      const boxGoalTarget = this.hasAt(boxTargetRow, boxTargetColumn, LEVEL_MAP_ITEM_GOAL);
+      return { collided: false, box, boxGoalTarget };
+    }
+
+    return { collided: false };
+  }
+
+  outOfBounds(row, column) {
+    return row < 0 || row >= this.rows || column < 0 || column >= this.columns;
   }
 
   get rows() {
