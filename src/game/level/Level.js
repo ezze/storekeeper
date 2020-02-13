@@ -102,9 +102,7 @@ class Level {
     }
 
     this._direction = DIRECTION_NONE;
-
     this._animating = false;
-
     this._completed = false;
 
     if (fireEvent && this._eventBus) {
@@ -139,10 +137,10 @@ class Level {
       // Checking whether level is completed (don't allow to move if it's true)
       if (this._completed || this.completed) {
         if (!this._completed) {
+          this._completed = true;
           if (this._eventBus) {
             this._eventBus.fire(EVENT_LEVEL_COMPLETED);
           }
-          this._completed = true;
         }
         return;
       }
