@@ -82,7 +82,6 @@ class Renderer {
     }
 
     const context = this._canvas.getContext('2d');
-    console.log(this.width, this.height);
     context.clearRect(0, 0, this.width, this.height);
 
     if (!this._level) {

@@ -10,6 +10,7 @@ import languages from '../translations/languages';
 class NavbarLanguageDropdown extends Component {
   static propTypes = {
     dropdownId: PropTypes.string,
+    setMenuOpen: PropTypes.func.isRequired,
     setDropdownId: PropTypes.func.isRequired
   };
 
@@ -18,8 +19,14 @@ class NavbarLanguageDropdown extends Component {
     this.onClick = this.onClick.bind(this);
   }
 
-  onClick() {
-    this.props.setDropdownId('language');
+  onClick(event) {
+    console.log(event.target);
+    if (event.target.parentElement.getAttribute('role') === 'menu') {
+      this.props.setDropdownId('language');
+    }
+    else {
+      this.props.setMenuOpen(false);
+    }
   }
 
   render() {
@@ -30,7 +37,7 @@ class NavbarLanguageDropdown extends Component {
     return (
       <div className={className} role="menu" onClick={this.onClick}>
         <a className="navbar-link">{t('language')}</a>
-        <div className="navbar-dropdown">
+        <div className="navbar-dropdown is-right">
           {languages.map(language => (
             <NavbarLanguageDropdownItem key={language.id} {...language} />
           ))}

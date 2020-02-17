@@ -13,6 +13,7 @@ class NavbarLevelsDropdown extends Component {
   static propTypes = {
     gameStore: PropTypes.any.isRequired,
     dropdownId: PropTypes.string,
+    setMenuOpen: PropTypes.func.isRequired,
     setDropdownId: PropTypes.func.isRequired
   };
 
@@ -22,12 +23,17 @@ class NavbarLevelsDropdown extends Component {
     this.onOpenClick = this.onOpenClick.bind(this);
   }
 
-  onClick() {
-    this.props.setDropdownId('levels');
-    this.setState({ open: !open });
+  onClick(event) {
+    if (event.target.parentElement.getAttribute('role') === 'menu') {
+      this.props.setDropdownId('levels');
+    }
+    else {
+      this.props.setMenuOpen(false);
+    }
   }
 
   onOpenClick() {
+    this.props.setMenuOpen(false);
     const { gameStore } = this.props;
     gameStore.game.browseLevelPack();
   }
@@ -40,7 +46,7 @@ class NavbarLevelsDropdown extends Component {
     return (
       <div className={className} role="menu" onClick={this.onClick}>
         <a className="navbar-link">{t('levels')}</a>
-        <div className="navbar-dropdown">
+        <div className="navbar-dropdown is-right">
           <a className="navbar-item" onClick={this.onOpenClick}>
             <div className="level">
               <div className="level-left">

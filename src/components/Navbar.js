@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
 
 import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
@@ -13,44 +14,64 @@ class Navbar extends Component {
   };
 
   state = {
+    menuOpen: false,
     dropdownId: null
   };
 
   constructor(props) {
     super(props);
+    this.setMenuOpen = this.setMenuOpen.bind(this);
     this.setDropdownId = this.setDropdownId.bind(this);
-    this.onOpenClick = this.onOpenClick.bind(this);
+    this.onBurgerClick = this.onBurgerClick.bind(this);
+  }
+
+  setMenuOpen(menuOpen) {
+    if (menuOpen) {
+      this.setState({ menuOpen });
+    }
+    else {
+      this.setState({ menuOpen: false, dropdownId: null });
+    }
   }
 
   setDropdownId(dropdownId) {
     this.setState({ dropdownId: this.state.dropdownId === dropdownId ? null : dropdownId });
   }
 
-  onOpenClick() {
-    const { eventBus } = this.props;
-    eventBus.request(REQUEST_BROWSE_LEVEL_PACK);
+  onBurgerClick() {
+    this.setMenuOpen(!this.state.menuOpen);
   }
 
   render() {
-    const { dropdownId } = this.state;
+    const { menuOpen, dropdownId } = this.state;
+    const burgerClassName = classNames('navbar-burger', { 'is-active': menuOpen });
+    const menuClassName = classNames('navbar-menu', { 'is-active': menuOpen });
     return (
       <nav className="navbar is-danger" role="navigation">
         <div className="navbar-brand">
           <div className="navbar-item">
             Storekeeper
           </div>
-          <a className="navbar-burger burger" role="menu" data-target="navigation">
+          <a className={burgerClassName} role="menu" data-target="navigation" onClick={this.onBurgerClick}>
             <span />
             <span />
             <span />
           </a>
         </div>
-        <div id="navigation" className="navbar-menu">
+        <div id="navigation" className={menuClassName}>
           <div className="navbar-start">
           </div>
           <div className="navbar-end">
-            <NavbarLevelsDropdown dropdownId={dropdownId} setDropdownId={this.setDropdownId} />
-            <NavbarLanguageDropdown dropdownId={dropdownId} setDropdownId={this.setDropdownId} />
+            <NavbarLanguageDropdown
+              dropdownId={dropdownId}
+              setMenuOpen={this.setMenuOpen}
+              setDropdownId={this.setDropdownId}
+            />
+            <NavbarLevelsDropdown
+              dropdownId={dropdownId}
+              setMenuOpen={this.setMenuOpen}
+              setDropdownId={this.setDropdownId}
+            />
           </div>
         </div>
       </nav>
