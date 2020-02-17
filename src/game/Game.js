@@ -47,6 +47,7 @@ class Game {
     this.onKeyUp = this.onKeyUp.bind(this);
     this.onTouchStart = this.onTouchStart.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
+    this.onContextMenu = this.onContextMenu.bind(this);
 
     eventBus.handle(REQUEST_BROWSE_LEVEL_PACK, this.browseLevelPack);
     eventBus.on(EVENT_LEVEL_COMPLETED, this.onLevelCompleted);
@@ -70,6 +71,7 @@ class Game {
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('touchstart', this.onTouchStart);
     window.addEventListener('touchend', this.onTouchEnd);
+    window.addEventListener('contextmenu', this.onContextMenu);
   }
 
   disableControls() {
@@ -77,6 +79,7 @@ class Game {
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('touchstart', this.onTouchStart);
     window.removeEventListener('touchend', this.onTouchEnd);
+    window.removeEventListener('contextmenu', this.onContextMenu);
   }
 
   browseLevelPack() {
@@ -167,6 +170,10 @@ class Game {
       return;
     }
     this._levelPack.level.direction = DIRECTION_NONE;
+  }
+
+  onContextMenu(event) {
+    event.preventDefault();
   }
 
   async loadLevelPack(source) {
