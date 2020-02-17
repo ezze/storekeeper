@@ -1,7 +1,26 @@
 {
-    "name": "Original",
-    "description": "A set of original Sokoban levels",
+    "name": "Classic",
+    "description": "A set of classic Sokoban levels",
     "levels": [{
+        "items": [
+            "########",
+            "#      ##",
+            "#  . $ @#",
+            "#########"
+        ]
+    }, {
+        "items": [
+            "########",
+            "#      ###",
+            "#  * $ @  ",
+            "#...   ###",
+            "#      #",
+            "#      #",
+            "# $$   #",
+            "#      #",
+            "########"
+        ]
+    }, {
         "name": "Level 1",
         "items": [
             "    #####",

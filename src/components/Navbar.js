@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 
-import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
 import { withEventBus } from '../context/eventBus';
 
 import NavbarLevelsDropdown from './NavbarLevelsDropdown';
