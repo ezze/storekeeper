@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Storekeeper
+Exec=webapp-container --app-id="storekeeper" --store-session-cookies --enable-media-hub-audio $@ dist/index.html
+Icon=storekeeper.png
+Terminal=false
+Type=Application
+X-Ubuntu-Touch=true
+X-Ubuntu-Splash-Color=#ffffff

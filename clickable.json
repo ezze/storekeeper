@@ -1,0 +1,5 @@
+{
+  "template": "custom",
+  "build": "mkdir -p ./install && cp -R ../../../manifest.json ../../../storekeeper* ../../../dist ./install",
+  "kill": "webapp-container*"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "storekeeper",
+  "description": "Sokoban game",
+  "architecture": "@CLICK_ARCH@",
+  "title": "Storekeeper",
+  "hooks": {
+    "storekeeper": {
+      "apparmor": "storekeeper.apparmor",
+      "desktop":  "storekeeper.desktop"
+    }
+  },
+  "version": "0.4.0",
+  "maintainer": "Dmitriy Pushkov <ezze@ezze.org>",
+  "framework" : "ubuntu-sdk-16.04"
+}

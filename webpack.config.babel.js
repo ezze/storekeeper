@@ -103,7 +103,7 @@ export default (env, argv) => {
           collapseWhitespace: mode === 'production'
         }
       }),
-      new FaviconsPlugin(path.resolve(__dirname, 'src/favicon/favicon.png')),
+      new FaviconsPlugin(path.resolve(__dirname, 'storekeeper.png')),
       new MiniCssExtractPlugin({
         filename: `css/${mode === 'development' ? '[name].css' : '[name].[hash:6].css'}`,
         chunkFilename: `css/${mode === 'development' ? '[name].css' : '[name].[hash:6].css'}`
