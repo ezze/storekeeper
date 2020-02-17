@@ -20,7 +20,6 @@ class NavbarLanguageDropdown extends Component {
   }
 
   onClick(event) {
-    console.log(event.target);
     if (event.target.parentElement.getAttribute('role') === 'menu') {
       this.props.setDropdownId('language');
     }
