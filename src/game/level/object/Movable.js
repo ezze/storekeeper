@@ -3,6 +3,7 @@ import { DIRECTION_LEFT, DIRECTION_DOWN } from '../../../constants/direction';
 import {
   isDirectionValidHorizontal,
   isDirectionValidVertical,
+  getOppositeDirection,
   getDirectionShift
 } from '../../utils/direction';
 
@@ -48,6 +49,28 @@ export default class Movable extends Item {
     }
 
     this._movesCount++;
+  }
+
+  undoMove(direction, lastHorizontalDirection, lastVerticalDirection) {
+    if (this._movesCount === 0) {
+      return;
+    }
+
+    const oppositeDirection = getOppositeDirection(direction);
+    const shift = getDirectionShift(oppositeDirection);
+
+    this.row = this.row + shift.y;
+    this.column = this.column + shift.x;
+
+    if (isDirectionValidHorizontal(lastHorizontalDirection)) {
+      this.lastHorizontalDirection = lastHorizontalDirection;
+    }
+    else if (isDirectionValidVertical(lastVerticalDirection)) {
+      this.lastVerticalDirection = lastVerticalDirection;
+    }
+
+    this._movesCount--;
+    this._consecutiveStepsCount = 0;
   }
 
   animate() {

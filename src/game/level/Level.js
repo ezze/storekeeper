@@ -1,4 +1,5 @@
 import {
+  DIRECTION_LEFT,
   DIRECTION_NONE
 } from '../../constants/direction';
 
@@ -6,7 +7,8 @@ import {
   EVENT_LEVEL_RESET,
   EVENT_LEVEL_COMPLETED,
   EVENT_MOVE_START,
-  EVENT_MOVE_END
+  EVENT_MOVE_END,
+  EVENT_MOVE_UNDO
 } from '../../constants/event';
 
 import {
@@ -17,9 +19,9 @@ import {
 } from '../../constants/level';
 
 import {
-  getDirectionShift,
   isDirectionValid,
-  isDirectionValidHorizontal
+  isDirectionValidHorizontal,
+  getDirectionShift
 } from '../utils/direction';
 
 import {
@@ -42,17 +44,13 @@ class Level {
   _goals = [];
   _boxes = [];
 
-  _retractedBoxesCountCached = null;
-
-  _stepsPerMove;
-
+  _history = [];
   _direction = DIRECTION_NONE;
-
+  _retractedBoxesCountCached = null;
+  _stepsPerMove;
   _animating = false;
   _animatedBox = null;
-
   _completed = false;
-
   _eventBus = null;
 
   constructor(items, options = {}) {
@@ -81,7 +79,11 @@ class Level {
     this._goals = [];
     this._boxes = [];
 
+    this._history = [];
+    this._direction = DIRECTION_NONE;
     this._retractedBoxesCountCached = null;
+    this._animating = false;
+    this._completed = false;
 
     for (let row = 0; row < this.map.rows; row++) {
       for (let column = 0; column < this.map.columns; column++) {
@@ -100,10 +102,6 @@ class Level {
         }
       }
     }
-
-    this._direction = DIRECTION_NONE;
-    this._animating = false;
-    this._completed = false;
 
     if (fireEvent && this._eventBus) {
       const { movesCount, pushesCount, boxesCount, retractedBoxesCount } = this;
@@ -177,6 +175,12 @@ class Level {
         this._animatedBox.move(this._direction, this.stepSize);
       }
 
+      // Adding a move to history
+      this._history.push({
+        direction: this._direction,
+        box: this._animatedBox ? this._animatedBox : null
+      });
+
       if (this._eventBus) {
         // Signaling that the move has been started
         const { movesCount, pushesCount } = this;
@@ -238,6 +242,40 @@ class Level {
     }
 
     return { collided: false };
+  }
+
+  undoMove(count = 1) {
+    if (this._animating) {
+      return;
+    }
+
+    let leftCount = count;
+    while (leftCount > 0 && this._history.length > 0) {
+      const previousMove = this._history.pop();
+      const { direction, box } = previousMove;
+
+      let lastHorizontalDirection = DIRECTION_LEFT;
+      for (let i = this._history.length - 1; i >= 0; i--) {
+        const { direction } = this._history[i];
+        if (isDirectionValidHorizontal(direction)) {
+          lastHorizontalDirection = direction;
+          break;
+        }
+      }
+
+      if (box) {
+        box.undoMove(direction);
+      }
+      this._worker.undoMove(direction, lastHorizontalDirection);
+
+      leftCount--;
+    }
+
+    this._retractedBoxesCountCached = null;
+    if (this._eventBus) {
+      const { movesCount, pushesCount, boxesCount, retractedBoxesCount } = this;
+      this._eventBus.fire(EVENT_MOVE_UNDO, { movesCount, pushesCount, boxesCount, retractedBoxesCount });
+    }
   }
 
   outOfBounds(row, column) {

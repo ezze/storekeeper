@@ -1,11 +1,11 @@
 import { DIRECTION_NONE } from '../constants/direction';
 import { EVENT_LEVEL_PACK_CHANGE, EVENT_LEVEL_COMPLETED } from '../constants/event';
+import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
 
 import LevelPack from './level/LevelPack';
 import Renderer from './renderer/Renderer';
 import { getLoaderByFileName } from './level/loader/factory';
 import { getDirectionByKeyCode, getDirectionByTouchPoint } from './direction';
-import { REQUEST_BROWSE_LEVEL_PACK } from '../constants/request';
 
 class Game {
   _eventBus;
@@ -13,7 +13,6 @@ class Game {
   _levelPack;
 
   _animationFrameId;
-  _fps = 0;
 
   constructor(options = {}) {
     const { eventBus, renderer, levelPack } = options;
@@ -38,9 +37,6 @@ class Game {
       this._levelPack = null;
     }
 
-    this.animationFrame = this.animationFrame.bind(this);
-    this._animationFrameId = requestAnimationFrame(this.animationFrame);
-
     this.browseLevelPack = this.browseLevelPack.bind(this);
     this.onLevelCompleted = this.onLevelCompleted.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
@@ -52,6 +48,9 @@ class Game {
     eventBus.handle(REQUEST_BROWSE_LEVEL_PACK, this.browseLevelPack);
     eventBus.on(EVENT_LEVEL_COMPLETED, this.onLevelCompleted);
     this.enableControls();
+
+    this.animationFrame = this.animationFrame.bind(this);
+    this._animationFrameId = requestAnimationFrame(this.animationFrame);
   }
 
   destroy() {
@@ -96,6 +95,49 @@ class Game {
     input.click();
   }
 
+  async loadLevelPack(source) {
+    const name = source instanceof File ? source.name : source;
+    const loader = getLoaderByFileName(name);
+    if (loader === null) {
+      return Promise.reject(`Unable to find loader for level pack "${name}".`);
+    }
+
+    try {
+      this._levelPack = await loader.load(source);
+      this._eventBus.fire(EVENT_LEVEL_PACK_CHANGE, source);
+    }
+    catch (e) {
+      console.error('Unable to load level pack.');
+      console.error(e);
+    }
+  }
+
+  render(time) {
+    const { level } = this._levelPack;
+    if (!level) {
+      return;
+    }
+    if (this._renderer.level !== level) {
+      this._renderer.level = level;
+    }
+    this._renderer.render(time);
+  }
+
+  animationFrame(time) {
+    if (!this._levelPack) {
+      this._animationFrameId = requestAnimationFrame(this.animationFrame);
+      return;
+    }
+
+    const { level } = this._levelPack;
+    if (level) {
+      level.move();
+    }
+
+    this.render(time);
+    this._animationFrameId = requestAnimationFrame(this.animationFrame);
+  }
+
   onLevelCompleted() {
     // TODO: show some congratulations
     this._levelPack.level.reset();
@@ -111,6 +153,10 @@ class Game {
       event.preventDefault();
       this.browseLevelPack();
       return;
+    }
+
+    if (event.ctrlKey && event.which === 90) { // Ctrl + Z
+      this._levelPack.level.undoMove();
     }
 
     if (event.altKey && event.which === 90) { // Alt + Z
@@ -174,49 +220,6 @@ class Game {
 
   onContextMenu(event) {
     event.preventDefault();
-  }
-
-  async loadLevelPack(source) {
-    const name = source instanceof File ? source.name : source;
-    const loader = getLoaderByFileName(name);
-    if (loader === null) {
-      return Promise.reject(`Unable to find loader for level pack "${name}".`);
-    }
-
-    try {
-      this._levelPack = await loader.load(source);
-      this._eventBus.fire(EVENT_LEVEL_PACK_CHANGE, source);
-    }
-    catch (e) {
-      console.error('Unable to load level pack.');
-      console.error(e);
-    }
-  }
-
-  render(time) {
-    const { level } = this._levelPack;
-    if (!level) {
-      return;
-    }
-    if (this._renderer.level !== level) {
-      this._renderer.level = level;
-    }
-    this._renderer.render(time);
-  }
-
-  animationFrame(time) {
-    if (!this._levelPack) {
-      this._animationFrameId = requestAnimationFrame(this.animationFrame);
-      return;
-    }
-
-    const { level } = this._levelPack;
-    if (level) {
-      level.move();
-    }
-
-    this.render(time);
-    this._animationFrameId = requestAnimationFrame(this.animationFrame);
   }
 }
 

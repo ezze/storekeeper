@@ -9,7 +9,8 @@ import {
   EVENT_LEVEL_CHANGE,
   EVENT_LEVEL_RESET,
   EVENT_MOVE_START,
-  EVENT_MOVE_END
+  EVENT_MOVE_END,
+  EVENT_MOVE_UNDO
 } from '../constants/event';
 
 import { levelPacks } from '../constants/level';
@@ -43,20 +44,23 @@ class GameStore extends BasicStore {
     this.eventBus = eventBus;
 
     this.onLevelPackChange = this.onLevelPackChange.bind(this);
-    this.onLevelChange = this.onLevelChange.bind(this);
-    this.onLevelReset = this.onLevelReset.bind(this);
-    this.onMoveStart = this.onMoveStart.bind(this);
-    this.onMoveEnd = this.onMoveEnd.bind(this);
+    this.onLevelPropsUpdate = this.onLevelPropsUpdate.bind(this);
 
     this.eventBus.on(EVENT_LEVEL_PACK_CHANGE, this.onLevelPackChange);
-    this.eventBus.on(EVENT_LEVEL_CHANGE, this.onLevelChange);
-    this.eventBus.on(EVENT_LEVEL_RESET, this.onLevelReset);
-    this.eventBus.on(EVENT_MOVE_START, this.onMoveStart);
-    this.eventBus.on(EVENT_MOVE_END, this.onMoveEnd);
+    this.eventBus.on(EVENT_LEVEL_CHANGE, this.onLevelPropsUpdate);
+    this.eventBus.on(EVENT_LEVEL_RESET, this.onLevelPropsUpdate);
+    this.eventBus.on(EVENT_MOVE_START, this.onLevelPropsUpdate);
+    this.eventBus.on(EVENT_MOVE_END, this.onLevelPropsUpdate);
+    this.eventBus.on(EVENT_MOVE_UNDO, this.onLevelPropsUpdate);
   }
 
   destroy() {
-    this.eventBus.off(EVENT_LEVEL_CHANGE, this.onLevelChange);
+    this.eventBus.off(EVENT_LEVEL_PACK_CHANGE, this.onLevelPackChange());
+    this.eventBus.off(EVENT_LEVEL_CHANGE, this.onLevelPropsUpdate);
+    this.eventBus.off(EVENT_LEVEL_RESET, this.onLevelPropsUpdate);
+    this.eventBus.off(EVENT_MOVE_START, this.onLevelPropsUpdate);
+    this.eventBus.off(EVENT_MOVE_END, this.onLevelPropsUpdate);
+    this.eventBus.off(EVENT_MOVE_UNDO, this.onLevelPropsUpdate);
     return super.destroy();
   }
 
@@ -123,19 +127,7 @@ class GameStore extends BasicStore {
     this.setLevelPackFileName(fileName);
   }
 
-  onLevelChange(params) {
-    this.updateLevelProperties(params);
-  }
-
-  onLevelReset(params) {
-    this.updateLevelProperties(params);
-  }
-
-  onMoveStart(params) {
-    this.updateLevelProperties(params);
-  }
-
-  onMoveEnd(params) {
+  onLevelPropsUpdate(params) {
     this.updateLevelProperties(params);
   }
 }
