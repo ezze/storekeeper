@@ -1,7 +1,7 @@
 import Tween from '@tweenjs/tween.js';
 
 import {
-  EVENT_MOVE_END
+  EVENT_LEVEL_MOVE_END
 } from '../../constants/event';
 
 import {
@@ -47,7 +47,7 @@ class Renderer {
     this.onMoveEnd = this.onMoveEnd.bind(this);
 
     if (this._eventBus) {
-      this._eventBus.on(EVENT_MOVE_END, this.onMoveEnd);
+      this._eventBus.on(EVENT_LEVEL_MOVE_END, this.onMoveEnd);
     }
     window.addEventListener('resize', this.onWindowResize);
 
@@ -62,7 +62,7 @@ class Renderer {
 
   destroy() {
     if (this._eventBus) {
-      this._eventBus.off(EVENT_MOVE_END, this.onMoveEnd);
+      this._eventBus.off(EVENT_LEVEL_MOVE_END, this.onMoveEnd);
     }
     window.removeEventListener('resize', this.onWindowResize);
   }

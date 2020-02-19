@@ -6,9 +6,9 @@ import {
 import {
   EVENT_LEVEL_RESET,
   EVENT_LEVEL_COMPLETED,
-  EVENT_MOVE_START,
-  EVENT_MOVE_END,
-  EVENT_MOVE_UNDO
+  EVENT_LEVEL_MOVE_START,
+  EVENT_LEVEL_MOVE_END,
+  EVENT_LEVEL_MOVE_UNDO
 } from '../../constants/event';
 
 import {
@@ -184,7 +184,7 @@ class Level {
       if (this._eventBus) {
         // Signaling that the move has been started
         const { movesCount, pushesCount } = this;
-        this._eventBus.fire(EVENT_MOVE_START, { movesCount, pushesCount });
+        this._eventBus.fire(EVENT_LEVEL_MOVE_START, { movesCount, pushesCount });
       }
     }
 
@@ -209,7 +209,7 @@ class Level {
     if (this._eventBus) {
       // Signaling that the move has been ended
       const { boxesCount, retractedBoxesCount } = this;
-      this._eventBus.fire(EVENT_MOVE_END, { boxesCount, retractedBoxesCount });
+      this._eventBus.fire(EVENT_LEVEL_MOVE_END, { boxesCount, retractedBoxesCount });
     }
   }
 
@@ -274,7 +274,7 @@ class Level {
     this._retractedBoxesCountCached = null;
     if (this._eventBus) {
       const { movesCount, pushesCount, boxesCount, retractedBoxesCount } = this;
-      this._eventBus.fire(EVENT_MOVE_UNDO, { movesCount, pushesCount, boxesCount, retractedBoxesCount });
+      this._eventBus.fire(EVENT_LEVEL_MOVE_UNDO, { movesCount, pushesCount, boxesCount, retractedBoxesCount });
     }
   }
 
