@@ -15,8 +15,32 @@ class NavbarLevelDropdown extends Component {
 
   constructor(props) {
     super(props);
+
     this.onClick = this.onClick.bind(this);
+    this.onPreviousClick = this.onPreviousClick.bind(this);
+    this.onNextClick = this.onNextClick.bind(this);
+    this.onRestartClick = this.onRestartClick.bind(this);
     this.onOpenClick = this.onOpenClick.bind(this);
+
+    this.buttons = [{
+      id: 'level.previous',
+      onClick: this.onPreviousClick,
+      keys: 'Alt+Z'
+    }, {
+      id: 'level.next',
+      onClick: this.onNextClick,
+      keys: 'Alt+X'
+    }, {
+      id: 'level.restart',
+      onClick: this.onRestartClick,
+      keys: 'Alt+R'
+    }, {
+      id: 'divider'
+    }, {
+      id: 'level.open',
+      onClick: this.onOpenClick,
+      keys: 'Ctrl+O'
+    }];
   }
 
   onClick(event) {
@@ -28,9 +52,27 @@ class NavbarLevelDropdown extends Component {
     }
   }
 
+  onPreviousClick() {
+    const { gameStore, setMenuOpen } = this.props;
+    setMenuOpen(false);
+    gameStore.game.levelPack.previous();
+  }
+
+  onNextClick() {
+    const { gameStore, setMenuOpen } = this.props;
+    setMenuOpen(false);
+    gameStore.game.levelPack.next();
+  }
+
+  onRestartClick() {
+    const { gameStore, setMenuOpen } = this.props;
+    setMenuOpen(false);
+    gameStore.game.levelPack.restart();
+  }
+
   onOpenClick() {
-    this.props.setMenuOpen(false);
-    const { gameStore } = this.props;
+    const { gameStore, setMenuOpen } = this.props;
+    setMenuOpen(false);
     gameStore.game.browseLevelPack();
   }
 
@@ -41,24 +83,32 @@ class NavbarLevelDropdown extends Component {
     });
     return (
       <div className={className} role="menu" onClick={this.onClick}>
-        <a className="navbar-link">{t('level')}</a>
+        <a className="navbar-link">{t('level.label')}</a>
         <div className="navbar-dropdown is-right">
-          <a className="navbar-item" onClick={this.onOpenClick}>
-            <div className="level">
-              <div className="level-left">
-                <div className="level-item">
-                  {t('open')}
+          {this.buttons.map((button, i) => {
+            if (button.id === 'divider') {
+              return (
+                <hr key={`divider-${i}`} className="navbar-divider" />
+              );
+            }
+            return (
+              <a key={button.id} className="navbar-item" onClick={button.onClick}>
+                <div className="level">
+                  <div className="level-left">
+                    <div className="level-item">
+                      {t(button.id)}
+                    </div>
+                  </div>
+                  <div className="level-right">
+                    <div className="level-item"></div>
+                    <div className="level-item">
+                      <small>{button.keys}</small>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="level-right">
-                <div className="level-item"></div>
-                <div className="level-item">
-                  <small>Ctrl+O</small>
-                </div>
-              </div>
-            </div>
-          </a>
-          <hr className="navbar-divider" />
+              </a>
+            );
+          })}
         </div>
       </div>
     );

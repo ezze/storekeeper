@@ -46,7 +46,9 @@ class Navbar extends Component {
   }
 
   onOptionsClick() {
-    this.props.gameStore.setModal('options');
+    const { gameStore } = this.props;
+    this.setMenuOpen(false);
+    gameStore.setModal('options');
   }
 
   render() {
@@ -76,7 +78,7 @@ class Navbar extends Component {
               setDropdownId={this.setDropdownId}
             />
             <a className="navbar-item" onClick={this.onOptionsClick}>
-              <i className="fas fa-cog"></i> {t('options')}
+              <i className="fas fa-cog"></i> {t('options.label')}
             </a>
           </div>
         </div>

@@ -1,8 +1,15 @@
 {
   "navbar": {
-    "options": "Options",
-    "level": "Level",
-    "open": "Open..."
+    "options": {
+      "label": "Options"
+    },
+    "level": {
+      "label": "Level",
+      "previous": "Previous",
+      "next": "Next",
+      "restart": "Restart",
+      "open": "Open..."
+    }
   },
   "options": {
     "title": "Options",
