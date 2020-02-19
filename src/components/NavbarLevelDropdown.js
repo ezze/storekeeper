@@ -17,12 +17,19 @@ class NavbarLevelDropdown extends Component {
     super(props);
 
     this.onClick = this.onClick.bind(this);
+    this.onUndoMoveClick = this.onUndoMoveClick.bind(this);
     this.onPreviousClick = this.onPreviousClick.bind(this);
     this.onNextClick = this.onNextClick.bind(this);
     this.onRestartClick = this.onRestartClick.bind(this);
     this.onOpenClick = this.onOpenClick.bind(this);
 
     this.buttons = [{
+      id: 'level.undo-move',
+      onClick: this.onUndoMoveClick,
+      keys: 'Ctrl+Z'
+    }, {
+      id: 'divider'
+    }, {
       id: 'level.previous',
       onClick: this.onPreviousClick,
       keys: 'Alt+Z'
@@ -50,6 +57,12 @@ class NavbarLevelDropdown extends Component {
     else {
       this.props.setMenuOpen(false);
     }
+  }
+
+  onUndoMoveClick() {
+    const { gameStore, setMenuOpen } = this.props;
+    setMenuOpen(false);
+    gameStore.game.levelPack.level.undoMove();
   }
 
   onPreviousClick() {

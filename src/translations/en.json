@@ -5,6 +5,7 @@
     },
     "level": {
       "label": "Level",
+      "undo-move": "Undo move",
       "previous": "Previous",
       "next": "Next",
       "restart": "Restart",
