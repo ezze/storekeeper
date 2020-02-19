@@ -23,6 +23,10 @@ export const levelPacks = [{
   fileName: 'classic.json',
   label: 'Classic'
 }, {
+  id: 'yellowberry',
+  fileName: 'yellowberry.json',
+  label: 'Yellowberry'
+}, {
   id: 'haikemono',
   fileName: 'haikemono.sok',
   label: 'Haikemono'
