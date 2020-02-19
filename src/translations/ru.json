@@ -1,8 +1,18 @@
 {
   "navbar": {
-    "levels": "Уровни",
-    "open": "Открыть...",
-    "language": "Язык"
+    "options": "Настройки",
+    "level": "Уровень",
+    "open": "Открыть..."
+  },
+  "options": {
+    "title": "Настройки",
+    "language": {
+      "label": "Язык"
+    },
+    "level-pack": {
+      "label": "Набор уровней"
+    },
+    "close": "Закрыть"
   },
   "level": {
     "number": "Уровень: {{number}}",

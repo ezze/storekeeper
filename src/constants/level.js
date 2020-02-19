@@ -22,6 +22,10 @@ export const levelPacks = [{
   id: 'classic',
   fileName: 'classic.json',
   label: 'Classic'
+}, {
+  id: 'haikemono',
+  fileName: 'haikemono.sok',
+  label: 'Haikemono'
 }];
 
 for (let number = 1; number <= 12; number++) {

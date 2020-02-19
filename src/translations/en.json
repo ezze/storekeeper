@@ -1,8 +1,18 @@
 {
   "navbar": {
-    "levels": "Levels",
-    "open": "Open...",
-    "language": "Language"
+    "options": "Options",
+    "level": "Level",
+    "open": "Open..."
+  },
+  "options": {
+    "title": "Options",
+    "language": {
+      "label": "Language"
+    },
+    "level-pack": {
+      "label": "Level pack"
+    },
+    "close": "Close"
   },
   "level": {
     "number": "Level: {{number}}",

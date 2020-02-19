@@ -19,6 +19,7 @@ class GameStore extends BasicStore {
   game;
   eventBus;
 
+  @observable modal = null;
   @observable languageId = languages[0].id;
   @observable levelPackFileName = levelPacks[0].fileName;
 
@@ -32,7 +33,11 @@ class GameStore extends BasicStore {
     super({
       ...options,
       key: 'game',
-      include: ['languageId', 'levelPackFileName']
+      include: [
+        'modal',
+        'languageId',
+        'levelPackFileName'
+      ]
     });
   }
 
@@ -62,6 +67,10 @@ class GameStore extends BasicStore {
     this.eventBus.off(EVENT_MOVE_END, this.onLevelPropsUpdate);
     this.eventBus.off(EVENT_MOVE_UNDO, this.onLevelPropsUpdate);
     return super.destroy();
+  }
+
+  @action setModal(modal) {
+    this.modal = modal;
   }
 
   @action setLanguageId(id) {

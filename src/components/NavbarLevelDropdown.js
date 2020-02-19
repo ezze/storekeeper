@@ -4,12 +4,8 @@ import { withTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 
-import { levelPacks } from '../constants/level';
-
-import NavbarLevelsDropdownItem from './NavbarLevelsDropdownItem';
-
 @inject('gameStore') @observer
-class NavbarLevelsDropdown extends Component {
+class NavbarLevelDropdown extends Component {
   static propTypes = {
     gameStore: PropTypes.any.isRequired,
     dropdownId: PropTypes.string,
@@ -25,7 +21,7 @@ class NavbarLevelsDropdown extends Component {
 
   onClick(event) {
     if (event.target.parentElement.getAttribute('role') === 'menu') {
-      this.props.setDropdownId('levels');
+      this.props.setDropdownId('level');
     }
     else {
       this.props.setMenuOpen(false);
@@ -41,11 +37,11 @@ class NavbarLevelsDropdown extends Component {
   render() {
     const { t, dropdownId } = this.props;
     const className = classNames('navbar-item', 'has-dropdown', {
-      'is-active': dropdownId === 'levels'
+      'is-active': dropdownId === 'level'
     });
     return (
       <div className={className} role="menu" onClick={this.onClick}>
-        <a className="navbar-link">{t('levels')}</a>
+        <a className="navbar-link">{t('level')}</a>
         <div className="navbar-dropdown is-right">
           <a className="navbar-item" onClick={this.onOpenClick}>
             <div className="level">
@@ -63,13 +59,10 @@ class NavbarLevelsDropdown extends Component {
             </div>
           </a>
           <hr className="navbar-divider" />
-          {levelPacks.map(levelPack => (
-            <NavbarLevelsDropdownItem key={levelPack.id} {...levelPack} />
-          ))}
         </div>
       </div>
     );
   }
 }
 
-export default withTranslation('navbar')(NavbarLevelsDropdown);
+export default withTranslation('navbar')(NavbarLevelDropdown);

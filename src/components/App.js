@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 
 import Navbar from './Navbar';
 import GameContent from './GameContent';
+import OptionsModal from './OptionsModal';
 
 class App extends Component {
   render() {
@@ -9,6 +10,7 @@ class App extends Component {
       <div className="app">
         <Navbar />
         <GameContent />
+        <OptionsModal />
       </div>
     );
   }
