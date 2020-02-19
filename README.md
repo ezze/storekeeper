@@ -5,6 +5,8 @@
 
 This is JavaScript implementation of Sokoban game.
 
+All significant changes are [mentioned in this document](CHANGELOG.md).
+
 ## Contributing
 
 Before making a pull request, please, be sure that your changes are rebased to `develop` branch.
