@@ -22,7 +22,6 @@ class GameStore extends BasicStore {
   @observable modal = null;
   @observable languageId = languages[0].id;
   @observable levelPackFileName = levelPacks[0].fileName;
-
   @observable levelNumber = 0;
   @observable movesCount = 0;
   @observable pushesCount = 0;
@@ -36,7 +35,8 @@ class GameStore extends BasicStore {
       include: [
         'modal',
         'languageId',
-        'levelPackFileName'
+        'levelPackFileName',
+        'levelNumber'
       ]
     });
   }

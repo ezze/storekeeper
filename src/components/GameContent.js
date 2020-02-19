@@ -19,7 +19,7 @@ class GameContent extends Component {
 
   componentDidMount() {
     const { gameStore } = this.props;
-    const { levelPackFileName } = gameStore;
+    const { levelPackFileName, levelNumber } = gameStore;
 
     gameStore.game = new Game({
       eventBus,
@@ -27,7 +27,8 @@ class GameContent extends Component {
         eventBus,
         container: this.gameContainerRef.current
       }),
-      levelPack: `levels/${levelPackFileName}`
+      levelPack: `levels/${levelPackFileName}`,
+      levelNumber
     });
   }
 

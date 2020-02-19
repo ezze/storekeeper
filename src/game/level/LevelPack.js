@@ -10,7 +10,7 @@ class LevelPack {
   _index = -1;
 
   constructor(source, options = {}) {
-    const { fileName, name = '', description = '', levels = [] } = source;
+    const { fileName, name = '', description = '', levels = [], levelNumber } = source;
     this._fileName = fileName;
     this._name = name;
     this._description = description;
@@ -18,19 +18,23 @@ class LevelPack {
     const { eventBus = null } = options;
     this._eventBus = eventBus;
 
-    this.load(levels);
+    this.load(levels, { levelNumber });
   }
 
   destroy() {
 
   }
 
-  load(levels) {
+  load(levels, options = {}) {
     const levelOptions = {};
     if (this._eventBus) {
       levelOptions.eventBus = this._eventBus;
     }
     levels.forEach(({ items }) => this.add(new Level(items, levelOptions)));
+    const { levelNumber } = options;
+    if (typeof levelNumber === 'number' && levelNumber >= 1 && levelNumber <= this._levels.length) {
+      this.setLevel(levelNumber - 1);
+    }
   }
 
   get fileName() {
@@ -78,13 +82,19 @@ class LevelPack {
       level = new Level(level);
     }
     this._levels.push(level);
-    if (this._index === -1 && this._levels.length === 1) {
+    if (this._index === -1) {
       this.setLevel(0);
     }
   }
 
-  remove(level) { // eslint-disable-line no-unused-vars
-    // TODO: implement
+  remove(level) {
+    const index = this._levels.find(l => l === level);
+    if (index >= 0) {
+      this._levels.splice(index, 1);
+      if (this._index >= index) {
+        this._index--;
+      }
+    }
   }
 
   previous() {

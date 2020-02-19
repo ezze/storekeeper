@@ -14,14 +14,14 @@ export default class Loader {
     let parsedSource;
     if (source instanceof File) {
       fileName = source.name;
-      parsedSource = await this.loadFromFile(source, options);
+      parsedSource = await this.loadFromFile(source);
     }
     else {
       fileName = source;
-      parsedSource = await this.loadFromUrl(source, options);
+      parsedSource = await this.loadFromUrl(source);
     }
     fileName = fileName.split('/').pop();
-    return this.createLevelPack({ fileName, ...parsedSource });
+    return this.createLevelPack({ fileName, ...parsedSource, ...options });
   }
 
   async loadFromFile(file) {
@@ -36,9 +36,9 @@ export default class Loader {
     });
   }
 
-  async loadFromUrl(url, options) {
+  async loadFromUrl(url) {
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url);
       if (!response.ok) {
         return Promise.reject(`Unable to load levels from "${url}".`);
       }

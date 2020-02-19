@@ -15,7 +15,7 @@ class Game {
   _animationFrameId;
 
   constructor(options = {}) {
-    const { eventBus, renderer, levelPack } = options;
+    const { eventBus, renderer, levelPack, levelNumber } = options;
 
     if (!eventBus) {
       throw new TypeError('Event bus is not specified.');
@@ -31,7 +31,7 @@ class Game {
       this._levelPack = levelPack;
     }
     else if (typeof levelPack === 'string' || levelPack instanceof File) {
-      this.loadLevelPack(levelPack).catch(e => console.error(e));
+      this.loadLevelPack(levelPack, levelNumber).catch(e => console.error(e));
     }
     else {
       this._levelPack = null;
@@ -95,7 +95,7 @@ class Game {
     input.click();
   }
 
-  async loadLevelPack(source) {
+  async loadLevelPack(source, levelNumber) {
     const name = source instanceof File ? source.name : source;
     const loader = getLoaderByFileName(name);
     if (loader === null) {
@@ -103,7 +103,7 @@ class Game {
     }
 
     try {
-      this._levelPack = await loader.load(source);
+      this._levelPack = await loader.load(source, { levelNumber });
       this._eventBus.fire(EVENT_LEVEL_PACK_CHANGE, source);
     }
     catch (e) {
